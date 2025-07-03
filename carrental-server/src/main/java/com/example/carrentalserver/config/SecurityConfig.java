@@ -1,6 +1,10 @@
 package com.example.carrentalserver.config;
 
+import com.example.carrentalserver.repository.IRoleRepository;
+import com.example.carrentalserver.repository.IUserRepository;
 import com.example.carrentalserver.security.JwtFilter;
+import com.example.carrentalserver.security.JwtProvider;
+import com.example.carrentalserver.security.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +26,9 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
+    private final JwtProvider jwtProvider;
+    private final IUserRepository userRepository;
+    private final IRoleRepository roleRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -30,11 +37,20 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
                         .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/api/auth/google")
+                        .successHandler(oAuth2SuccessHandler()) // custom handler, tạo JWT & redirect về frontend
                 );
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public OAuth2SuccessHandler oAuth2SuccessHandler() {
+        return new OAuth2SuccessHandler(jwtProvider, userRepository, roleRepository);
     }
 
     @Bean
@@ -58,4 +74,5 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
+
 }

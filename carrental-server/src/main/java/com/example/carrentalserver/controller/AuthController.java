@@ -8,11 +8,14 @@ import com.example.carrentalserver.model.User;
 import com.example.carrentalserver.repository.IRoleRepository;
 import com.example.carrentalserver.repository.IUserRepository;
 import com.example.carrentalserver.security.JwtProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Collections;
 
 @RestController
@@ -23,6 +26,7 @@ public class AuthController {
     private final IRoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final ClientRegistrationRepository clientRegistrationRepository;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
@@ -49,5 +53,11 @@ public class AuthController {
         }
         String token = jwtProvider.generateToken(user);
         return ResponseEntity.ok(new JwtResponse(token));
+    }
+
+    @GetMapping("/google")
+    public void googleLogin(HttpServletResponse response) throws IOException {
+        // Redirect đến trang xác thực của Google
+        response.sendRedirect("/oauth2/authorization/google");
     }
 }
