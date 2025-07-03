@@ -4,21 +4,22 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
+    const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
-    const token = localStorage.getItem("jwt");
-    return username && token ? { username, token } : null;
+    return token && username ? { token, username } : null;
   });
 
   const login = (username, token) => {
-    setUser({ username, token });
+    localStorage.setItem("token", token);
     localStorage.setItem("username", username);
-    localStorage.setItem("jwt", token);
+    setUser({ username, token });
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("username");
-    localStorage.removeItem("jwt");
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("oauth2_handled");
   };
 
   return (

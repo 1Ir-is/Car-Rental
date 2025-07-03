@@ -1,11 +1,17 @@
 import React, { useState } from "react";
 import { register as registerApi } from "../api/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  if (user && user.token) {
+    return <Navigate to="/" replace />;
+  }
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
