@@ -3,10 +3,12 @@ package com.example.car_rental_server.service.user;
 import com.example.car_rental_server.dto.UserProfileDTO;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IUserRepository;
+import com.example.car_rental_server.utils.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +17,7 @@ import java.util.Optional;
 public class UserService implements IUserService {
     private final IUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public Optional<User> findByEmail(String email) {
@@ -65,7 +68,26 @@ public class UserService implements IUserService {
         user.setName(userUpdateDTO.getName());
         user.setPhone(userUpdateDTO.getPhone());
         user.setAddress(userUpdateDTO.getAddress());
-        user.setAvatar(userUpdateDTO.getAvatar());
+        user.setDateOfBirth(userUpdateDTO.getDateOfBirth());
+
+        String newAvatar = userUpdateDTO.getAvatar();
+        if (newAvatar != null && !newAvatar.isBlank() && newAvatar.startsWith("data:image")) {
+            try {
+                String[] parts = newAvatar.split(",");
+                if (parts.length == 2) {
+                    byte[] imageBytes = Base64.getDecoder().decode(parts[1]);
+                    String url = cloudinaryService.uploadImageFromBytes(imageBytes);
+                    user.setAvatar(url);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Upload avatar failed: " + e.getMessage());
+            }
+        } else if (newAvatar == null || newAvatar.isBlank()) {
+            user.setAvatar(null); // Xóa avatar
+        } else {
+            user.setAvatar(newAvatar);
+        }
+
         userRepository.save(user);
         return UserProfileDTO.from(user);
     }

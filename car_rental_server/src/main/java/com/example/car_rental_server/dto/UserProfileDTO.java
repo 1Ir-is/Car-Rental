@@ -4,6 +4,8 @@ import com.example.car_rental_server.model.Role;
 import com.example.car_rental_server.model.User;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 @Data
 public class UserProfileDTO {
     private Long id;
@@ -14,6 +16,7 @@ public class UserProfileDTO {
     private String avatar;
     private Boolean status;
     private Double trustPoint;
+    private LocalDate dateOfBirth;
     private Role role;
     private String createdAt;
     private Boolean enabled;
@@ -28,6 +31,7 @@ public class UserProfileDTO {
         dto.setAvatar(user.getAvatar());
         dto.setStatus(user.getStatus());
         dto.setTrustPoint(user.getTrustPoint());
+        dto.setDateOfBirth(user.getDateOfBirth());
         dto.setRole(user.getRole());
         dto.setCreatedAt(user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         dto.setEnabled(user.isEnabled());

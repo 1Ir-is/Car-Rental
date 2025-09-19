@@ -34,6 +34,7 @@ public class User implements UserDetails {
     private String avatar;
     private Boolean status = true;
     private Double trustPoint = 0.0;
+    private LocalDate dateOfBirth;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
