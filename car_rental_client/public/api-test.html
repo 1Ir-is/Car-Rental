@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Integration Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .test-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .test-result {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+      .info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      button:disabled {
+        background-color: #6c757d;
+        cursor: not-allowed;
+      }
+      pre {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🚗 Car Rental API Integration Test</h1>
+
+    <div class="test-container">
+      <h2>🔧 API Integration Tests</h2>
+      <p>
+        This page tests the integration between React frontend and Spring Boot
+        backend.
+      </p>
+
+      <button onclick="testGetProfile()">Test GET Profile</button>
+      <button onclick="testUpdateProfile()">Test UPDATE Profile</button>
+      <button onclick="runAllTests()">Run All Tests</button>
+      <button onclick="clearResults()">Clear Results</button>
+
+      <div id="results"></div>
+    </div>
+
+    <div class="test-container">
+      <h2>📋 Test Instructions</h2>
+      <ol>
+        <li>Make sure your React app is running on localhost:3000</li>
+        <li>Make sure your Spring Boot backend is running</li>
+        <li>Make sure you are logged in to the React app</li>
+        <li>Open this page alongside your React app</li>
+        <li>Click the test buttons to verify API integration</li>
+      </ol>
+    </div>
+
+    <script>
+      let resultsDiv = document.getElementById("results");
+
+      function addResult(message, type = "info") {
+        const div = document.createElement("div");
+        div.className = `test-result ${type}`;
+        div.innerHTML = `<strong>[${new Date().toLocaleTimeString()}]</strong> ${message}`;
+        resultsDiv.appendChild(div);
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+      }
+
+      function addJsonResult(data, title = "Response") {
+        const div = document.createElement("div");
+        div.className = "test-result info";
+        div.innerHTML = `<strong>${title}:</strong><pre>${JSON.stringify(
+          data,
+          null,
+          2
+        )}</pre>`;
+        resultsDiv.appendChild(div);
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+      }
+
+      async function testGetProfile() {
+        addResult("🔍 Testing GET /api/user/me...", "info");
+
+        try {
+          const response = await fetch("http://localhost:8080/api/user/me", {
+            method: "GET",
+            credentials: "include", // Important for HttpOnly cookies
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            addResult("✅ GET Profile successful", "success");
+            addJsonResult(data, "Profile Data");
+          } else {
+            const error = await response.text();
+            addResult(
+              `❌ GET Profile failed: ${response.status} - ${error}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          addResult(`❌ GET Profile error: ${error.message}`, "error");
+        }
+      }
+
+      async function testUpdateProfile() {
+        addResult("💾 Testing PUT /api/user/me...", "info");
+
+        // First get current profile to have valid data
+        try {
+          let currentData = {
+            name: "Test User",
+            email: "test@example.com",
+            phone: "0123456789",
+            address: "Test Address, Updated at " + new Date().toISOString(),
+          };
+
+          // Try to get current profile first
+          try {
+            const getResponse = await fetch(
+              "http://localhost:8080/api/user/me",
+              {
+                method: "GET",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+
+            if (getResponse.ok) {
+              currentData = await getResponse.json();
+              currentData.address = "Updated at " + new Date().toISOString();
+              addResult(
+                "ℹ️ Using current profile data for update test",
+                "info"
+              );
+            }
+          } catch (e) {
+            addResult(
+              "⚠️ Could not get current profile, using test data",
+              "info"
+            );
+          }
+
+          const response = await fetch("http://localhost:8080/api/user/me", {
+            method: "PUT",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(currentData),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            addResult("✅ PUT Profile successful", "success");
+            addJsonResult(data, "Updated Profile Data");
+          } else {
+            const error = await response.text();
+            addResult(
+              `❌ PUT Profile failed: ${response.status} - ${error}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          addResult(`❌ PUT Profile error: ${error.message}`, "error");
+        }
+      }
+
+      async function runAllTests() {
+        addResult("🚀 Starting comprehensive API tests...", "info");
+        clearResults();
+
+        await testGetProfile();
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
+        await testUpdateProfile();
+
+        addResult("✅ All tests completed!", "success");
+      }
+
+      function clearResults() {
+        resultsDiv.innerHTML = "";
+      }
+
+      // Auto-clear results after 5 minutes
+      setInterval(() => {
+        if (resultsDiv.children.length > 20) {
+          const oldResults = Array.from(resultsDiv.children).slice(0, 10);
+          oldResults.forEach((el) => el.remove());
+        }
+      }, 30000);
+
+      addResult("🎯 API Integration Test Tool Ready", "success");
+      addResult(
+        "Make sure both React (localhost:3000) and Spring Boot backends are running",
+        "info"
+      );
+    </script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+/* Authentication styles - Import all auth-related CSS files */
+
+@import "./login.css";
+@import "./register.css";
+@import "./forgot-password.css";

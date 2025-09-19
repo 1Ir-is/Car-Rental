@@ -1,0 +1,122 @@
+/* Avatar Upload Section */
+.avatar-upload-section {
+  position: relative;
+  display: inline-block;
+}
+
+.avatar-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid #f8f9fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
+  border: 4px solid #f8f9fa;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.avatar-overlay {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 35px;
+  height: 35px;
+  background: #007bff;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.avatar-overlay:hover {
+  background: #0056b3;
+  transform: scale(1.1);
+}
+
+.avatar-overlay i {
+  font-size: 14px;
+  color: white;
+}
+
+.avatar-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar-upload-info {
+  margin-top: 10px;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+/* File input styling */
+.avatar-file-input {
+  display: none;
+}
+
+.avatar-upload-btn {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.avatar-upload-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .avatar-container {
+    width: 100px;
+    height: 100px;
+  }
+
+  .avatar-placeholder {
+    font-size: 2rem;
+  }
+
+  .avatar-overlay {
+    width: 30px;
+    height: 30px;
+    bottom: 3px;
+    right: 3px;
+  }
+
+  .avatar-overlay i {
+    font-size: 12px;
+  }
+
+  .avatar-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
