@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { authAPI, authUtils } from "../services/authService";
+import { userService } from "../services/userService";
 
 // Initial state
 const initialState = {
@@ -103,12 +104,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       console.log("=== AUTH INITIALIZATION START ===");
-      
+
       try {
         // Với HttpOnly cookies, chúng ta cần gọi API để check auth state
         console.log("🍪 Checking auth state via API...");
-        const response = await authAPI.getCurrentUserProfile();
-        
+        const response = await userService.getCurrentProfile();
+
         if (response.success && response.data) {
           console.log("✅ User authenticated via cookies:", response.data);
           dispatch({
@@ -139,7 +140,7 @@ export const AuthProvider = ({ children }) => {
           });
         }
       }
-      
+
       console.log("=== AUTH INITIALIZATION END ===");
     };
 
@@ -154,17 +155,56 @@ export const AuthProvider = ({ children }) => {
       const result = await authAPI.login(credentials);
 
       if (result.success) {
-        // Lưu user data vào localStorage làm cache
-        if (result.user) {
-          authUtils.saveUser(result.user);
-          console.log("💾 User data saved to localStorage for cache");
+        console.log("✅ Login successful, fetching fresh user profile...");
+
+        // Sau khi login thành công, lấy user profile mới nhất từ backend
+        try {
+          const profileResult = await userService.getCurrentProfile();
+
+          if (profileResult.success) {
+            // Sử dụng data mới nhất từ profile API
+            const freshUser = profileResult.data;
+            authUtils.saveUser(freshUser);
+            console.log("💾 Fresh user data saved:", freshUser);
+
+            dispatch({
+              type: AuthActionTypes.LOGIN_SUCCESS,
+              payload: { user: freshUser },
+            });
+
+            return { success: true, user: freshUser };
+          } else {
+            // Fallback: sử dụng data từ login response nếu không lấy được profile
+            console.log(
+              "⚠️ Could not fetch fresh profile, using login response data"
+            );
+            const loginUser = result.user;
+            if (loginUser) {
+              authUtils.saveUser(loginUser);
+            }
+
+            dispatch({
+              type: AuthActionTypes.LOGIN_SUCCESS,
+              payload: { user: loginUser },
+            });
+
+            return result;
+          }
+        } catch (profileError) {
+          console.error("❌ Error fetching fresh profile:", profileError);
+          // Fallback: sử dụng data từ login response
+          const loginUser = result.user;
+          if (loginUser) {
+            authUtils.saveUser(loginUser);
+          }
+
+          dispatch({
+            type: AuthActionTypes.LOGIN_SUCCESS,
+            payload: { user: loginUser },
+          });
+
+          return result;
         }
-        
-        dispatch({
-          type: AuthActionTypes.LOGIN_SUCCESS,
-          payload: { user: result.user },
-        });
-        return result;
       } else {
         dispatch({
           type: AuthActionTypes.LOGIN_FAILURE,
@@ -238,14 +278,14 @@ export const AuthProvider = ({ children }) => {
         payload: { loading: true },
       });
 
-      // Use the updated authAPI
-      const response = await authAPI.updateUserProfile(userData);
+      // Use the userService for profile updates
+      const response = await userService.updateProfile(userData);
 
       if (response.success) {
         // Save updated user data to localStorage cache
         authUtils.saveUser(response.data);
         console.log("💾 Updated user data saved to localStorage");
-        
+
         // Update local state with the updated user data
         dispatch({
           type: AuthActionTypes.UPDATE_USER,
@@ -316,7 +356,7 @@ export const AuthProvider = ({ children }) => {
   // Get current user profile
   const getCurrentUserProfile = async () => {
     try {
-      const response = await authAPI.getCurrentUserProfile();
+      const response = await userService.getCurrentProfile();
 
       if (response.success) {
         dispatch({

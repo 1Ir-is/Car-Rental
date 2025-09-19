@@ -1,4 +1,4 @@
-import React, { Fragment } from "react";
+import React from "react";
 
 import Header from "../Header/Header";
 import Footer from "../Footer/Footer";
@@ -6,13 +6,15 @@ import Routers from "../../routers/Routers";
 
 const Layout = () => {
   return (
-    <Fragment>
+    <div
+      style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
+    >
       <Header />
-      <div>
+      <main style={{ flex: "1" }}>
         <Routers />
-      </div>
+      </main>
       <Footer />
-    </Fragment>
+    </div>
   );
 };
 

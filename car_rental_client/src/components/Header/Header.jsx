@@ -88,9 +88,9 @@ const Header = () => {
           <Row>
             <Col lg="6" md="6" sm="6">
               <div className="header__top__left">
-                <span>Need Help?</span>
+                <span className="help-text">Need Help?</span>
                 <span className="header__top__help">
-                  <i class="ri-phone-fill"></i> +84-914-048-099
+                  <i className="ri-phone-fill"></i> +84-914-048-099
                 </span>
               </div>
             </Col>

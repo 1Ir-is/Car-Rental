@@ -9,6 +9,31 @@
   font-family: "Source Sans Pro", sans-serif;
 }
 
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Global fix for any potential white space */
+html {
+  margin: 0;
+  padding: 0;
+}
+
 /* ========= pre-define css ========= */
 h1,
 h2,

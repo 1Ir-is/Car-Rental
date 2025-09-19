@@ -1,7 +1,10 @@
 .footer {
   background: #000d6b;
   padding-top: 50px;
-  padding-bottom: 15px;
+  padding-bottom: 20px;
+  margin-bottom: -30px;
+  position: relative;
+  min-height: 300px;
 }
 
 .footer__logo i {
@@ -68,6 +71,9 @@
 
 .footer__bottom {
   border-top: 1px solid #7c8a972f;
+  padding-top: 15px;
+  padding-bottom: 25px;
+  margin-bottom: -10px;
 }
 
 @media only screen and (max-width: 768px) {
@@ -88,7 +94,33 @@
 
   .footer__bottom p {
     font-size: 0.7rem;
+    margin-bottom: 0 !important;
   }
+}
 
-  
+/* Ensure no extra spacing */
+.footer,
+.footer * {
+  margin-bottom: 0 !important;
+}
+
+.footer:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Fix Reactstrap container spacing */
+.footer .container,
+.footer .row,
+.footer .col {
+  margin-bottom: 0 !important;
+  padding-bottom: 0;
+}
+
+/* Extend footer to cover any white space */
+.footer::after {
+  content: "";
+  display: block;
+  height: 50px;
+  background: #000d6b;
+  margin-top: -1px;
 }

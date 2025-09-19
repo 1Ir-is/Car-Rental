@@ -11,6 +11,7 @@ import Contact from "../pages/Contact";
 import Profile from "../pages/Profile";
 import MyBookings from "../pages/MyBookings";
 import Settings from "../pages/Settings";
+import BecomeDriver from "../pages/BecomeDriver";
 import { Login, Register, ForgotPassword } from "../pages/auth";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 
@@ -28,6 +29,16 @@ const Routers = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+
+      {/* Become Driver Route */}
+      <Route
+        path="/become-driver"
+        element={
+          <ProtectedRoute>
+            <BecomeDriver />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected Routes */}
       <Route
