@@ -1,5 +1,6 @@
 package com.example.car_rental_server.service.user;
 
+import com.example.car_rental_server.dto.UserProfileDTO;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,5 +49,24 @@ public class UserService implements IUserService {
     @Override
     public List<User> findAll() {
         return userRepository.findAll();
+    }
+
+    @Override
+    public UserProfileDTO getCurrentUserInfo(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return UserProfileDTO.from(user);
+    }
+
+    @Override
+    public UserProfileDTO updateCurrentUserInfo(String email, UserProfileDTO userUpdateDTO) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setName(userUpdateDTO.getName());
+        user.setPhone(userUpdateDTO.getPhone());
+        user.setAddress(userUpdateDTO.getAddress());
+        user.setAvatar(userUpdateDTO.getAvatar());
+        userRepository.save(user);
+        return UserProfileDTO.from(user);
     }
 }
