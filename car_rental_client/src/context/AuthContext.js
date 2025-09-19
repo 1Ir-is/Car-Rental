@@ -101,27 +101,45 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize auth state on app load
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       console.log("=== AUTH INITIALIZATION START ===");
-      const token = authUtils.getToken();
-      const user = authUtils.getCurrentUser();
-
-      console.log("🔑 Token from localStorage:", token);
-      console.log("👤 User from localStorage:", user);
-
-      if (token && user) {
-        console.log("✅ Auth data found, logging user in");
-        dispatch({
-          type: AuthActionTypes.LOGIN_SUCCESS,
-          payload: { user },
-        });
-      } else {
-        console.log("❌ No auth data found, staying logged out");
-        dispatch({
-          type: AuthActionTypes.SET_LOADING,
-          payload: { loading: false },
-        });
+      
+      try {
+        // Với HttpOnly cookies, chúng ta cần gọi API để check auth state
+        console.log("🍪 Checking auth state via API...");
+        const response = await authAPI.getCurrentUserProfile();
+        
+        if (response.success && response.data) {
+          console.log("✅ User authenticated via cookies:", response.data);
+          dispatch({
+            type: AuthActionTypes.LOGIN_SUCCESS,
+            payload: { user: response.data },
+          });
+        } else {
+          console.log("❌ No valid session found");
+          dispatch({
+            type: AuthActionTypes.SET_LOADING,
+            payload: { loading: false },
+          });
+        }
+      } catch (error) {
+        console.log("❌ Auth check failed:", error.message);
+        // Nếu API call thất bại, check localStorage như fallback
+        const user = authUtils.getCurrentUser();
+        if (user) {
+          console.log("📦 Using cached user data:", user);
+          dispatch({
+            type: AuthActionTypes.LOGIN_SUCCESS,
+            payload: { user },
+          });
+        } else {
+          dispatch({
+            type: AuthActionTypes.SET_LOADING,
+            payload: { loading: false },
+          });
+        }
       }
+      
       console.log("=== AUTH INITIALIZATION END ===");
     };
 
@@ -136,6 +154,12 @@ export const AuthProvider = ({ children }) => {
       const result = await authAPI.login(credentials);
 
       if (result.success) {
+        // Lưu user data vào localStorage làm cache
+        if (result.user) {
+          authUtils.saveUser(result.user);
+          console.log("💾 User data saved to localStorage for cache");
+        }
+        
         dispatch({
           type: AuthActionTypes.LOGIN_SUCCESS,
           payload: { user: result.user },
@@ -189,12 +213,16 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await authAPI.logout();
+      // Clear localStorage cache
+      authUtils.clearAuthData();
       dispatch({ type: AuthActionTypes.LOGOUT });
+      console.log("🚪 Logout successful, localStorage cleared");
       return { success: true, message: "Logged out successfully" };
     } catch (error) {
       // Force logout even if API call fails
       authUtils.clearAuthData();
       dispatch({ type: AuthActionTypes.LOGOUT });
+      console.log("🚪 Force logout, localStorage cleared");
       return { success: true, message: "Logged out successfully" };
     }
   };
@@ -214,6 +242,10 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.updateUserProfile(userData);
 
       if (response.success) {
+        // Save updated user data to localStorage cache
+        authUtils.saveUser(response.data);
+        console.log("💾 Updated user data saved to localStorage");
+        
         // Update local state with the updated user data
         dispatch({
           type: AuthActionTypes.UPDATE_USER,

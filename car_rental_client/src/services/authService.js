@@ -340,10 +340,21 @@ export const authUtils = {
     return null;
   },
 
+  // Save user data to localStorage (for caching)
+  saveUser: (userData) => {
+    try {
+      localStorage.setItem("user", JSON.stringify(userData));
+      console.log("💾 User data saved to localStorage:", userData);
+    } catch (error) {
+      console.error("Error saving user data:", error);
+    }
+  },
+
   // Clear auth data
   clearAuthData: () => {
     // Chỉ clear user data, HttpOnly cookie sẽ được clear bởi backend
     localStorage.removeItem("user");
+    console.log("🗑️ Auth data cleared from localStorage");
     // localStorage.removeItem("authToken"); // không cần với HttpOnly cookies
   },
 };
