@@ -83,7 +83,7 @@ public class UserService implements IUserService {
                 throw new RuntimeException("Upload avatar failed: " + e.getMessage());
             }
         } else if (newAvatar == null || newAvatar.isBlank()) {
-            user.setAvatar(null); // Xóa avatar
+            user.setAvatar(null);
         } else {
             user.setAvatar(newAvatar);
         }
