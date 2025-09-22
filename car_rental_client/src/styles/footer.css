@@ -1,10 +1,11 @@
 .footer {
   background: #000d6b;
   padding-top: 50px;
-  padding-bottom: 20px;
-  margin-bottom: -30px;
+  padding-bottom: 0;
+  margin-bottom: 0;
   position: relative;
   min-height: 300px;
+  z-index: 1;
 }
 
 .footer__logo i {
@@ -72,8 +73,8 @@
 .footer__bottom {
   border-top: 1px solid #7c8a972f;
   padding-top: 15px;
-  padding-bottom: 25px;
-  margin-bottom: -10px;
+  padding-bottom: 15px;
+  margin-bottom: 0;
 }
 
 @media only screen and (max-width: 768px) {
@@ -95,6 +96,7 @@
   .footer__bottom p {
     font-size: 0.7rem;
     margin-bottom: 0 !important;
+    padding-bottom: 15px;
   }
 }
 
@@ -116,11 +118,8 @@
   padding-bottom: 0;
 }
 
-/* Extend footer to cover any white space */
-.footer::after {
-  content: "";
-  display: block;
-  height: 50px;
-  background: #000d6b;
-  margin-top: -1px;
+/* Ensure footer stays at bottom without white space */
+/* Override any global spacing that might affect footer */
+.footer * {
+  margin-bottom: 0 !important;
 }

@@ -92,6 +92,14 @@ section {
   padding: 50px 0px;
 }
 
+/* Override section padding for ToastContainer */
+section[aria-live="polite"] {
+  padding: 0 !important;
+  margin: 0 !important;
+  position: fixed !important;
+  z-index: 9999 !important;
+}
+
 .btn {
   padding: 7px 15px;
   background: #000d6b;
@@ -119,4 +127,10 @@ section {
   .section__subtitle {
     font-size: 1.1rem;
   }
+}
+
+/* Ensure no elements interfere with footer */
+body > div:not(#root) {
+  position: fixed !important;
+  z-index: 9999 !important;
 }
