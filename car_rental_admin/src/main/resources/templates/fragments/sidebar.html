@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html
+        xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="admin-sidebar">
+    <nav class="sidebar">
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <div class="menu-title">Tổng quan</div>
+                <a class="menu-item" href="/admin/dashboard"
+                   th:classappend="${activeMenu} == 'dashboard' ? 'active' : ''">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Quản lý Người dùng</div>
+                <a class="menu-item" href="/admin/users"
+                   th:classappend="${activeMenu} == 'users' ? 'active' : ''">
+                    <i class="fas fa-users"></i>
+                    <span>Danh sách người dùng</span>
+                </a>
+                <a class="menu-item" href="/admin/users/create"
+                   th:classappend="${activeMenu} == 'users-create' ? 'active' : ''">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Thêm người dùng mới</span>
+                </a>
+                <a class="menu-item" href="/admin/customers"
+                   th:classappend="${activeMenu} == 'customers' ? 'active' : ''">
+                    <i class="fas fa-id-card"></i>
+                    <span>Khách hàng</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Quản lý Xe</div>
+                <a class="menu-item" href="/admin/cars"
+                   th:classappend="${activeMenu} == 'cars' ? 'active' : ''">
+                    <i class="fas fa-car"></i>
+                    <span>Danh sách xe</span>
+                </a>
+                <a class="menu-item" href="/admin/cars/create"
+                   th:classappend="${activeMenu} == 'cars-create' ? 'active' : ''">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Thêm xe mới</span>
+                </a>
+                <a class="menu-item" href="/admin/car-types"
+                   th:classappend="${activeMenu} == 'car-types' ? 'active' : ''">
+                    <i class="fas fa-list"></i>
+                    <span>Loại xe</span>
+                </a>
+                <a class="menu-item" href="/admin/car-maintenance"
+                   th:classappend="${activeMenu} == 'car-maintenance' ? 'active' : ''">
+                    <i class="fas fa-wrench"></i>
+                    <span>Bảo trì xe</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Quản lý Đặt xe</div>
+                <a class="menu-item" href="/admin/bookings"
+                   th:classappend="${activeMenu} == 'bookings' ? 'active' : ''">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Đơn đặt xe</span>
+                </a>
+                <a class="menu-item" href="/admin/bookings/pending"
+                   th:classappend="${activeMenu} == 'bookings-pending' ? 'active' : ''">
+                    <i class="fas fa-clock"></i>
+                    <span>Chờ duyệt</span>
+                </a>
+                <a class="menu-item" href="/admin/bookings/active"
+                   th:classappend="${activeMenu} == 'bookings-active' ? 'active' : ''">
+                    <i class="fas fa-car-side"></i>
+                    <span>Đang thuê</span>
+                </a>
+                <a class="menu-item" href="/admin/returns"
+                   th:classappend="${activeMenu} == 'returns' ? 'active' : ''">
+                    <i class="fas fa-undo"></i>
+                    <span>Trả xe</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Tài chính</div>
+                <a class="menu-item" href="/admin/payments"
+                   th:classappend="${activeMenu} == 'payments' ? 'active' : ''">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Thanh toán</span>
+                </a>
+                <a class="menu-item" href="/admin/invoices"
+                   th:classappend="${activeMenu} == 'invoices' ? 'active' : ''">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>Hóa đơn</span>
+                </a>
+                <a class="menu-item" href="/admin/discounts"
+                   th:classappend="${activeMenu} == 'discounts' ? 'active' : ''">
+                    <i class="fas fa-percentage"></i>
+                    <span>Mã giảm giá</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Địa điểm</div>
+                <a class="menu-item" href="/admin/locations"
+                   th:classappend="${activeMenu} == 'locations' ? 'active' : ''">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Điểm lấy/trả xe</span>
+                </a>
+                <a class="menu-item" href="/admin/branches"
+                   th:classappend="${activeMenu} == 'branches' ? 'active' : ''">
+                    <i class="fas fa-building"></i>
+                    <span>Chi nhánh</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Báo cáo & Thống kê</div>
+                <a class="menu-item" href="/admin/reports"
+                   th:classappend="${activeMenu} == 'reports' ? 'active' : ''">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Báo cáo tổng hợp</span>
+                </a>
+                <a class="menu-item" href="/admin/analytics"
+                   th:classappend="${activeMenu} == 'analytics' ? 'active' : ''">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Phân tích doanh thu</span>
+                </a>
+                <a class="menu-item" href="/admin/financial-reports"
+                   th:classappend="${activeMenu} == 'financial-reports' ? 'active' : ''">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Báo cáo tài chính</span>
+                </a>
+                <a class="menu-item" href="/admin/car-usage"
+                   th:classappend="${activeMenu} == 'car-usage' ? 'active' : ''">
+                    <i class="fas fa-road"></i>
+                    <span>Thống kê sử dụng xe</span>
+                </a>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-title">Hệ thống & Bảo mật</div>
+                <a class="menu-item" href="/admin/settings"
+                   th:classappend="${activeMenu} == 'settings' ? 'active' : ''">
+                    <i class="fas fa-cog"></i>
+                    <span>Cài đặt hệ thống</span>
+                </a>
+                <a class="menu-item" href="/admin/roles"
+                   th:classappend="${activeMenu} == 'roles' ? 'active' : ''">
+                    <i class="fas fa-user-shield"></i>
+                    <span>Phân quyền</span>
+                </a>
+                <a class="menu-item" href="/admin/audit"
+                   th:classappend="${activeMenu} == 'audit' ? 'active' : ''">
+                    <i class="fas fa-history"></i>
+                    <span>Nhật ký hoạt động</span>
+                </a>
+                <a class="menu-item" href="/admin/backup"
+                   th:classappend="${activeMenu} == 'backup' ? 'active' : ''">
+                    <i class="fas fa-database"></i>
+                    <span>Sao lưu dữ liệu</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+</div>
+</body>
+</html>

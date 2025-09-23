@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+>
+<body>
+<div th:fragment="admin-navbar">
+    <header class="admin-header">
+        <div class="header-content">
+            <div class="admin-logo">
+                <i class="fas fa-car"></i>
+                <span>Admin Panel - Car Rental System</span>
+            </div>
+            <div class="admin-nav">
+                <div class="user-info">
+                    <div class="user-avatar-container">
+                        <img class="user-avatar-img"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             th:alt="${currentUserName}"
+                             th:if="${hasAvatar}"
+                             th:src="${currentUserAvatarUrl}">
+                        <div th:class="'user-avatar-fallback ' + (${hasAvatar} ? 'hidden' : '')"
+                             th:text="${currentUserAvatar ?: 'A'}">A
+                        </div>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name" th:text="${currentUserName ?: 'Admin'}">Admin</span>
+                        <small class="user-email" style="display: block; font-size: 0.8em; opacity: 0.7;"
+                               th:text="${currentUserEmail ?: ''}"></small>
+                    </div>
+                    <span class="user-role">🚗 Quản trị viên</span>
+                </div>
+                <form id="logoutForm" method="post" style="display: inline;" th:action="@{/admin/logout}">
+                    <button class="logout-btn" id="logoutButton" type="button">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+</div>
+</body>
+</html>
