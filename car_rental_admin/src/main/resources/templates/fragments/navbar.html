@@ -1,38 +1,131 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
->
+<html xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:fragment="admin-navbar">
-    <header class="admin-header">
-        <div class="header-content">
-            <div class="admin-logo">
-                <i class="fas fa-car"></i>
-                <span>Admin Panel - Car Rental System</span>
-            </div>
-            <div class="admin-nav">
-                <div class="user-info">
-                    <div class="user-avatar-container">
-                        <img class="user-avatar-img"
-                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                             th:alt="${currentUserName}"
-                             th:if="${hasAvatar}"
-                             th:src="${currentUserAvatarUrl}">
-                        <div th:class="'user-avatar-fallback ' + (${hasAvatar} ? 'hidden' : '')"
-                             th:text="${currentUserAvatar ?: 'A'}">A
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-left">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1>Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <div class="header-actions">
+                <!-- Search Box -->
+                <div class="header-search">
+                    <i class="fas fa-search"></i>
+                    <input class="search-input" placeholder="Search..." type="text"/>
+                </div>
+
+                <!-- Notifications -->
+                <div class="notification-wrapper">
+                    <button class="notification-btn" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <!-- Notification Dropdown -->
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="dropdown-header">
+                            <h4>Thông báo</h4>
+                            <span class="mark-all-read">Đánh dấu đã đọc</span>
+                        </div>
+                        <div class="notification-list">
+                            <div class="notification-item unread">
+                                <div class="notification-icon">
+                                    <i class="fas fa-car text-primary"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <p>Xe BMW X5 cần bảo dưỡng</p>
+                                    <span class="time">5 phút trước</span>
+                                </div>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-icon">
+                                    <i class="fas fa-user text-success"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <p>Khách hàng mới đăng ký</p>
+                                    <span class="time">1 giờ trước</span>
+                                </div>
+                            </div>
+                            <div class="notification-item">
+                                <div class="notification-icon">
+                                    <i class="fas fa-calendar text-warning"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <p>Đặt xe mới cần xác nhận</p>
+                                    <span class="time">2 giờ trước</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dropdown-footer">
+                            <a class="view-all" href="#">Xem tất cả thông báo</a>
                         </div>
                     </div>
-                    <div class="user-details">
-                        <span class="user-name" th:text="${currentUserName ?: 'Admin'}">Admin</span>
-                        <small class="user-email" style="display: block; font-size: 0.8em; opacity: 0.7;"
-                               th:text="${currentUserEmail ?: ''}"></small>
-                    </div>
-                    <span class="user-role">🚗 Quản trị viên</span>
                 </div>
-                <form id="logoutForm" method="post" style="display: inline;" th:action="@{/admin/logout}">
-                    <button class="logout-btn" id="logoutButton" type="button">
-                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                    </button>
-                </form>
+
+                <!-- Date Time -->
+                <div class="date-time">
+                    <div class="current-date" id="current-date"></div>
+                    <div class="current-time" id="current-time"></div>
+                </div>
+
+                <!-- Admin Profile Dropdown -->
+                <div class="admin-profile">
+                    <div class="profile-trigger" onclick="toggleProfileDropdown()">
+                        <div class="admin-avatar">
+                            <img th:alt="${currentUserName}"
+                                 th:src="@{https://ui-avatars.com/api/?name={name}&background=4f46e5&color=fff&size=40(name=${currentUserName ?: 'Admin'})}"/>
+                            <div class="status-indicator online"></div>
+                        </div>
+                        <div class="admin-info">
+                            <span class="admin-name" th:text="${currentUserName}">Admin</span>
+                            <span class="admin-role">Quản trị viên</span>
+                        </div>
+                        <i class="fas fa-chevron-down dropdown-arrow"></i>
+                    </div>
+
+                    <!-- Profile Dropdown Menu -->
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="dropdown-header">
+                            <div class="user-info-detail">
+                                <img th:alt="${currentUserName}"
+                                     th:src="@{https://ui-avatars.com/api/?name={name}&background=4f46e5&color=fff&size=60(name=${currentUserName ?: 'Admin'})}"/>
+                                <div>
+                                    <h4 th:text="${currentUserName ?: 'Admin'}">Admin</h4>
+                                    <p th:text="${currentUserEmail ?: 'admin@autorent.com'}">admin@autorent.com</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-user"></i>
+                                <span>Hồ sơ</span>
+                            </a>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-cog"></i>
+                                <span>Cài đặt tài khoản</span>
+                            </a>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-key"></i>
+                                <span>Đổi mật khẩu</span>
+                            </a>
+                            <hr class="dropdown-divider"/>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-question-circle"></i>
+                                <span>Trợ giúp</span>
+                            </a>
+                            <a class="dropdown-item" href="#"
+                               onclick="document.getElementById('logoutForm').submit(); return false;">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Đăng xuất</span>
+                            </a>
+                            <form id="logoutForm" method="post" style="display:none"
+                                  th:action="@{/admin/logout}"></form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>

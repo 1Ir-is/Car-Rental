@@ -1,27 +1,209 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Admin Login</title>
-    <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Login - Auto Rent Da Nang Admin</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
 </head>
 <body>
-<div class="login-form">
-    <h2>Admin Login</h2>
-    <form method="post" th:action="@{/admin/login}">
-        <div>
-            <label>Email:</label>
-            <input name="username" required type="email"/>
+<div class="login-container">
+    <div class="login-background">
+        <div class="login-overlay"></div>
+    </div>
+
+    <div class="login-content">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-car"></i>
+                    <h1>Auto Rent Admin</h1>
+                </div>
+                <p class="subtitle">Car Rental Management System</p>
+            </div>
+
+            <!-- Spring Security Login Form -->
+            <form class="login-form" method="post" th:action="@{/admin/login}">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input class="form-input"
+                               id="email"
+                               name="username"
+                               placeholder="Enter your email"
+                               required
+                               type="email"/>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input class="form-input"
+                               id="password"
+                               name="password"
+                               placeholder="Enter your password"
+                               required
+                               type="password"/>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label class="checkbox-container">
+                        <input name="remember-me" type="checkbox"/>
+                        <span class="checkmark"></span>
+                        Remember me
+                    </label>
+                </div>
+
+                <!-- Simple Error Message -->
+                <div class="error-text" th:if="${param.error}">
+                    Invalid email or password!
+                </div>
+
+                <button class="login-btn" type="submit">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login
+                </button>
+            </form>
         </div>
-        <div>
-            <label>Password:</label>
-            <input name="password" required type="password"/>
+
+        <div class="login-footer">
+            <p>&copy; 2025 Auto Rent Da Nang. All rights reserved.</p>
+            <div class="contact-info">
+                <span><i class="fas fa-phone"></i> +84 914 048 099</span>
+                <span><i class="fas fa-envelope"></i> info@autorentdanang.com</span>
+            </div>
         </div>
-        <div>
-            <button type="submit">Login</button>
-        </div>
-        <div class="error" th:if="${param.error}">Sai email hoặc mật khẩu!</div>
-        <div class="success" th:if="${param.logout}">Đã đăng xuất!</div>
-    </form>
+    </div>
 </div>
-</body>
-</html>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<script>
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById("password");
+        const toggleButton = document.querySelector(".password-toggle i");
+
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            toggleButton.className = "fas fa-eye-slash";
+        } else {
+            passwordInput.type = "password";
+            toggleButton.className = "fas fa-eye";
+        }
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+
+        const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+        toast.innerHTML = `
+            <div class="toast-content">
+                <i class="${icon}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Show toast
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+
+        // Remove toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
+
+    // Show logout success toast if logout parameter exists
+    document.addEventListener('DOMContentLoaded', function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('logout')) {
+            showToast('You have been logged out successfully!', 'success');
+            // Clean URL by removing the logout parameter
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+</script>
+
+<style>
+    /* Error text styling */
+    .error-text {
+        color: #dc3545;
+        font-size: 14px;
+        margin-bottom: 15px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    /* Toast container */
+    #toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+    }
+
+    /* Toast styling */
+    .toast {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-bottom: 10px;
+        padding: 16px 20px;
+        min-width: 300px;
+        transform: translateX(400px);
+        transition: all 0.3s ease-in-out;
+        opacity: 0;
+        border-left: 4px solid #28a745;
+    }
+
+    .toast.toast-success {
+        border-left-color: #28a745;
+    }
+
+    .toast.toast-error {
+        border-left-color: #dc3545;
+    }
+
+    .toast.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .toast-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .toast-content i {
+        font-size: 18px;
+        color: #28a745;
+    }
+
+    .toast.toast-error .toast-content i {
+        color: #dc3545;
+    }
+
+    .toast-content span {
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+    }
+</style>
+

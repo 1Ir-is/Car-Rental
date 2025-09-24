@@ -28,6 +28,9 @@ public class AdminAuthController {
     public String dashboard(Authentication authentication, Model model) {
         User admin = (User) authentication.getPrincipal();
         model.addAttribute("admin", admin);
+        model.addAttribute("currentUserName", admin.getName());
+        model.addAttribute("currentUserEmail", admin.getEmail());
+        model.addAttribute("activeMenu", "dashboard");
         return "admin/dashboard";
     }
 
