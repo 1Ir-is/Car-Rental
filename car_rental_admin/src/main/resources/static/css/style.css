@@ -67,6 +67,10 @@ body {
     line-height: 1.6;
 }
 
+a {
+    text-decoration: none;
+}
+
 .admin-container {
     display: flex;
     min-height: 100vh;

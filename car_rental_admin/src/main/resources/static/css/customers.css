@@ -286,6 +286,11 @@
     color: var(--gray);
 }
 
+.stat-icon.inactive {
+    background: #f87171; /* đỏ pastel, sáng rõ hơn */
+    color: #fff;
+}
+
 .customer-actions {
     display: flex;
     gap: 0.5rem;
@@ -510,6 +515,39 @@
     height: 20px;
     background-color: var(--secondary-orange);
     border-radius: 2px;
+}
+
+/* Tooltip styles */
+.tooltip {
+    position: relative;
+    cursor: pointer;
+}
+
+.tooltip[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    top: -35px;
+    transform: translateX(-50%);
+    background: #24292f;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 13px;
+    z-index: 999;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.15s;
+}
+
+.tooltip[data-tooltip]::after {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tooltip[data-tooltip]:hover::after {
+    opacity: 1;
 }
 
 /* Responsive Design */

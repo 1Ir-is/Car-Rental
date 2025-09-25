@@ -32,16 +32,37 @@
                 </div>
             </div>
 
-            <!-- Stats Cards (Bạn có thể cập nhật dữ liệu động nếu muốn) -->
             <div class="stats-row">
+                <!-- Total Users -->
                 <div class="stat-card">
-                    <div class="stat-icon total">
-                        <i class="fas fa-users"></i>
-                    </div>
+                    <div class="stat-icon total"><i class="fas fa-users"></i></div>
                     <div class="stat-content">
-                        <h3>Total Users</h3>
-                        <p class="stat-number" th:text="${customers.size()}">4</p>
-                        <span class="stat-change positive">Active users</span>
+                        <h3>TOTAL USERS</h3>
+                        <p class="stat-number" th:text="${totalUserCount != null ? totalUserCount : 0}">0</p>
+                    </div>
+                </div>
+                <!-- Active Users -->
+                <div class="stat-card">
+                    <div class="stat-icon active"><i class="fas fa-user-check"></i></div>
+                    <div class="stat-content">
+                        <h3>ACTIVE USERS</h3>
+                        <p class="stat-number" th:text="${activeUserCount != null ? activeUserCount : 0}">0</p>
+                    </div>
+                </div>
+                <!-- Inactive Users -->
+                <div class="stat-card">
+                    <div class="stat-icon inactive"><i class="fa-solid fa-user-slash"></i></div>
+                    <div class="stat-content">
+                        <h3>INACTIVE USERS</h3>
+                        <p class="stat-number" th:text="${inactiveUserCount != null ? inactiveUserCount : 0}">0</p>
+                    </div>
+                </div>
+                <!-- New This Month -->
+                <div class="stat-card">
+                    <div class="stat-icon new"><i class="fas fa-user-plus"></i></div>
+                    <div class="stat-content">
+                        <h3>NEW THIS MONTH</h3>
+                        <p class="stat-number" th:text="${newUserThisMonth != null ? newUserThisMonth : 0}">0</p>
                     </div>
                 </div>
             </div>
@@ -50,24 +71,29 @@
             <div class="table-controls">
                 <div class="table-filters">
                     <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input
-                                id="customer-search"
-                                onkeyup="searchCustomers()"
-                                placeholder="Search by name, phone, email..."
-                                type="text"
-                        />
+                        <form method="get" style="position: relative;" th:action="@{/admin/customers}">
+                            <i class="fas fa-search"></i>
+                            <input name="search" placeholder="Search by name, phone, email..." th:value="${search}"
+                                   type="text"/>
+                            <button style="display:none;" type="submit"></button>
+                        </form>
                     </div>
                     <div class="filter-group">
-                        <select id="role-filter" onchange="filterCustomers()">
-                            <option value="">All Roles</option>
-                            <option th:each="role : ${roles}" th:text="${role.name()}" th:value="${role}"></option>
-                        </select>
-                        <select id="status-filter" onchange="filterCustomers()">
-                            <option value="">All Status</option>
-                            <option th:each="status : ${statuses}" th:text="${status.name()}"
-                                    th:value="${status}"></option>
-                        </select>
+                        <form class="filter-form" method="get" style="display: flex; gap: 12px;"
+                              th:action="@{/admin/customers}">
+                            <select id="role-filter" name="role" onchange="this.form.submit()">
+                                <option value="">All Roles</option>
+                                <option th:each="role : ${roles}" th:selected="${selectedRole} == ${role}"
+                                        th:text="${role.name()}"
+                                        th:value="${role}"></option>
+                            </select>
+                            <select id="status-filter" name="status" onchange="this.form.submit()">
+                                <option value="">All Status</option>
+                                <option th:each="status : ${statuses}" th:selected="${selectedStatus} == ${status}"
+                                        th:text="${status.name()}"
+                                        th:value="${status}"></option>
+                            </select>
+                        </form>
                     </div>
                 </div>
                 <div class="table-actions">
@@ -103,7 +129,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="customer : ${customers}">
+                    <tr th:each="customer : ${customers}" th:if="${customers.size() > 0}">
                         <td>
                             <div class="customer-info">
                                 <div class="customer-avatar">
@@ -112,7 +138,6 @@
                                 </div>
                                 <div class="customer-details">
                                     <span class="customer-name" th:text="${customer.name}"></span>
-                                    <span class="customer-id" th:text="'#CUS' + ${customer.id}"></span>
                                 </div>
                             </div>
                         </td>
@@ -144,9 +169,11 @@
                         </td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn-action btn-view" title="View Details">
+                                <a class="btn-action btn-view tooltip"
+                                   data-tooltip="View Details"
+                                   th:href="@{/admin/customers/{id}(id=${customer.id})}">
                                     <i class="fas fa-eye"></i>
-                                </button>
+                                </a>
                                 <button class="btn-action btn-edit" title="Edit Customer">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -156,12 +183,41 @@
                             </div>
                         </td>
                     </tr>
+                    <!-- Nếu lọc/search không tìm thấy kết quả -->
+                    <tr th:if="${customers.size() == 0} and ${search != null and !#strings.isEmpty(search)}">
+                        <td colspan="7" style="text-align: center; color: #888;">
+                            Không tìm thấy kết quả
+                        </td>
+                    </tr>
+
+                    <!-- Nếu danh sách hoàn toàn trống (không có user nào trong hệ thống) -->
+                    <tr th:if="${customers.size() == 0} and ${search == null or #strings.isEmpty(search)}">
+                        <td colspan="7" style="text-align: center; color: #888;">
+                            Danh sách trống
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
+            </div>
+            <div class="pagination">
+                <ul>
+                    <li th:if="${currentPage > 0}">
+                        <a th:href="@{/admin/customers(page=${currentPage - 1}, size=${pageSize}, search=${search})}">Previous</a>
+                    </li>
+                    <li th:classappend="${i == currentPage} ? 'active'"
+                        th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                        <a th:href="@{/admin/customers(page=${i}, size=${pageSize}, search=${search})}"
+                           th:text="${i + 1}"></a>
+                    </li>
+                    <li th:if="${currentPage < totalPages - 1}">
+                        <a th:href="@{/admin/customers(page=${currentPage + 1}, size=${pageSize}, search=${search})}">Next</a>
+                    </li>
+                </ul>
             </div>
         </div>
     </main>
 </div>
-
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/customers.js}"></script>
 </body>
 </html>

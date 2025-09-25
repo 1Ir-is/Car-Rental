@@ -8,16 +8,21 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RoleService implements IRoleService {
     private final IRoleRepository roleRepository;
 
+    @Override
     public List<RoleType> getAllRoles() {
-        return Arrays.asList(RoleType.values());
+        return Arrays.stream(RoleType.values())
+                .filter(role -> role != RoleType.ADMIN)
+                .collect(Collectors.toList());
     }
 
+    @Override
     public List<UserStatus> getAllUserStatuses() {
         return Arrays.asList(UserStatus.values());
     }
