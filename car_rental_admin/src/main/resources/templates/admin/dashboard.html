@@ -28,9 +28,9 @@
                         <i class="fas fa-car"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>Tổng số xe</h3>
-                        <p class="stat-number" th:text="${totalCars ?: 24}">24</p>
-                        <span class="stat-change positive">+2 từ tháng trước</span>
+                        <h3>Total Vehicles</h3>
+                        <p class="stat-number">24</p>
+                        <span class="stat-change positive">+2 from last month</span>
                     </div>
                 </div>
 
@@ -39,9 +39,9 @@
                         <i class="fas fa-calendar-check"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>Đặt xe hôm nay</h3>
-                        <p class="stat-number" th:text="${todayBookings ?: 8}">8</p>
-                        <span class="stat-change positive">+3 từ hôm qua</span>
+                        <h3>Today's Bookings</h3>
+                        <p class="stat-number">8</p>
+                        <span class="stat-change positive">+3 from yesterday</span>
                     </div>
                 </div>
 
@@ -50,9 +50,9 @@
                         <i class="fas fa-dollar-sign"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>Doanh thu tháng</h3>
-                        <p class="stat-number" th:text="${monthlyRevenue ?: '$45,250'}">$45,250</p>
-                        <span class="stat-change positive">+12% từ tháng trước</span>
+                        <h3>Monthly Revenue</h3>
+                        <p class="stat-number">$45,250</p>
+                        <span class="stat-change positive">+12% from last month</span>
                     </div>
                 </div>
 
@@ -61,9 +61,9 @@
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="stat-content">
-                        <h3>Khách hàng mới</h3>
-                        <p class="stat-number" th:text="${newCustomers ?: 12}">12</p>
-                        <span class="stat-change positive">+5 tuần này</span>
+                        <h3>New Customers</h3>
+                        <p class="stat-number">12</p>
+                        <span class="stat-change positive">+5 this week</span>
                     </div>
                 </div>
             </div>
@@ -72,11 +72,11 @@
             <div class="charts-row">
                 <div class="chart-container">
                     <div class="chart-header">
-                        <h3>Doanh thu 7 ngày</h3>
+                        <h3>7-Day Revenue</h3>
                         <select class="chart-filter">
-                            <option>7 ngày</option>
-                            <option>30 ngày</option>
-                            <option>3 tháng</option>
+                            <option>7 days</option>
+                            <option>30 days</option>
+                            <option>3 months</option>
                         </select>
                     </div>
                     <div class="chart-canvas-container">
@@ -86,7 +86,7 @@
 
                 <div class="chart-container">
                     <div class="chart-header">
-                        <h3>Xe được thuê nhiều nhất</h3>
+                        <h3>Most Rented Vehicles</h3>
                     </div>
                     <div class="chart-canvas-container">
                         <canvas id="popularCarsChart"></canvas>
@@ -97,8 +97,8 @@
             <!-- Recent Activities -->
             <div class="activities-section">
                 <div class="section-header">
-                    <h3>Hoạt động gần đây</h3>
-                    <a class="view-all-btn" href="/admin/bookings" th:href="@{/admin/bookings}">Xem tất cả</a>
+                    <h3>Recent Activities</h3>
+                    <a class="view-all-btn" href="bookings.html">View all</a>
                 </div>
 
                 <div class="activities-list">
@@ -107,10 +107,10 @@
                             <i class="fas fa-plus-circle"></i>
                         </div>
                         <div class="activity-content">
-                            <p><strong>Nguyễn Văn A</strong> đặt xe Toyota Camry</p>
-                            <span class="activity-time">5 phút trước</span>
+                            <p><strong>John Smith</strong> booked Toyota Camry</p>
+                            <span class="activity-time">5 minutes ago</span>
                         </div>
-                        <div class="activity-status pending">Chờ xử lý</div>
+                        <div class="activity-status pending">Pending</div>
                     </div>
 
                     <div class="activity-item">
@@ -118,10 +118,12 @@
                             <i class="fas fa-check-circle"></i>
                         </div>
                         <div class="activity-content">
-                            <p><strong>Trần Thị B</strong> hoàn thành thuê xe Honda Civic</p>
-                            <span class="activity-time">1 giờ trước</span>
+                            <p>
+                                <strong>Mary Johnson</strong> completed Honda Civic rental
+                            </p>
+                            <span class="activity-time">1 hour ago</span>
                         </div>
-                        <div class="activity-status completed">Hoàn thành</div>
+                        <div class="activity-status completed">Completed</div>
                     </div>
 
                     <div class="activity-item">
@@ -129,10 +131,10 @@
                             <i class="fas fa-car"></i>
                         </div>
                         <div class="activity-content">
-                            <p>Xe <strong>BMW X5</strong> được thêm vào hệ thống</p>
-                            <span class="activity-time">2 giờ trước</span>
+                            <p>Vehicle <strong>BMW X5</strong> added to system</p>
+                            <span class="activity-time">2 hours ago</span>
                         </div>
-                        <div class="activity-status new">Mới</div>
+                        <div class="activity-status new">New</div>
                     </div>
 
                     <div class="activity-item">
@@ -140,33 +142,34 @@
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
                         <div class="activity-content">
-                            <p>Xe <strong>Mercedes C200</strong> cần bảo dưỡng</p>
-                            <span class="activity-time">3 giờ trước</span>
+                            <p>
+                                Vehicle <strong>Mercedes C200</strong> needs maintenance
+                            </p>
+                            <span class="activity-time">3 hours ago</span>
                         </div>
-                        <div class="activity-status warning">Cảnh báo</div>
+                        <div class="activity-status warning">Warning</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick Actions -->
             <div class="quick-actions">
-                <h3>Thao tác nhanh</h3>
+                <h3>Quick Action</h3>
                 <div class="actions-grid">
                     <button class="action-btn" th:onclick="|location.href='@{/admin/cars/create}'|">
                         <i class="fas fa-plus"></i>
-                        <span>Thêm xe mới</span>
+                        <span>Add New Vehicle</span>
                     </button>
                     <button class="action-btn" th:onclick="|location.href='@{/admin/bookings/create}'|">
                         <i class="fas fa-calendar-plus"></i>
-                        <span>Tạo đặt xe</span>
+                        <span>Create Booking</span>
                     </button>
                     <button class="action-btn" th:onclick="|location.href='@{/admin/customers/create}'|">
                         <i class="fas fa-user-plus"></i>
-                        <span>Thêm khách hàng</span>
+                        <span>Add Customer</span>
                     </button>
                     <button class="action-btn" onclick="generateReport()">
                         <i class="fas fa-file-download"></i>
-                        <span>Xuất báo cáo</span>
+                        <span>Export Report</span>
                     </button>
                 </div>
             </div>

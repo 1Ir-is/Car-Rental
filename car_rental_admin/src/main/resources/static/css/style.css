@@ -25,6 +25,22 @@
     --danger: #dc2626;
     --info: #0284c7;
 
+    /* Additional Status Colors */
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+
+    /* Background & Surface Colors */
+    --background-color: #f8fafc;
+    --card-background: #ffffff;
+    --border-color: #e2e8f0;
+    --hover-color: #f1f5f9;
+
+    /* Text Colors */
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+
     /* Spacing */
     --sidebar-width: 280px;
     --header-height: 70px;
@@ -280,8 +296,10 @@ body {
 
 /* Dashboard Content */
 .dashboard-content {
-    padding: 2rem;
+    padding: 32px 40px;
     max-width: 1400px;
+    margin: 0 auto;
+    background-color: var(--gray-50);
 }
 
 /* Stats Grid */
@@ -368,35 +386,57 @@ body {
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .btn-primary {
-    background-color: var(--primary-blue);
+    background-color: var(--primary-color);
     color: var(--white);
 }
 
 .btn-primary:hover {
-    background-color: var(--primary-dark-blue);
+    background-color: var(--primary-dark);
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .btn-secondary {
-    background-color: var(--secondary-orange);
+    background-color: var(--accent-color);
     color: var(--white);
 }
 
 .btn-secondary:hover {
-    background-color: #d97706;
+    background-color: var(--warning-color);
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .btn-outline {
     background-color: transparent;
-    border: 2px solid var(--primary-blue);
-    color: var(--primary-blue);
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .btn-outline:hover {
-    background-color: var(--primary-blue);
+    background-color: var(--primary-color);
     color: var(--white);
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.btn-sm:hover {
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 /* Form Elements */
@@ -981,4 +1021,82 @@ body {
 
 .text-danger {
     color: var(--danger);
+}
+
+/* Toast Notification Styles */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border: 1px solid #e2e8f0;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 10000;
+    min-width: 300px;
+    max-width: 400px;
+    animation: slideInRight 0.3s ease-out;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.toast.toast-success {
+    border-left: 4px solid #10b981;
+}
+
+.toast.toast-success .toast-content i {
+    color: #10b981;
+}
+
+.toast.toast-error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast.toast-error .toast-content i {
+    color: #ef4444;
+}
+
+.toast.toast-info {
+    border-left: 4px solid #3b82f6;
+}
+
+.toast.toast-info .toast-content i {
+    color: #3b82f6;
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.toast-close:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }

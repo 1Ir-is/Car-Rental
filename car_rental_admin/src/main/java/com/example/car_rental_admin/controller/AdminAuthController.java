@@ -1,7 +1,7 @@
 package com.example.car_rental_admin.controller;
 
 import com.example.car_rental_admin.model.User;
-import com.example.car_rental_admin.service.user.IAdminService;
+import com.example.car_rental_admin.service.admin.IAdminService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

@@ -1,4 +1,4 @@
-package com.example.car_rental_admin.service.user;
+package com.example.car_rental_admin.service.admin;
 
 import com.example.car_rental_admin.model.User;
 

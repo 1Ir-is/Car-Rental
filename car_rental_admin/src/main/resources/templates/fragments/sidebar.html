@@ -37,6 +37,14 @@
                         <span>Customers</span>
                     </a>
                 </li>
+
+                <li class="nav-item" th:classappend="${activeMenu == 'owner_application'} ? 'active' : ''">
+                    <a class="nav-link" href="/admin/owner-application" th:href="@{/admin/owner-application}">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Owner Application</span>
+                    </a>
+                </li>
+
                 <li class="nav-item" th:classappend="${activeMenu == 'reports'} ? 'active' : ''">
                     <a class="nav-link" href="/admin/reports" th:href="@{/admin/reports}">
                         <i class="fas fa-chart-bar"></i>
