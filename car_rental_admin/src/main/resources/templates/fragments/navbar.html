@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:fragment="admin-navbar">
     <!-- Header -->
@@ -21,45 +21,48 @@
                 <div class="notification-wrapper">
                     <button class="notification-btn" onclick="toggleNotifications()">
                         <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
+                        <!-- Hiển thị badge chỉ khi có số lượng chưa đọc > 0 -->
+                        <span class="notification-badge"
+                              th:if="${unreadNotificationCount > 0}"
+                              th:text="${unreadNotificationCount}"></span>
                     </button>
                     <!-- Notification Dropdown -->
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="dropdown-header">
-                            <h4>Thông báo</h4>
-                            <span class="mark-all-read">Đánh dấu đã đọc</span>
+                            <h4>Notification</h4>
+                            <form method="post" style="display:inline"
+                                  th:action="@{/admin/notifications/mark-all-read}"
+                                  th:if="${unreadNotificationCount > 0}">
+                                <button class="mark-all-read-btn" type="submit">Mark all as read</button>
+                            </form>
                         </div>
                         <div class="notification-list">
-                            <div class="notification-item unread">
-                                <div class="notification-icon">
-                                    <i class="fas fa-car text-primary"></i>
-                                </div>
+                            <div class="notification-item" th:if="${#lists.isEmpty(notifications)}">
                                 <div class="notification-content">
-                                    <p>Xe BMW X5 cần bảo dưỡng</p>
-                                    <span class="time">5 phút trước</span>
+                                    <p>No notifications.</p>
                                 </div>
                             </div>
-                            <div class="notification-item">
+                            <div th:class="'notification-item ' + (!noti.isRead ? 'unread' : '')"
+                                 th:each="noti : ${notifications}">
                                 <div class="notification-icon">
-                                    <i class="fas fa-user text-success"></i>
+                                    <i class="fas"
+                                       th:classappend="${noti.type} == 'OWNER_REQUEST' ? ' fa-user text-success' :
+                                (${noti.type} == 'BOOKING_ALERT' ? ' fa-calendar text-warning' :
+                                (${noti.type} == 'MAINTENANCE' ? ' fa-car text-primary' : ' fa-info-circle text-secondary'))">
+                                    </i>
                                 </div>
                                 <div class="notification-content">
-                                    <p>Khách hàng mới đăng ký</p>
-                                    <span class="time">1 giờ trước</span>
+                                    <p th:text="${noti.content}"></p>
+                                    <span class="time"
+                                          th:text="${#temporals.format(noti.createdAt, 'HH:mm dd/MM/yyyy')}"></span>
                                 </div>
-                            </div>
-                            <div class="notification-item">
-                                <div class="notification-icon">
-                                    <i class="fas fa-calendar text-warning"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p>Đặt xe mới cần xác nhận</p>
-                                    <span class="time">2 giờ trước</span>
-                                </div>
+                                <a class="notification-link"
+                                   th:href="@{${noti.url}}"
+                                   th:if="${noti.url != null}"></a>
                             </div>
                         </div>
                         <div class="dropdown-footer">
-                            <a class="view-all" href="#">Xem tất cả thông báo</a>
+                            <a class="view-all" th:href="@{/admin/notifications}">All notifications</a>
                         </div>
                     </div>
                 </div>

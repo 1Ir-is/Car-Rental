@@ -213,41 +213,6 @@ Báo cáo được tạo lúc: ${formatTime(new Date())}
     }, 2000);
 }
 
-// Load notifications
-function loadNotifications() {
-    // Simulate loading notifications
-    const notifications = [
-        {
-            id: 1,
-            type: "booking",
-            message: "Có 3 đặt xe mới cần xác nhận",
-            time: "5 phút trước",
-            read: false,
-        },
-        {
-            id: 2,
-            type: "maintenance",
-            message: "Xe BMW X5 cần bảo dưỡng định kỳ",
-            time: "1 giờ trước",
-            read: false,
-        },
-        {
-            id: 3,
-            type: "payment",
-            message: "Thanh toán từ khách hàng Nguyễn Văn A",
-            time: "2 giờ trước",
-            read: true,
-        },
-    ];
-
-    // Update notification badge
-    const badge = document.querySelector(".notification-badge");
-    const unreadCount = notifications.filter((n) => !n.read).length;
-    if (badge) {
-        badge.textContent = unreadCount;
-        badge.style.display = unreadCount > 0 ? "block" : "none";
-    }
-}
 
 // Refresh dashboard data
 function refreshDashboard() {
@@ -256,7 +221,6 @@ function refreshDashboard() {
     // Simulate data refresh
     setTimeout(() => {
         updateStats();
-        loadNotifications();
         showNotification("Dữ liệu đã được cập nhật!", "success");
     }, 1500);
 }
@@ -265,7 +229,6 @@ function refreshDashboard() {
 function startAutoRefresh() {
     setInterval(() => {
         updateStats();
-        loadNotifications();
     }, 5 * 60 * 1000); // 5 minutes
 }
 
@@ -276,8 +239,6 @@ document.addEventListener("DOMContentLoaded", function () {
         initializeCharts();
     }
 
-    // Load initial data
-    loadNotifications();
 
     // Start auto refresh (chỉ update data, không tạo lại chart)
     startAutoRefresh();

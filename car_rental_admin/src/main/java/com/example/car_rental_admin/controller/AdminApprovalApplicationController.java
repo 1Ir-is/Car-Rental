@@ -1,7 +1,7 @@
 package com.example.car_rental_admin.controller;
 
-import com.example.car_rental_admin.model.ApprovalApplication;
 import com.example.car_rental_admin.service.approval.IApprovalApplicationService;
+import com.example.car_rental_admin.service.notification.INotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,18 +10,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.List;
-
 @Controller
 @RequestMapping("/admin/approval-application")
 @RequiredArgsConstructor
 public class AdminApprovalApplicationController {
     private final IApprovalApplicationService approvalApplicationService;
+    private final INotificationService notificationService;
 
     @GetMapping
     public String approvalApplicationsPage(Model model) {
-        List<ApprovalApplication> applications = approvalApplicationService.getAllApprovalApplication();
-        model.addAttribute("applications", applications);
+        model.addAttribute("applications", approvalApplicationService.getAllApprovalApplication());
         model.addAttribute("pendingCount", approvalApplicationService.countPending());
         model.addAttribute("approvedCount", approvalApplicationService.countApproved());
         model.addAttribute("rejectedCount", approvalApplicationService.countRejected());
