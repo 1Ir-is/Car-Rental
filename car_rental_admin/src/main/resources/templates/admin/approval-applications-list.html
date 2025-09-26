@@ -1,10 +1,216 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Approval Applications</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <link rel="stylesheet" th:href="@{/css/table.css}"/>
+    <link rel="stylesheet" th:href="@{/css/owner-applications.css}"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
 </head>
 <body>
-$END$
+<div class="admin-container">
+    <!-- Sidebar -->
+    <div th:replace="fragments/sidebar :: admin-sidebar"></div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div th:replace="fragments/navbar :: admin-navbar"></div>
+        <div class="applications-content">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <div class="title-section">
+                        <h1>Owner Applications</h1>
+                        <p class="page-description">
+                            Manage and review owner applications from users who want to
+                            rent out their vehicles
+                        </p>
+                    </div>
+                    <div class="header-stats">
+                        <div class="stat-card pending">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number" th:text="${pendingCount}">0</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                        </div>
+                        <div class="stat-card approved">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number" th:text="${approvedCount}">0</div>
+                                <div class="stat-label">Approved</div>
+                            </div>
+                        </div>
+                        <div class="stat-card rejected">
+                            <div class="stat-icon">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-number" th:text="${rejectedCount}">0</div>
+                                <div class="stat-label">Rejected</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters and Actions -->
+            <div class="table-controls">
+                <div class="filters">
+                    <select class="filter-select" id="status-filter">
+                        <option value="">All Status</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="APPROVED">Approved</option>
+                        <option value="REJECTED">Rejected</option>
+                    </select>
+
+                    <select class="filter-select" id="type-filter">
+                        <option value="">All Types</option>
+                        <option value="PERSONAL">Personal</option>
+                        <option value="BUSINESS">Business</option>
+                    </select>
+
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input
+                                id="search-input"
+                                placeholder="Search by name, email, or identity..."
+                                type="text"
+                        />
+                    </div>
+                </div>
+
+                <div class="table-actions">
+                    <button class="btn btn-secondary" onclick="refreshApplications()">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-success" onclick="approveSelected()">
+                        <i class="fas fa-check"></i>
+                        Approve Selected
+                    </button>
+                    <button class="btn btn-danger" onclick="rejectSelected()">
+                        <i class="fas fa-times"></i>
+                        Reject Selected
+                    </button>
+                </div>
+            </div>
+
+            <!-- Applications Table -->
+            <div class="table-container">
+                <table class="data-table" id="applications-table">
+                    <thead>
+                    <tr>
+                        <th>
+                            <input
+                                    id="select-all"
+                                    onchange="toggleSelectAll()"
+                                    type="checkbox"
+                            />
+                        </th>
+                        <th>Applicant</th>
+                        <th>Contact Info</th>
+                        <th>Identity</th>
+                        <th>Address</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Applied Date</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="applications-table-body">
+                    <tr class="slide-in-up" th:each="app : ${applications}">
+                        <td>
+                            <input th:value="${app.id}" type="checkbox"/>
+                        </td>
+                        <td>
+                            <div class="applicant-info">
+                                <div class="applicant-avatar" th:text="${app.name.substring(0,1).toUpperCase()}"></div>
+                                <div class="applicant-details">
+                                    <div class="applicant-name" th:text="${app.name}"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="contact-info">
+                                <div class="contact-item">
+                                    <i class="fas fa-envelope"></i>
+                                    <span th:text="${app.email}"></span>
+                                </div>
+                                <div class="contact-item">
+                                    <i class="fas fa-phone"></i>
+                                    <span th:text="${app.phone}"></span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <code th:text="${app.identity}"></code>
+                        </td>
+                        <td th:text="${app.address}"></td>
+                        <td>
+        <span class="type-badge" th:classappend="${app.type.name().toLowerCase()}"
+              th:text="${app.type}"></span>
+                        </td>
+                        <td>
+        <span class="status-badge"
+              th:classappend="${app.status.name().toLowerCase()}">
+            <i class="fas"
+               th:classappend="${app.status.name() == 'PENDING' ? 'fa-clock' : (app.status.name() == 'APPROVED' ? 'fa-check-circle' : 'fa-times-circle')}"></i>
+            <span th:text="${app.status}"></span>
+        </span>
+                        </td>
+                        <td th:text="${app.appliedDate != null ? #temporals.format(app.appliedDate, 'dd/MM/yyyy') : ''}"></td>
+                        <td>
+                            <div class="action-buttons">
+                                <form method="post"
+                                      style="display:inline" th:action="@{'/admin/approval-application/revoke/' + ${app.id}}"
+                                      th:if="${app.status.name() == 'APPROVED'}">
+                                    <button class="action-btn revoke" onclick="return confirm('Revoke owner rights?')"
+                                            title="Revoke Owner">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </form>
+                                <form method="post"
+                                      style="display:inline" th:action="@{'/admin/approval-application/approve/' + ${app.id}}"
+                                      th:if="${app.status.name() == 'PENDING'}">
+                                    <button class="action-btn approve" onclick="return confirm('Approve this application?')"
+                                            title="Quick Approve">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                <form method="post"
+                                      style="display:inline" th:action="@{'/admin/approval-application/reject/' + ${app.id}}"
+                                      th:if="${app.status.name() == 'PENDING'}">
+                                    <button class="action-btn reject" onclick="return confirm('Reject this application?')"
+                                            title="Quick Reject">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <div class="pagination-info">Showing 1 to 5 of 5 applications</div>
+                <div class="pagination">
+                    <!-- Only one page since we have 5 applications -->
+                    <button class="pagination-btn active">1</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+<script th:src="@{/js/main.js}"></script>
 </body>
 </html>

@@ -6,4 +6,16 @@ import java.util.List;
 
 public interface IApprovalApplicationService {
     List<ApprovalApplication> getAllApprovalApplication();
+
+    long countPending();
+
+    long countApproved();
+
+    long countRejected();
+
+    void approveApplication(Long id);
+
+    void rejectApplication(Long id);
+
+    boolean revokeApplication(Long id);
 }

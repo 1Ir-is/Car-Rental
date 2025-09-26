@@ -5,6 +5,8 @@ import com.example.car_rental_admin.enums.RequestStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,6 +30,8 @@ public class ApprovalApplication {
     private String identity;
     private String title;
     private String description;
+    @Column(name = "applied_date")
+    private LocalDateTime appliedDate;
 
     @Enumerated(EnumType.STRING)
     private ApplicationType type;
