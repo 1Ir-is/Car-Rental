@@ -1,10 +1,12 @@
 import React from "react";
-import { GoogleLogin, googleLogout } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const GoogleLoginButton = () => {
   const { loginWithGoogle, loading } = useAuth();
+  const navigate = useNavigate();
 
   const handleSuccess = async (credentialResponse) => {
     const idToken = credentialResponse.credential;
@@ -16,7 +18,7 @@ const GoogleLoginButton = () => {
     const result = await loginWithGoogle(idToken);
     if (result.success) {
       toast.success(result.message || "Login with Google successful!");
-      window.location.href = "/home";
+      navigate("/home"); // <-- dùng navigate thay vì window.location.href
     } else {
       toast.error(result.message || "Google login failed");
     }

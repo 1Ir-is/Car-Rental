@@ -397,26 +397,25 @@ export const AuthProvider = ({ children }) => {
       const result = await authAPI.loginWithGoogle(idToken);
 
       if (result.success) {
-        // Lấy user profile mới nhất từ backend
-        try {
-          const profileResult = await userService.getCurrentProfile();
-          if (profileResult.success) {
-            const freshUser = profileResult.data;
-            authUtils.saveUser(freshUser);
-            dispatch({
-              type: AuthActionTypes.LOGIN_SUCCESS,
-              payload: { user: freshUser },
-            });
-            return { success: true, user: freshUser };
-          }
-        } catch (err) {
-          // fallback: không lấy được profile thì vẫn login
+        // Luôn gọi lại lấy profile mới nhất
+        const profileResult = await userService.getCurrentProfile();
+        let freshUser =
+          (profileResult && profileResult.data) ||
+          (profileResult && profileResult.user);
+        if (freshUser) {
+          authUtils.saveUser(freshUser);
           dispatch({
             type: AuthActionTypes.LOGIN_SUCCESS,
-            payload: { user: null },
+            payload: { user: freshUser },
           });
-          return { success: true };
+          return { success: true, user: freshUser };
         }
+        // fallback
+        dispatch({
+          type: AuthActionTypes.LOGIN_SUCCESS,
+          payload: { user: null },
+        });
+        return { success: true };
       } else {
         dispatch({
           type: AuthActionTypes.LOGIN_FAILURE,
