@@ -7,6 +7,7 @@ import com.example.car_rental_server.model.ApprovalApplication;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IApprovalApplicationRepository;
 import com.example.car_rental_server.repository.IUserRepository;
+import com.example.car_rental_server.service.notification.INotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 public class ApprovalApplicationService implements IApprovalApplicationService {
     private final IApprovalApplicationRepository applicationRepo;
     private final IUserRepository userRepo;
+    private final INotificationService notificationService;
 
     @Override
     public ApprovalApplicationResponseDTO submitApplication(String userEmail, ApprovalApplicationRequestDTO req) {
@@ -32,12 +34,14 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
         app.setDescription(req.getDescription());
         app.setType(req.getType());
         app.setStatus(RequestStatus.PENDING);
-        // Set appliedDate nếu là đơn mới, hoặc cập nhật lại nếu muốn
         if (app.getAppliedDate() == null) {
             app.setAppliedDate(LocalDateTime.now());
         }
 
         ApprovalApplication saved = applicationRepo.save(app);
+
+        // Tạo notification cho admin
+        notificationService.notifyOwnerRequest(user.getId(), user.getName());
 
         ApprovalApplicationResponseDTO resp = new ApprovalApplicationResponseDTO();
         resp.setId(saved.getId());
@@ -52,6 +56,7 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
         resp.setStatus(saved.getStatus());
         return resp;
     }
+
 
     @Override
     public ApprovalApplicationResponseDTO getUserApplication(String email) {

@@ -1,5 +1,6 @@
 package com.example.car_rental_server.controller.auth;
 
+import com.example.car_rental_server.dto.GoogleLoginRequestDTO;
 import com.example.car_rental_server.dto.LoginRequestDTO;
 import com.example.car_rental_server.dto.RegisterRequestDTO;
 import com.example.car_rental_server.model.Role;
@@ -7,8 +8,13 @@ import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.security.JwtService;
 import com.example.car_rental_server.service.role.IRoleService;
 import com.example.car_rental_server.service.user.IUserService;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -22,12 +28,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
+    @Value("${google.client-id}")
+    private String googleClientId;
+
+    @Value("${google.client-secret}")
+    private String googleClientSecret;
+
     private final IUserService userService;
     private final IRoleService roleService;
     private final JwtService jwtService;
@@ -96,6 +110,61 @@ public class AuthController {
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công"));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> loginWithGoogle(@RequestBody GoogleLoginRequestDTO request, HttpServletResponse response) {
+        try {
+            String idTokenString = request.getIdToken();
+
+            // Verify token với Google
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken == null) {
+                return ResponseEntity.status(401).body(Map.of("success", false, "error", "INVALID_GOOGLE_TOKEN"));
+            }
+
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+
+            // Tìm user theo email, nếu chưa có thì tự động tạo mới
+            User user = userService.findByEmail(email).orElse(null);
+            if (user == null) {
+                Role userRole = roleService.findByName("USER")
+                        .orElseGet(() -> roleService.save(new Role(null, "USER")));
+                user = new User();
+                user.setEmail(email);
+                user.setName(name);
+                user.setStatus(true);
+                user.setRole(userRole);
+                // Bạn có thể lưu avatar hoặc các thông tin khác nếu muốn
+                userService.save(user);
+            }
+
+            if (!Boolean.TRUE.equals(user.getStatus())) {
+                return ResponseEntity.status(403)
+                        .body(Map.of("success", false, "error", "ACCOUNT_DISABLED"));
+            }
+
+            // Tạo JWT và trả về như login thường
+            long maxAge = 3600;
+            String token = jwtService.generateToken(user);
+            ResponseCookie cookie = ResponseCookie.from("jwt", token)
+                    .httpOnly(true)
+                    .sameSite("Lax")
+                    .path("/")
+                    .maxAge(maxAge)
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            e.printStackTrace(); // In stacktrace để tìm lỗi
+            return ResponseEntity.status(500).body(Map.of("success", false, "error", "SERVER_ERROR"));
+        }
     }
 
 //    @PostMapping("/forgot-password")
