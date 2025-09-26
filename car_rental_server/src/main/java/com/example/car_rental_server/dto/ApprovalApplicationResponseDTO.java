@@ -4,6 +4,8 @@ import com.example.car_rental_server.enums.ApplicationType;
 import com.example.car_rental_server.enums.RequestStatus;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class ApprovalApplicationResponseDTO {
     private Long id;
@@ -16,4 +18,5 @@ public class ApprovalApplicationResponseDTO {
     private String description;
     private ApplicationType type;
     private RequestStatus status;
+    private LocalDateTime appliedDate;
 }

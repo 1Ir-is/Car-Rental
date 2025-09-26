@@ -10,6 +10,8 @@ import com.example.car_rental_server.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class ApprovalApplicationService implements IApprovalApplicationService {
@@ -30,6 +32,10 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
         app.setDescription(req.getDescription());
         app.setType(req.getType());
         app.setStatus(RequestStatus.PENDING);
+        // Set appliedDate nếu là đơn mới, hoặc cập nhật lại nếu muốn
+        if (app.getAppliedDate() == null) {
+            app.setAppliedDate(LocalDateTime.now());
+        }
 
         ApprovalApplication saved = applicationRepo.save(app);
 
@@ -63,6 +69,8 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
         resp.setDescription(app.getDescription());
         resp.setType(app.getType());
         resp.setStatus(app.getStatus());
+        // truyền thêm appliedDate về cho admin nếu cần
+        resp.setAppliedDate(app.getAppliedDate());
         return resp;
     }
 }
