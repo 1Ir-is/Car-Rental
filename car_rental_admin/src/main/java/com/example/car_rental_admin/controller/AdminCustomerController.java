@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @RequestMapping("/admin/customers")
 @RequiredArgsConstructor
-public class CustomerController {
+public class AdminCustomerController {
     private final ICustomerService customerService;
     private final IRoleService roleService;
 

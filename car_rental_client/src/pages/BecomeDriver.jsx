@@ -47,27 +47,33 @@ const BecomeDriver = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Check for existing application
-  React.useEffect(() => {
-    const checkExistingApplication = async () => {
+  // Function to check existing application
+  const checkExistingApplication = React.useCallback(
+    async (showLoading = true) => {
       if (!isAuthenticated || !user) return;
 
       try {
-        setCheckingStatus(true);
+        if (showLoading) setCheckingStatus(true);
         const result = await applicationService.getDriverApplicationStatus();
 
         if (result.success && result.data) {
           setExistingApplication(result.data);
+        } else {
+          setExistingApplication(null);
         }
       } catch (error) {
         console.error("Error checking application status:", error);
       } finally {
-        setCheckingStatus(false);
+        if (showLoading) setCheckingStatus(false);
       }
-    };
+    },
+    [isAuthenticated, user]
+  );
 
+  // Check for existing application
+  React.useEffect(() => {
     checkExistingApplication();
-  }, [isAuthenticated, user]);
+  }, [checkExistingApplication]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,6 +81,29 @@ const BecomeDriver = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Smooth scroll to top function
+  const smoothScrollToTop = () => {
+    const start = window.pageYOffset;
+    const startTime = performance.now();
+    const duration = 800; // 800ms for smooth scroll
+
+    const animateScroll = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing function for smooth animation
+      const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+
+      window.scrollTo(0, start * (1 - easeOutCubic));
+
+      if (progress < 1) {
+        requestAnimationFrame(animateScroll);
+      }
+    };
+
+    requestAnimationFrame(animateScroll);
   };
 
   const handleSubmit = async (e) => {
@@ -120,7 +149,21 @@ const BecomeDriver = () => {
           result.message ||
             "Your driver application has been submitted successfully! We will review it within 3-5 business days."
         );
-        navigate("/profile");
+
+        // Refresh application status to show the new application
+        await checkExistingApplication(false);
+
+        // Try multiple scroll methods with delay
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        }, 100);
+
+        // Also try smooth scroll
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 200);
       } else {
         toast.error(
           result.message || "Failed to submit application. Please try again."
@@ -203,20 +246,20 @@ const BecomeDriver = () => {
                             }`}
                           >
                             {existingApplication.status === "PENDING"
-                              ? "Đang được xét duyệt"
+                              ? "Pending"
                               : existingApplication.status === "APPROVED"
-                              ? "Đã được phê duyệt"
+                              ? "Approved"
                               : existingApplication.status === "REJECTED"
-                              ? "Bị từ chối"
-                              : "Chưa gửi"}
+                              ? "Rejected"
+                              : "Not Submitted"}
                           </span>
                         </div>
                         <div className="col-md-6">
                           <strong>Application Type:</strong>
                           <span className="ms-2">
                             {existingApplication.type === "PERSONAL"
-                              ? "Tài xế cá nhân"
-                              : "Tài xế doanh nghiệp"}
+                              ? "Personal Driver"
+                              : "Business Driver"}
                           </span>
                         </div>
                       </div>
@@ -230,24 +273,24 @@ const BecomeDriver = () => {
                       {existingApplication.status === "PENDING" && (
                         <Alert color="info" className="mt-3">
                           <i className="ri-time-line me-2"></i>
-                          Đơn đăng ký của bạn hiện đang được xét duyệt. Chúng
-                          tôi sẽ thông báo kết quả trong vòng 3-5 ngày làm việc.
+                          Your application is pending review. We will notify you
+                          of the results within 3-5 business days.
                         </Alert>
                       )}
 
                       {existingApplication.status === "APPROVED" && (
                         <Alert color="success" className="mt-3">
                           <i className="ri-check-line me-2"></i>
-                          Chúc mừng! Đơn đăng ký của bạn đã được phê duyệt. Bạn
-                          có thể bắt đầu cho thuê xe ngay bây giờ.
+                          Congratulations! Your application has been approved.
+                          You can start renting out your vehicle now.
                         </Alert>
                       )}
 
                       {existingApplication.status === "REJECTED" && (
                         <Alert color="danger" className="mt-3">
                           <i className="ri-close-line me-2"></i>
-                          Rất tiếc, đơn đăng ký của bạn không được phê duyệt.
-                          Vui lòng liên hệ với chúng tôi để biết thêm chi tiết.
+                          Unfortunately, your application was not approved.
+                          Please contact us for more details.
                         </Alert>
                       )}
                     </div>
@@ -283,12 +326,12 @@ const BecomeDriver = () => {
                     <h4 className="mb-0">
                       <i className="ri-file-text-line me-2"></i>
                       {existingApplication?.status === "REJECTED"
-                        ? "Nộp Đơn Mới"
+                        ? "Submit New Application"
                         : "Driver Application Form"}
                     </h4>
                     <small>
                       {existingApplication?.status === "REJECTED"
-                        ? "Vui lòng điền lại thông tin để nộp đơn mới"
+                        ? "Please fill out the information again to submit a new application"
                         : "Fill out all required fields to complete your application"}
                     </small>
                   </CardHeader>
