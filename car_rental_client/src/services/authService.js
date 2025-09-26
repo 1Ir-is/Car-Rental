@@ -233,6 +233,23 @@ export const authAPI = {
       };
     }
   },
+  loginWithGoogle: async (idToken) => {
+    try {
+      const response = await apiClient.post("/auth/google", { idToken });
+      if (response.data.success) {
+        return { success: true, data: response.data };
+      }
+      return {
+        success: false,
+        message: response.data.message || "Google login failed",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.error || "Google login failed",
+      };
+    }
+  },
 };
 
 // Utility functions for HttpOnly cookie authentication

@@ -13,6 +13,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import Helmet from "../../components/Helmet/Helmet";
+import GoogleLoginButton from "../../components/Google/GoogleLoginButton";
 
 import "../../styles/auth/login.css";
 
@@ -139,18 +140,8 @@ const Login = () => {
                   <div className="social__login">
                     <p className="text-center mb-3">Or login with</p>
                     <div className="social__buttons d-flex gap-3 justify-content-center">
-                      <Button
-                        className="social__btn google__btn"
-                        disabled={loading}
-                      >
-                        <i className="ri-google-fill"></i> Google
-                      </Button>
-                      <Button
-                        className="social__btn facebook__btn"
-                        disabled={loading}
-                      >
-                        <i className="ri-facebook-fill"></i> Facebook
-                      </Button>
+                      <GoogleLoginButton />
+                      {/* Nếu muốn Facebook sau này thì để đây */}
                     </div>
                   </div>
                 </div>

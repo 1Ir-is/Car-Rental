@@ -391,6 +391,49 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AuthActionTypes.CLEAR_ERROR });
   };
 
+  const loginWithGoogle = async (idToken) => {
+    dispatch({ type: AuthActionTypes.LOGIN_START });
+    try {
+      const result = await authAPI.loginWithGoogle(idToken);
+
+      if (result.success) {
+        // Lấy user profile mới nhất từ backend
+        try {
+          const profileResult = await userService.getCurrentProfile();
+          if (profileResult.success) {
+            const freshUser = profileResult.data;
+            authUtils.saveUser(freshUser);
+            dispatch({
+              type: AuthActionTypes.LOGIN_SUCCESS,
+              payload: { user: freshUser },
+            });
+            return { success: true, user: freshUser };
+          }
+        } catch (err) {
+          // fallback: không lấy được profile thì vẫn login
+          dispatch({
+            type: AuthActionTypes.LOGIN_SUCCESS,
+            payload: { user: null },
+          });
+          return { success: true };
+        }
+      } else {
+        dispatch({
+          type: AuthActionTypes.LOGIN_FAILURE,
+          payload: { error: result.message },
+        });
+        return result;
+      }
+    } catch (error) {
+      const errorMessage = "Google login failed. Please try again.";
+      dispatch({
+        type: AuthActionTypes.LOGIN_FAILURE,
+        payload: { error: errorMessage },
+      });
+      return { success: false, message: errorMessage };
+    }
+  };
+
   // Context value
   const value = {
     // State
@@ -407,6 +450,7 @@ export const AuthProvider = ({ children }) => {
     getCurrentUserProfile,
     forgotPassword,
     clearError,
+    loginWithGoogle,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
