@@ -1,7 +1,7 @@
 package com.example.car_rental_admin.service.approval;
 
 import com.example.car_rental_admin.model.ApprovalApplication;
-import com.example.car_rental_admin.model.User;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -20,5 +20,9 @@ public interface IApprovalApplicationService {
 
     void revokeApplication(Long id);
 
-    void submitApplication(User user, ApprovalApplication app);
+    Page<ApprovalApplication> findApprovalApplications(String status, String type, String search, int page, int size);
+
+    List<String> findAllStatuses();
+
+    List<String> findAllTypes();
 }

@@ -1,16 +1,19 @@
 package com.example.car_rental_admin.service.approval;
 
+import com.example.car_rental_admin.enums.ApplicationType;
 import com.example.car_rental_admin.enums.RequestStatus;
 import com.example.car_rental_admin.model.ApprovalApplication;
-import com.example.car_rental_admin.model.Notification;
 import com.example.car_rental_admin.model.User;
 import com.example.car_rental_admin.repository.IAdminUserRepository;
 import com.example.car_rental_admin.repository.IApprovalApplicationRepository;
 import com.example.car_rental_admin.repository.INotificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -76,19 +79,42 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
     }
 
     @Override
-    public void submitApplication(User user, ApprovalApplication app) {
-        // Lưu đơn
-        approvalApplicationRepository.save(app);
+    public Page<ApprovalApplication> findApprovalApplications(String status, String type, String search, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Specification<ApprovalApplication> spec = null;
 
-        // Tạo notification cho admin
-        Notification noti = Notification.builder()
-                .content("Người dùng " + user.getName() + " vừa gửi đơn trở thành owner.")
-                .isRead(false)
-                .createdAt(LocalDateTime.now())
-                .type("OWNER_REQUEST")
-                .url("/admin/approval-application") // đường link quản lý đơn
-                .senderId(user.getId())
-                .build();
-        notificationRepository.save(noti);
+        if (status != null && !status.isEmpty()) {
+            // Convert String => Enum
+            RequestStatus statusEnum = RequestStatus.valueOf(status);
+            Specification<ApprovalApplication> s = (root, query, cb) -> cb.equal(root.get("status"), statusEnum);
+            spec = (spec == null) ? s : spec.and(s);
+        }
+        if (type != null && !type.isEmpty()) {
+            // Convert String => Enum
+            ApplicationType typeEnum = ApplicationType.valueOf(type);
+            Specification<ApprovalApplication> t = (root, query, cb) -> cb.equal(root.get("type"), typeEnum);
+            spec = (spec == null) ? t : spec.and(t);
+        }
+        if (search != null && !search.isEmpty()) {
+            String like = "%" + search.toLowerCase() + "%";
+            Specification<ApprovalApplication> se = (root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("name")), like),
+                    cb.like(cb.lower(root.get("email")), like),
+                    cb.like(cb.lower(root.get("identity")), like)
+            );
+            spec = (spec == null) ? se : spec.and(se);
+        }
+
+        return approvalApplicationRepository.findAll(spec, pageable);
+    }
+
+    @Override
+    public List<String> findAllStatuses() {
+        return approvalApplicationRepository.findDistinctStatus();
+    }
+
+    @Override
+    public List<String> findAllTypes() {
+        return approvalApplicationRepository.findDistinctType();
     }
 }

@@ -64,43 +64,55 @@
             <!-- Filters and Actions -->
             <div class="table-controls">
                 <div class="filters">
-                    <select class="filter-select" id="status-filter">
-                        <option value="">All Status</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="APPROVED">Approved</option>
-                        <option value="REJECTED">Rejected</option>
-                    </select>
+                    <form id="filterForm" method="get" style="display: flex; align-items: center; gap: 1rem;"
+                          th:action="@{/admin/approval-application}">
+                        <select class="filter-select"
+                                id="status-filter"
+                                name="status"
+                                th:value="${selectedStatus}">
+                            <option value="">All Status</option>
+                            <option th:each="status : ${statusList}"
+                                    th:selected="${status.name() == selectedStatus}"
+                                    th:text="${status.name()}"
+                                    th:value="${status.name()}"></option>
+                        </select>
+                        <select class="filter-select"
+                                id="type-filter"
+                                name="type"
+                                th:value="${selectedType}">
+                            <option value="">All Types</option>
+                            <option th:each="type : ${typeList}"
+                                    th:selected="${type.name() == selectedType}"
+                                    th:text="${type.name()}"
+                                    th:value="${type.name()}"></option>
+                        </select>
 
-                    <select class="filter-select" id="type-filter">
-                        <option value="">All Types</option>
-                        <option value="PERSONAL">Personal</option>
-                        <option value="BUSINESS">Business</option>
-                    </select>
+                        <div class="search-box" style="display: flex; align-items: center;">
+                            <i class="fas fa-search"></i>
+                            <input
+                                    id="search-input"
+                                    name="search"
+                                    placeholder="Search by name, email, or identity..."
+                                    th:value="${searchKeyword}"
+                                    type="text"/>
+                        </div>
+                        <button style="display: none" type="submit"></button>
+                    </form>
+                </div>
 
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input
-                                id="search-input"
-                                placeholder="Search by name, email, or identity..."
-                                type="text"
-                        />
+                <form id="bulk-action-form" method="post">
+                    <div class="table-actions">
+                        <input th:name="${_csrf.parameterName}" th:value="${_csrf.token}" type="hidden"/>
+                        <input id="bulk-action-type" name="actionType" type="hidden"/>
+                        <input id="bulk-selected-ids" name="selectedIds" type="hidden"/>
+                        <button class="btn btn-secondary" onclick="refreshApplications()" type="button">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
                     </div>
-                </div>
+                </form>
 
-                <div class="table-actions">
-                    <button class="btn btn-secondary" onclick="refreshApplications()">
-                        <i class="fas fa-sync-alt"></i>
-                        Refresh
-                    </button>
-                    <button class="btn btn-success" onclick="approveSelected()">
-                        <i class="fas fa-check"></i>
-                        Approve Selected
-                    </button>
-                    <button class="btn btn-danger" onclick="rejectSelected()">
-                        <i class="fas fa-times"></i>
-                        Reject Selected
-                    </button>
-                </div>
+
             </div>
 
             <!-- Applications Table -->
@@ -108,13 +120,6 @@
                 <table class="data-table" id="applications-table">
                     <thead>
                     <tr>
-                        <th>
-                            <input
-                                    id="select-all"
-                                    onchange="toggleSelectAll()"
-                                    type="checkbox"
-                            />
-                        </th>
                         <th>Applicant</th>
                         <th>Contact Info</th>
                         <th>Identity</th>
@@ -126,10 +131,7 @@
                     </tr>
                     </thead>
                     <tbody id="applications-table-body">
-                    <tr class="slide-in-up" th:each="app : ${applications}">
-                        <td>
-                            <input th:value="${app.id}" type="checkbox"/>
-                        </td>
+                    <tr class="slide-in-up" th:each="app : ${applications}" th:unless="${#lists.isEmpty(applications)}">
                         <td>
                             <div class="applicant-info">
                                 <div class="applicant-avatar" th:text="${app.name.substring(0,1).toUpperCase()}"></div>
@@ -170,7 +172,8 @@
                         <td>
                             <div class="action-buttons">
                                 <form method="post"
-                                      style="display:inline" th:action="@{'/admin/approval-application/revoke/' + ${app.id}}"
+                                      style="display:inline"
+                                      th:action="@{'/admin/approval-application/revoke/' + ${app.id}}"
                                       th:if="${app.status.name() == 'APPROVED'}">
                                     <button class="action-btn revoke" onclick="return confirm('Revoke owner rights?')"
                                             title="Revoke Owner">
@@ -178,17 +181,21 @@
                                     </button>
                                 </form>
                                 <form method="post"
-                                      style="display:inline" th:action="@{'/admin/approval-application/approve/' + ${app.id}}"
+                                      style="display:inline"
+                                      th:action="@{'/admin/approval-application/approve/' + ${app.id}}"
                                       th:if="${app.status.name() == 'PENDING'}">
-                                    <button class="action-btn approve" onclick="return confirm('Approve this application?')"
+                                    <button class="action-btn approve"
+                                            onclick="return confirm('Approve this application?')"
                                             title="Quick Approve">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
                                 <form method="post"
-                                      style="display:inline" th:action="@{'/admin/approval-application/reject/' + ${app.id}}"
+                                      style="display:inline"
+                                      th:action="@{'/admin/approval-application/reject/' + ${app.id}}"
                                       th:if="${app.status.name() == 'PENDING'}">
-                                    <button class="action-btn reject" onclick="return confirm('Reject this application?')"
+                                    <button class="action-btn reject"
+                                            onclick="return confirm('Reject this application?')"
                                             title="Quick Reject">
                                         <i class="fas fa-times"></i>
                                     </button>
@@ -196,21 +203,45 @@
                             </div>
                         </td>
                     </tr>
+                    <!-- Nếu không có dữ liệu -->
+                    <tr th:if="${#lists.isEmpty(applications)}">
+                        <td colspan="9" style="text-align: center; color: #888; font-style: italic;">
+                            <i class="fas fa-folder-open" style="font-size: 20px; margin-bottom: 4px;"></i><br/>
+                            No application data found.
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Pagination -->
             <div class="pagination-container">
-                <div class="pagination-info">Showing 1 to 5 of 5 applications</div>
+                <div class="pagination-info">
+                    <!-- Hiển thị số bản ghi đang xem -->
+                    <span th:text="'Showing ' + (${applications.size()} > 0 ? (${(currentPage - 1) * size + 1}) : 0) + ' to ' + (${(currentPage - 1) * size + applications.size()}) + ' of ' + ${totalElements} + ' applications'"></span>
+                </div>
                 <div class="pagination">
-                    <!-- Only one page since we have 5 applications -->
-                    <button class="pagination-btn active">1</button>
+                    <ul>
+                        <li th:if="${currentPage > 1}">
+                            <a class="pagination-btn"
+                               th:href="@{/admin/approval-application(page=${currentPage - 1}, size=${size}, status=${selectedStatus}, type=${selectedType}, search=${searchKeyword})}">Previous</a>
+                        </li>
+                        <li th:classappend="${i == currentPage} ? 'active'"
+                            th:each="i : ${#numbers.sequence(1, totalPages)}">
+                            <a class="pagination-btn"
+                               th:href="@{/admin/approval-application(page=${i}, size=${size}, status=${selectedStatus}, type=${selectedType}, search=${searchKeyword})}"
+                               th:text="${i}"></a>
+                        </li>
+                        <li th:if="${currentPage < totalPages}">
+                            <a class="pagination-btn"
+                               th:href="@{/admin/approval-application(page=${currentPage + 1}, size=${size}, status=${selectedStatus}, type=${selectedType}, search=${searchKeyword})}">Next</a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </main>
 </div>
 <script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/approval-application.js}"></script>
 </body>
 </html>

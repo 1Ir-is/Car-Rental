@@ -1,7 +1,6 @@
-function refreshTable() {
-    if (window.currentTable) {
-        window.currentTable.refresh();
-    }
+// Làm mới table
+function refreshApplications() {
+    window.location.reload(); // hoặc gọi ajax nếu muốn load động
 }
 
 function changeEntriesPerPage() {
