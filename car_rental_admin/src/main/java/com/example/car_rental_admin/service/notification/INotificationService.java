@@ -1,6 +1,7 @@
 package com.example.car_rental_admin.service.notification;
 
 import com.example.car_rental_admin.model.Notification;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -10,4 +11,6 @@ public interface INotificationService {
     long countUnreadNotifications();
 
     int markAllAsRead();
+
+    Page<Notification> findAllNotifications(int page, int size);
 }

@@ -22,8 +22,7 @@
                     <button class="notification-btn" onclick="toggleNotifications()">
                         <i class="fas fa-bell"></i>
                         <!-- Hiển thị badge chỉ khi có số lượng chưa đọc > 0 -->
-                        <span class="notification-badge"
-                              th:if="${unreadNotificationCount > 0}"
+                        <span class="notification-badge" style="display: none;"
                               th:text="${unreadNotificationCount}"></span>
                     </button>
                     <!-- Notification Dropdown -->

@@ -3,10 +3,11 @@ package com.example.car_rental_admin.service.approval;
 import com.example.car_rental_admin.enums.ApplicationType;
 import com.example.car_rental_admin.enums.RequestStatus;
 import com.example.car_rental_admin.model.ApprovalApplication;
+import com.example.car_rental_admin.model.Role;
 import com.example.car_rental_admin.model.User;
 import com.example.car_rental_admin.repository.IAdminUserRepository;
 import com.example.car_rental_admin.repository.IApprovalApplicationRepository;
-import com.example.car_rental_admin.repository.INotificationRepository;
+import com.example.car_rental_admin.repository.IRoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,7 +22,7 @@ import java.util.List;
 public class ApprovalApplicationService implements IApprovalApplicationService {
     private final IApprovalApplicationRepository approvalApplicationRepository;
     private final IAdminUserRepository userRepository;
-    private final INotificationRepository notificationRepository;
+    private final IRoleRepository roleRepository;
 
     @Override
     public List<ApprovalApplication> getAllApprovalApplication() {
@@ -47,8 +48,20 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
     public void approveApplication(Long id) {
         ApprovalApplication app = approvalApplicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
-        if (app.getStatus() == RequestStatus.APPROVED) return; // hoặc custom rule
+        if (app.getStatus() == RequestStatus.APPROVED) return;
+
         app.setStatus(RequestStatus.APPROVED);
+
+        User user = app.getUser();
+        if (user != null) {
+            // Lấy role OWNER từ db
+            Role ownerRole = roleRepository.findByName("OWNER")
+                    .orElseThrow(() -> new RuntimeException("Role OWNER not found"));
+            // Gán role mới cho user
+            user.setRole(ownerRole);
+            userRepository.save(user);
+        }
+
         approvalApplicationRepository.save(app);
     }
 

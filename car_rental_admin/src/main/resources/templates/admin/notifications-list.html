@@ -1,10 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <title>All Notifications</title>
+    <!-- Css link here -->
 </head>
 <body>
-$END$
+<div class="container">
+    <h2>All Notifications</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Content</th>
+            <th>Time</th>
+            <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="noti : ${notifications}">
+            <td th:text="${noti.content}"></td>
+            <td th:text="${#temporals.format(noti.createdAt, 'HH:mm dd/MM/yyyy')}"></td>
+            <td>
+                <span class="badge badge-read" th:if="${noti.isRead}">Read</span>
+                <span class="badge badge-unread" th:if="${!noti.isRead}">Unread</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+</div>
 </body>
 </html>

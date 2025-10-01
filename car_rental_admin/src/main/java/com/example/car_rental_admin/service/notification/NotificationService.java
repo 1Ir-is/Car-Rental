@@ -3,6 +3,10 @@ package com.example.car_rental_admin.service.notification;
 import com.example.car_rental_admin.model.Notification;
 import com.example.car_rental_admin.repository.INotificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,5 +27,11 @@ public class NotificationService implements INotificationService {
     @Override
     public int markAllAsRead() {
         return notificationRepository.markAllAsRead();
+    }
+
+    @Override
+    public Page<Notification> findAllNotifications(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return notificationRepository.findAll(pageable);
     }
 }
