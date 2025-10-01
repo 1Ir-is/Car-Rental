@@ -80,10 +80,12 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
                 .orElseThrow(() -> new RuntimeException("Application not found"));
         if (app.getStatus() != RequestStatus.APPROVED) return; // chỉ revoke khi đã duyệt
 
-        // Thu hồi quyền owner: chuyển role user về USER
+        // Thu hồi quyền owner: đổi role_id user về USER
         User user = app.getUser();
         if (user != null && user.getRole() != null && !"USER".equals(user.getRole().getName())) {
-            user.getRole().setName("USER");
+            Role userRole = roleRepository.findByName("USER")
+                    .orElseThrow(() -> new RuntimeException("Role USER not found"));
+            user.setRole(userRole); // đổi role_id về 2
             userRepository.save(user);
         }
 
