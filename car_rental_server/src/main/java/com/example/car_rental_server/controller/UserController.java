@@ -1,4 +1,4 @@
-package com.example.car_rental_server.controller.user;
+package com.example.car_rental_server.controller;
 
 import com.example.car_rental_server.dto.UserProfileDTO;
 import com.example.car_rental_server.service.user.IUserService;

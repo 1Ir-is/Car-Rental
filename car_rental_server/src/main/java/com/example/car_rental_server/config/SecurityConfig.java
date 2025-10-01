@@ -34,10 +34,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CORS cho phép admin webapp và FE React kết nối
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
+                // CSRF: Bỏ qua cho WebSocket endpoint
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/ws-notify/**") // Bỏ qua CSRF cho WebSocket
+                        .disable()
+                )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Cho phép truy cập WebSocket cho mọi client
+                        .requestMatchers("/ws-notify/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/owner/**").hasAuthority("OWNER")
@@ -63,7 +70,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(frontendUrl, "http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                frontendUrl,
+                "http://localhost:3000",
+                "http://localhost:8082" // Cho phép cả admin webapp truy cập WebSocket
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

@@ -1,4 +1,4 @@
-package com.example.car_rental_server.controller.auth;
+package com.example.car_rental_server.controller;
 
 import com.example.car_rental_server.dto.GoogleLoginRequestDTO;
 import com.example.car_rental_server.dto.LoginRequestDTO;
@@ -130,6 +130,7 @@ public class AuthController {
             GoogleIdToken.Payload payload = idToken.getPayload();
             String email = payload.getEmail();
             String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
 
             // Tìm user theo email, nếu chưa có thì tự động tạo mới
             User user = userService.findByEmail(email).orElse(null);
@@ -139,9 +140,13 @@ public class AuthController {
                 user = new User();
                 user.setEmail(email);
                 user.setName(name);
+                user.setAvatar(picture);
                 user.setStatus(true);
                 user.setRole(userRole);
-                // Bạn có thể lưu avatar hoặc các thông tin khác nếu muốn
+                userService.save(user);
+            } else if (user.getAvatar() == null || user.getAvatar().isEmpty()) {
+                // Nếu user đã tồn tại mà chưa có avatar thì cập nhật avatar luôn
+                user.setAvatar(picture);
                 userService.save(user);
             }
 
