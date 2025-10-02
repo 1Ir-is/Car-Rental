@@ -37,6 +37,8 @@ public class AdminNotificationController {
         model.addAttribute("totalPages", notiPage.getTotalPages());
         model.addAttribute("totalElements", notiPage.getTotalElements());
         model.addAttribute("size", size);
+        model.addAttribute("notifications", notificationService.getLatestNotifications(5));
+        model.addAttribute("unreadNotificationCount", notificationService.countUnreadNotifications());
         return "admin/notifications-list";
     }
 }

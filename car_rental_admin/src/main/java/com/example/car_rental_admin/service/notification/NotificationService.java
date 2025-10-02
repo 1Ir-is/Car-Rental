@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -33,5 +34,12 @@ public class NotificationService implements INotificationService {
     public Page<Notification> findAllNotifications(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         return notificationRepository.findAll(pageable);
+    }
+
+    @Override
+    public Notification createNotification(Notification noti) {
+        noti.setIsRead(false);
+        noti.setCreatedAt(LocalDateTime.now());
+        return notificationRepository.save(noti);
     }
 }

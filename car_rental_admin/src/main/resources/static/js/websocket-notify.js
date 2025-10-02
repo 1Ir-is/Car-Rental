@@ -1,5 +1,4 @@
 let stompClient = null;
-let unreadNotificationCount = 0;
 
 function connectWebSocketNotify() {
     console.log("Connecting to WebSocket at http://localhost:8080/ws-notify");
@@ -11,47 +10,14 @@ function connectWebSocketNotify() {
         stompClient.subscribe('/topic/owner-request', function (message) {
             console.log("Received notification:", message.body);
             const noti = JSON.parse(message.body);
-            handleAdminNotification(noti);
+            saveNotificationToServer(noti); // Lưu vào DB qua API backend
         });
     }, function (error) {
         console.error("WebSocket connection error:", error);
     });
 }
 
-function handleAdminNotification(noti) {
-    // 1. Thêm vào danh sách notification (notification-list)
-    const list = document.querySelector('.notification-list');
-    let newDiv = null;
-    if (list) {
-        // Xóa dòng "No notifications" nếu có
-        const empty = list.querySelector('.notification-item p');
-        if (empty && empty.textContent.includes('No notifications')) {
-            list.innerHTML = '';
-        }
-        newDiv = document.createElement('div');
-        newDiv.className = 'notification-item unread';
-        newDiv.innerHTML = `
-            <div class="notification-icon">
-                <i class="fas fa-user text-success"></i>
-            </div>
-            <div class="notification-content">
-                <p>${noti.content}</p>
-                <span class="time">Just now</span>
-            </div>
-            <a class="notification-link" href="${noti.url}"></a>
-        `;
-        newDiv.onclick = () => window.location.href = noti.url;
-        if (list.firstChild) {
-            list.insertBefore(newDiv, list.firstChild);
-        } else {
-            list.appendChild(newDiv);
-        }
-    }
-
-    // 2. Cập nhật badge dựa trên số lượng notification chưa đọc
-    updateNotificationBadge();
-}
-
+// Cập nhật badge chuông
 function updateNotificationBadge() {
     let badge = document.querySelector('.notification-badge');
     if (!badge) {
@@ -68,22 +34,70 @@ function updateNotificationBadge() {
     badge.style.display = unreadCount > 0 ? '' : 'none';
 }
 
-// Xử lý Mark all as read
+// Lưu notification vào DB qua API backend
+function saveNotificationToServer(noti) {
+    fetch('/admin/notifications/api/create', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(noti)
+    }).then(() => {
+        fetchNotificationsFromServer(); // Sau khi lưu, fetch lại danh sách từ DB
+    });
+}
+
+// Fetch notification từ backend khi load/chuyển tab
+function fetchNotificationsFromServer() {
+    fetch('/admin/notifications/api/latest?limit=5')
+        .then(res => res.json())
+        .then(data => {
+            renderNotifications(data);
+            updateNotificationBadge();
+        });
+}
+
+// Render notification-list
+function renderNotifications(notifications) {
+    const list = document.querySelector('.notification-list');
+    list.innerHTML = '';
+    if (!notifications || notifications.length === 0) {
+        list.innerHTML = `<div class="notification-item"><div class="notification-content"><p>No notifications.</p></div></div>`;
+    } else {
+        notifications.forEach(noti => {
+            const div = document.createElement('div');
+            div.className = 'notification-item ' + (!noti.isRead ? 'unread' : '');
+            div.innerHTML = `
+                <div class="notification-icon">
+                    <i class="fas fa-user text-success"></i>
+                </div>
+                <div class="notification-content">
+                    <p>${noti.content}</p>
+                    <span class="time">${formatTime(noti.createdAt)}</span>
+                </div>
+                <a class="notification-link" href="${noti.url || '#'}"></a>
+            `;
+            list.appendChild(div);
+        });
+    }
+}
+
+// Format thời gian
+function formatTime(isoString) {
+    const d = new Date(isoString);
+    return d.toLocaleTimeString() + ' ' + d.toLocaleDateString();
+}
+
+
+// Khi load trang/chuyển tab
 document.addEventListener("DOMContentLoaded", function () {
+    fetchNotificationsFromServer();
     connectWebSocketNotify();
 
+    // Mark all as read
     const markAllBtn = document.querySelector('.mark-all-read-btn');
     if (markAllBtn) {
-        markAllBtn.addEventListener('click', function (e) {
-            // Đánh dấu tất cả là đã đọc trên UI
-            const list = document.querySelector('.notification-list');
-            if (list) {
-                list.querySelectorAll('.notification-item.unread').forEach(item => {
-                    item.classList.remove('unread');
+        markAllBtn.addEventListener('click', function () {
+            fetch('/admin/notifications/api/mark-all-read', {method: 'POST'})
+                .then(() => {
+                    fetchNotificationsFromServer();
                 });
-            }
-            updateNotificationBadge();
-            // Không cần set biến global, badge luôn đồng bộ với DOM
         });
     }
 });

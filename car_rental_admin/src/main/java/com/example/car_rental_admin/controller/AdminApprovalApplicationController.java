@@ -57,6 +57,8 @@ public class AdminApprovalApplicationController {
         model.addAttribute("selectedStatus", status);
         model.addAttribute("selectedType", type);
         model.addAttribute("searchKeyword", search);
+        model.addAttribute("notifications", notificationService.getLatestNotifications(5));
+        model.addAttribute("unreadNotificationCount", notificationService.countUnreadNotifications());
 
         return "admin/approval-applications-list";
     }

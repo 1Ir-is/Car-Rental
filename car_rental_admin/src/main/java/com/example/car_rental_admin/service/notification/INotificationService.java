@@ -13,4 +13,6 @@ public interface INotificationService {
     int markAllAsRead();
 
     Page<Notification> findAllNotifications(int page, int size);
+
+    Notification createNotification(Notification noti);
 }

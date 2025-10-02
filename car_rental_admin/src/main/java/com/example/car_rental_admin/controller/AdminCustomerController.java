@@ -2,6 +2,7 @@ package com.example.car_rental_admin.controller;
 
 import com.example.car_rental_admin.model.User;
 import com.example.car_rental_admin.service.customer.ICustomerService;
+import com.example.car_rental_admin.service.notification.INotificationService;
 import com.example.car_rental_admin.service.role.IRoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class AdminCustomerController {
     private final ICustomerService customerService;
     private final IRoleService roleService;
+    private final INotificationService notificationService;
 
     @GetMapping
     public String listUsers(
@@ -47,6 +49,8 @@ public class AdminCustomerController {
         model.addAttribute("newUserThisMonth", customerService.countNewUsersThisMonth());
         model.addAttribute("roles", roleService.getAllRoles());
         model.addAttribute("statuses", roleService.getAllUserStatuses());
+        model.addAttribute("notifications", notificationService.getLatestNotifications(5));
+        model.addAttribute("unreadNotificationCount", notificationService.countUnreadNotifications());
         return "admin/user-list";
     }
 
@@ -55,6 +59,8 @@ public class AdminCustomerController {
         User user = customerService.getUserById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         model.addAttribute("user", user);
+        model.addAttribute("notifications", notificationService.getLatestNotifications(5));
+        model.addAttribute("unreadNotificationCount", notificationService.countUnreadNotifications());
         return "admin/user-detail";
     }
 }
