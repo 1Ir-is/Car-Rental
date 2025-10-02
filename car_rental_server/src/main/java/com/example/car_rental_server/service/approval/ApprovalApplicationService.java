@@ -8,9 +8,12 @@ import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IApprovalApplicationRepository;
 import com.example.car_rental_server.repository.IUserRepository;
 import com.example.car_rental_server.service.notification.INotificationService;
+import com.example.car_rental_server.utils.MailService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 
 @Service
@@ -19,6 +22,7 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
     private final IApprovalApplicationRepository applicationRepo;
     private final IUserRepository userRepo;
     private final INotificationService notificationService;
+    private final MailService mailService;
 
     @Override
     public ApprovalApplicationResponseDTO submitApplication(String userEmail, ApprovalApplicationRequestDTO req) {
@@ -42,6 +46,15 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
 
         // Tạo notification cho admin
         notificationService.notifyOwnerRequest(user.getId(), user.getName());
+
+        // Gửi email cho user xác nhận đã nộp đơn
+        String appUrl = "http://localhost:3000/user/application"; // hoặc URL frontend chi tiết đơn
+        try {
+            mailService.sendOwnerApplicationPendingHtmlMail(user.getEmail(), user.getName(), appUrl);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            // Log lỗi hoặc xử lý nếu cần
+            e.printStackTrace();
+        }
 
         ApprovalApplicationResponseDTO resp = new ApprovalApplicationResponseDTO();
         resp.setId(saved.getId());
