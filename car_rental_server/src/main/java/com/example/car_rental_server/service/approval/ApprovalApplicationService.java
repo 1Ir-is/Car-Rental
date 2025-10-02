@@ -48,11 +48,24 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
         notificationService.notifyOwnerRequest(user.getId(), user.getName());
 
         // Gửi email cho user xác nhận đã nộp đơn
-        String appUrl = "http://localhost:3000/user/application"; // hoặc URL frontend chi tiết đơn
+        String appUrl = "http://localhost:3000/user/application";
         try {
             mailService.sendOwnerApplicationPendingHtmlMail(user.getEmail(), user.getName(), appUrl);
         } catch (MessagingException | UnsupportedEncodingException e) {
-            // Log lỗi hoặc xử lý nếu cần
+            e.printStackTrace();
+        }
+
+        // Gửi email thông báo cho admin về đơn mới
+        String adminEmail = "mhuynhk1005@gmail.com";
+        String appUrlAdmin = "http://localhost:8082/admin/approval-application";
+        try {
+            mailService.sendOwnerApplicationNotificationToAdmin(
+                    adminEmail,
+                    user.getName(),
+                    user.getEmail(),
+                    appUrlAdmin
+            );
+        } catch (MessagingException | UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
@@ -70,7 +83,6 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
         return resp;
     }
 
-
     @Override
     public ApprovalApplicationResponseDTO getUserApplication(String email) {
         User user = userRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
@@ -87,7 +99,6 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
         resp.setDescription(app.getDescription());
         resp.setType(app.getType());
         resp.setStatus(app.getStatus());
-        // truyền thêm appliedDate về cho admin nếu cần
         resp.setAppliedDate(app.getAppliedDate());
         return resp;
     }
