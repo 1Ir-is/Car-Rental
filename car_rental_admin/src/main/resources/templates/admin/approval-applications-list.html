@@ -171,32 +171,36 @@
                         <td th:text="${app.appliedDate != null ? #temporals.format(app.appliedDate, 'dd/MM/yyyy') : ''}"></td>
                         <td>
                             <div class="action-buttons">
-                                <form method="post"
+                                <form class="action-form revoke-form"
+                                      method="post"
                                       style="display:inline"
                                       th:action="@{'/admin/approval-application/revoke/' + ${app.id}}"
                                       th:if="${app.status.name() == 'APPROVED'}">
-                                    <button class="action-btn revoke" onclick="return confirm('Revoke owner rights?')"
-                                            title="Revoke Owner">
+                                    <button class="action-btn revoke" onclick="confirmRevoke(this)"
+                                            title="Revoke Owner"
+                                            type="button">
                                         <i class="fas fa-undo"></i>
                                     </button>
                                 </form>
-                                <form method="post"
+                                <form class="action-form approve-form"
+                                      method="post"
                                       style="display:inline"
                                       th:action="@{'/admin/approval-application/approve/' + ${app.id}}"
                                       th:if="${app.status.name() == 'PENDING'}">
-                                    <button class="action-btn approve"
-                                            onclick="return confirm('Approve this application?')"
-                                            title="Quick Approve">
+                                    <button class="action-btn approve" onclick="confirmApprove(this)"
+                                            title="Quick Approve"
+                                            type="button">
                                         <i class="fas fa-check"></i>
                                     </button>
                                 </form>
-                                <form method="post"
+                                <form class="action-form reject-form"
+                                      method="post"
                                       style="display:inline"
                                       th:action="@{'/admin/approval-application/reject/' + ${app.id}}"
                                       th:if="${app.status.name() == 'PENDING'}">
-                                    <button class="action-btn reject"
-                                            onclick="return confirm('Reject this application?')"
-                                            title="Quick Reject">
+                                    <button class="action-btn reject" onclick="confirmReject(this)"
+                                            title="Quick Reject"
+                                            type="button">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </form>
@@ -243,9 +247,9 @@
 </div>
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/approval-application.js}"></script>
-<!-- Import thư viện SockJS và StompJS trước -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Import file JS WebSocket riêng -->
 <script th:src="@{/js/websocket-notify.js}"></script>
 </body>
