@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.List;
 
-
 @Controller
 @RequestMapping("/admin/approval-application")
 @RequiredArgsConstructor
@@ -31,11 +30,9 @@ public class AdminApprovalApplicationController {
             @RequestParam(value = "size", defaultValue = "5") int size,
             Model model
     ) {
-        // Lấy page ứng với bộ lọc
         Page<ApprovalApplication> appsPage = approvalApplicationService
                 .findApprovalApplications(status, type, search, page - 1, size);
 
-        // Lấy đủ giá trị enum cho dropdown filter
         List<RequestStatus> statusList = Arrays.asList(RequestStatus.values());
         List<ApplicationType> typeList = Arrays.asList(ApplicationType.values());
 
@@ -47,13 +44,11 @@ public class AdminApprovalApplicationController {
         model.addAttribute("statusList", statusList);
         model.addAttribute("typeList", typeList);
 
-        // Để phân trang
         model.addAttribute("currentPage", page);
         model.addAttribute("size", size);
         model.addAttribute("totalElements", appsPage.getTotalElements());
         model.addAttribute("totalPages", appsPage.getTotalPages());
 
-        // Để giữ lại filter khi chuyển trang
         model.addAttribute("selectedStatus", status);
         model.addAttribute("selectedType", type);
         model.addAttribute("searchKeyword", search);
@@ -63,24 +58,20 @@ public class AdminApprovalApplicationController {
         return "admin/approval-applications-list";
     }
 
-
-    // Approve 1 đơn
     @PostMapping("/approve/{id}")
-    public String approveApplication(@PathVariable Long id) {
+    public String approveApplication(@PathVariable("id") Long id) {
         approvalApplicationService.approveApplication(id);
         return "redirect:/admin/approval-application";
     }
 
-    // Reject 1 đơn
     @PostMapping("/reject/{id}")
-    public String rejectApplication(@PathVariable Long id) {
+    public String rejectApplication(@PathVariable("id") Long id) {
         approvalApplicationService.rejectApplication(id);
         return "redirect:/admin/approval-application";
     }
 
-    // Thu hồi
     @PostMapping("/revoke/{id}")
-    public String revokeApplication(@PathVariable Long id) {
+    public String revokeApplication(@PathVariable("id") Long id) {
         approvalApplicationService.revokeApplication(id);
         return "redirect:/admin/approval-application";
     }

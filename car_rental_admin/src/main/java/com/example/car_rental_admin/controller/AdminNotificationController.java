@@ -27,8 +27,8 @@ public class AdminNotificationController {
 
     @GetMapping
     public String allNotifications(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
             Model model
     ) {
         Page<Notification> notiPage = notificationService.findAllNotifications(page - 1, size);
@@ -37,7 +37,7 @@ public class AdminNotificationController {
         model.addAttribute("totalPages", notiPage.getTotalPages());
         model.addAttribute("totalElements", notiPage.getTotalElements());
         model.addAttribute("size", size);
-        model.addAttribute("notifications", notificationService.getLatestNotifications(5));
+        model.addAttribute("latestNotifications", notificationService.getLatestNotifications(5));
         model.addAttribute("unreadNotificationCount", notificationService.countUnreadNotifications());
         return "admin/notifications-list";
     }

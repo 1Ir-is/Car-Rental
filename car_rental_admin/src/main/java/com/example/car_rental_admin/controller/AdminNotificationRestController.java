@@ -20,7 +20,7 @@ public class AdminNotificationRestController {
     }
 
     @GetMapping("/latest")
-    public List<Notification> getLatestNotifications(@RequestParam(defaultValue = "5") int limit) {
+    public List<Notification> getLatestNotifications(@RequestParam(name = "limit", defaultValue = "5") int limit) {
         return notificationService.getLatestNotifications(limit);
     }
 

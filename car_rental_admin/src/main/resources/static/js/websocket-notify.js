@@ -9,8 +9,8 @@ function connectWebSocketNotify() {
         console.log("WebSocket connected:", frame);
         stompClient.subscribe('/topic/owner-request', function (message) {
             console.log("Received notification:", message.body);
-            const noti = JSON.parse(message.body);
-            saveNotificationToServer(noti); // Lưu vào DB qua API backend
+            // Không cần gọi saveNotificationToServer(noti) nếu notification đã được lưu ở backend!
+            fetchNotificationsFromServer(); // Chỉ cần fetch lại danh sách
         });
     }, function (error) {
         console.error("WebSocket connection error:", error);
@@ -34,15 +34,18 @@ function updateNotificationBadge() {
     badge.style.display = unreadCount > 0 ? '' : 'none';
 }
 
-// Lưu notification vào DB qua API backend
 function saveNotificationToServer(noti) {
+    noti.isRead = false;
+    // Đảm bảo gửi đúng kiểu chuỗi ISO cho LocalDateTime
+    noti.createdAt = new Date().toISOString(); // <-- CHUỖI ISO, không phải số
     fetch('/admin/notifications/api/create', {
-        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(noti)
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(noti)
     }).then(() => {
-        fetchNotificationsFromServer(); // Sau khi lưu, fetch lại danh sách từ DB
+        fetchNotificationsFromServer();
     });
 }
-
 // Fetch notification từ backend khi load/chuyển tab
 function fetchNotificationsFromServer() {
     fetch('/admin/notifications/api/latest?limit=5')
@@ -50,6 +53,7 @@ function fetchNotificationsFromServer() {
         .then(data => {
             renderNotifications(data);
             updateNotificationBadge();
+            updateMarkAllReadButton(data);
         });
 }
 
@@ -71,10 +75,38 @@ function renderNotifications(notifications) {
                     <p>${noti.content}</p>
                     <span class="time">${formatTime(noti.createdAt)}</span>
                 </div>
-                <a class="notification-link" href="${noti.url || '#'}"></a>
+                <a class="notification-link" href="${noti.url || '/admin/approval-application'}"></a>
             `;
+            // Click vào notification sẽ chuyển sang trang quản lý đơn
+            div.onclick = () => window.location.href = noti.url || '/admin/approval-application';
             list.appendChild(div);
         });
+    }
+}
+
+function updateMarkAllReadButton(notifications) {
+    // Đếm số thông báo chưa đọc
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+    let header = document.querySelector('.dropdown-header');
+    let markAllBtn = header.querySelector('.mark-all-read-btn');
+
+    // Nếu có thông báo chưa đọc và nút chưa tồn tại thì thêm vào
+    if (unreadCount > 0 && !markAllBtn) {
+        markAllBtn = document.createElement('button');
+        markAllBtn.className = 'mark-all-read-btn';
+        markAllBtn.type = 'button';
+        markAllBtn.innerText = 'Mark all as read';
+        markAllBtn.onclick = function() {
+            fetch('/admin/notifications/api/mark-all-read', {method: 'POST'})
+                .then(() => {
+                    fetchNotificationsFromServer();
+                });
+        };
+        header.appendChild(markAllBtn);
+    }
+    // Nếu không còn thông báo chưa đọc thì ẩn nút
+    if (unreadCount === 0 && markAllBtn) {
+        markAllBtn.remove();
     }
 }
 

@@ -2,6 +2,7 @@ package com.example.car_rental_admin.config;
 
 import com.example.car_rental_admin.service.AdminUserDetailsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,9 +14,13 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class AdminSecurityConfig {
     private final AdminUserDetailsService adminUserDetailsService;
+
+    @Autowired
+    public AdminSecurityConfig(AdminUserDetailsService adminUserDetailsService) {
+        this.adminUserDetailsService = adminUserDetailsService;
+    }
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -27,8 +32,12 @@ public class AdminSecurityConfig {
         http
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/admin/login", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/admin/notifications/api/**").permitAll()
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         .anyRequest().authenticated()
+                )
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/admin/notifications/api/**") // <-- Tắt CSRF cho REST API notification
                 )
                 .formLogin(form -> form
                         .loginPage("/admin/login")
