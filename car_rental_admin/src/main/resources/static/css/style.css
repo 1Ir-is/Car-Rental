@@ -279,23 +279,23 @@ a {
     color: var(--primary-color);
 }
 
-.notification-badge {
+.notification-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background: #ef4444; /* màu đỏ cảnh báo, có thể đổi */
+    border-radius: 50%;
     position: absolute;
-    top: 0;
-    right: 0;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 6px;
-    background: #ff2c2c;
-    color: #fff;
-    font-size: 12px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    box-shadow: 0 0 0 2px #fff;
+    top: 8px;
+    right: 8px;
+    animation: dot-blink 1s infinite;
+    box-shadow: 0 0 8px #ef444480;
     z-index: 1;
+}
+
+@keyframes dot-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
 }
 
 .date-time {

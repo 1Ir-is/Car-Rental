@@ -2,6 +2,7 @@ package com.example.car_rental_admin.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 
@@ -22,7 +23,7 @@ public class Notification {
     private String content;
 
     // Đã đọc hay chưa
-    @Column(nullable = false)
+    @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
     // Thời gian tạo thông báo

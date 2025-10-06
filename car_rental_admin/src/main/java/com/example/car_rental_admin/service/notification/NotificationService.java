@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,5 +42,14 @@ public class NotificationService implements INotificationService {
         noti.setIsRead(false);
         noti.setCreatedAt(LocalDateTime.now());
         return notificationRepository.save(noti);
+    }
+
+    @Override
+    @Transactional
+    public void markAsRead(Long id) {
+        Notification noti = notificationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+        noti.setIsRead(true);
+        notificationRepository.save(noti);
     }
 }

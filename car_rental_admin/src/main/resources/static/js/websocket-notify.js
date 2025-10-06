@@ -19,19 +19,18 @@ function connectWebSocketNotify() {
 
 // Cập nhật badge chuông
 function updateNotificationBadge() {
-    let badge = document.querySelector('.notification-badge');
-    if (!badge) {
+    let dot = document.querySelector('.notification-dot');
+    if (!dot) {
         const btn = document.querySelector('.notification-btn');
         if (btn) {
-            badge = document.createElement('span');
-            badge.className = 'notification-badge';
-            btn.appendChild(badge);
+            dot = document.createElement('span');
+            dot.className = 'notification-dot';
+            btn.appendChild(dot);
         }
     }
     const list = document.querySelector('.notification-list');
     const unreadCount = list ? list.querySelectorAll('.notification-item.unread').length : 0;
-    badge.innerText = unreadCount > 0 ? unreadCount : '';
-    badge.style.display = unreadCount > 0 ? '' : 'none';
+    dot.style.display = unreadCount > 0 ? 'inline-block' : 'none';
 }
 
 function saveNotificationToServer(noti) {
@@ -77,8 +76,26 @@ function renderNotifications(notifications) {
                 </div>
                 <a class="notification-link" href="${noti.url || '/admin/approval-application'}"></a>
             `;
-            // Click vào notification sẽ chuyển sang trang quản lý đơn
-            div.onclick = () => window.location.href = noti.url || '/admin/approval-application';
+            // Nếu là chưa đọc, khi click sẽ gọi API mark-read, sau đó chuyển trang
+            div.onclick = function () {
+                if (!noti.isRead) {
+                    fetch('/admin/notifications/api/mark-read/' + noti.id, {method: 'POST'})
+                        .then(() => {
+                            // Đợi fetch lại từ backend rồi mới chuyển trang
+                            fetch('/admin/notifications/api/latest?limit=5')
+                                .then(res => res.json())
+                                .then(data => {
+                                    renderNotifications(data);
+                                    updateNotificationBadge();
+                                    setTimeout(function() {
+                                        window.location.href = noti.url || '/admin/approval-application';
+                                    }, 100); // Cho UI kịp update
+                                });
+                        });
+                } else {
+                    window.location.href = noti.url || '/admin/approval-application';
+                }
+            };
             list.appendChild(div);
         });
     }
