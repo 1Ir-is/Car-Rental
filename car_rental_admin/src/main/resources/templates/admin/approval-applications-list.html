@@ -134,7 +134,17 @@
                     <tr class="slide-in-up" th:each="app : ${applications}" th:unless="${#lists.isEmpty(applications)}">
                         <td>
                             <div class="applicant-info">
-                                <div class="applicant-avatar" th:text="${app.name.substring(0,1).toUpperCase()}"></div>
+                                <div class="applicant-avatar">
+                                    <div th:if="${app.user != null && app.user.avatar != null && !#strings.isEmpty(app.user.avatar)}">
+                                        <img th:src="${app.user.avatar}" th:alt="${app.name}" class="real-avatar"/>
+                                    </div>
+                                    <div th:if="${app.user == null or app.user.avatar == null or #strings.isEmpty(app.user.avatar)}"
+                                         class="default-avatar">
+                <span>
+                    <span th:text="${app.name.substring(0,1).toUpperCase()}"></span>
+                </span>
+                                    </div>
+                                </div>
                                 <div class="applicant-details">
                                     <div class="applicant-name" th:text="${app.name}"></div>
                                 </div>
@@ -245,6 +255,30 @@
         </div>
     </main>
 </div>
+
+<div id="loading-overlay" style="display:none;">
+    <div class="modern-loading-container">
+        <svg class="modern-spinner" viewBox="0 0 50 50">
+            <circle class="modern-path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+        </svg>
+        <div class="modern-loading-text">
+            <span class="modern-dot">P</span>
+            <span class="modern-dot">r</span>
+            <span class="modern-dot">o</span>
+            <span class="modern-dot">c</span>
+            <span class="modern-dot">e</span>
+            <span class="modern-dot">s</span>
+            <span class="modern-dot">s</span>
+            <span class="modern-dot">i</span>
+            <span class="modern-dot">n</span>
+            <span class="modern-dot">g</span>
+            <span class="modern-dot">.</span>
+            <span class="modern-dot">.</span>
+            <span class="modern-dot">.</span>
+        </div>
+    </div>
+</div>
+
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/approval-application.js}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>

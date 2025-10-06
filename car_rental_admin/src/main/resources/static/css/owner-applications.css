@@ -57,6 +57,39 @@
     overflow: hidden;
 }
 
+.applicant-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.applicant-avatar .real-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: transparent;
+}
+
+.applicant-avatar .default-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #4f46e5; /* hoặc màu bạn thích */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.applicant-avatar .default-avatar span {
+    color: #fff;
+    font-size: 20px;
+    font-weight: bold;
+    user-select: none;
+}
+
 .stat-card::before {
     content: "";
     position: absolute;
@@ -353,7 +386,6 @@
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -741,4 +773,63 @@
 
 .fade-in {
     animation: fadeIn 0.3s ease-out;
+}
+
+#loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modern-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.modern-spinner {
+    animation: rotate 1.2s linear infinite;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+}
+@keyframes rotate { 100% { transform: rotate(360deg); } }
+
+.modern-path {
+    stroke: #6366f1;
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+}
+@keyframes dash {
+    0% { stroke-dasharray: 1,150; stroke-dashoffset: 0; }
+    50% { stroke-dasharray: 90,150; stroke-dashoffset: -35; }
+    100% { stroke-dasharray: 90,150; stroke-dashoffset: -124; }
+}
+
+.modern-loading-text {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #6366f1;
+    letter-spacing: 2px;
+    display: flex;
+    gap: 2px;
+}
+
+.modern-dot {
+    animation: bounce 1s infinite;
+    display: inline-block;
+}
+.modern-dot:nth-child(10) { animation-delay: 0.1s }
+.modern-dot:nth-child(11) { animation-delay: 0.2s }
+.modern-dot:nth-child(12) { animation-delay: 0.3s }
+@keyframes bounce {
+    0%, 100% { transform: translateY(0);}
+    50% { transform: translateY(-8px);}
 }

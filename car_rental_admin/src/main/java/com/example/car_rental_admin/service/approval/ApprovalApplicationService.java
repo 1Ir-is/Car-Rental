@@ -45,10 +45,10 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
     }
 
     @Override
-    public void approveApplication(Long id) {
+    public ApprovalApplication approveApplication(Long id) {
         ApprovalApplication app = approvalApplicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
-        if (app.getStatus() == RequestStatus.APPROVED) return;
+        if (app.getStatus() == RequestStatus.APPROVED) return app;
 
         app.setStatus(RequestStatus.APPROVED);
 
@@ -63,22 +63,24 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
         }
 
         approvalApplicationRepository.save(app);
+        return app;
     }
 
     @Override
-    public void rejectApplication(Long id) {
+    public ApprovalApplication rejectApplication(Long id) {
         ApprovalApplication app = approvalApplicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
-        if (app.getStatus() == RequestStatus.REJECTED) return; // hoặc custom rule
+        if (app.getStatus() == RequestStatus.REJECTED) return app;
         app.setStatus(RequestStatus.REJECTED);
         approvalApplicationRepository.save(app);
+        return app;
     }
 
     @Override
-    public void revokeApplication(Long id) {
+    public ApprovalApplication revokeApplication(Long id) {
         ApprovalApplication app = approvalApplicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
-        if (app.getStatus() != RequestStatus.APPROVED) return; // chỉ revoke khi đã duyệt
+        if (app.getStatus() != RequestStatus.APPROVED) return app;
 
         // Thu hồi quyền owner: đổi role_id user về USER
         User user = app.getUser();
@@ -91,6 +93,7 @@ public class ApprovalApplicationService implements IApprovalApplicationService {
 
         // Xóa đơn luôn khỏi database
         approvalApplicationRepository.delete(app);
+        return app;
     }
 
     @Override

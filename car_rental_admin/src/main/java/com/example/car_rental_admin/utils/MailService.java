@@ -1,4 +1,4 @@
-package com.example.car_rental_admin.utils;
+package com.example.car_rental_admin.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -18,22 +18,42 @@ import java.util.Scanner;
 public class MailService {
     private final JavaMailSender mailSender;
 
-    public void sendOwnerApplicationNotificationToAdmin(String adminEmail, String userName, String userEmail, String appUrl) throws MessagingException, UnsupportedEncodingException {
+    private String fromEmail = "autorentdanang@gmail.com";
+    private String fromName = "AutoRent Da Nang";
+
+    public void sendApprovedMail(String to, String userName, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        sendMailTemplate(to, "Your Owner Application Approved",
+                "email-templates/owner-application-approved.html", userName, appUrl);
+    }
+
+    public void sendRejectedMail(String to, String userName, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        sendMailTemplate(to, "Your Owner Application Rejected",
+                "email-templates/owner-application-rejected.html", userName, appUrl);
+    }
+
+    public void sendRevokedMail(String to, String userName, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        sendMailTemplate(to, "Your Owner Privileges Revoked",
+                "email-templates/owner-application-revoked.html", userName, appUrl);
+    }
+
+    private void sendMailTemplate(String to, String subject, String templatePath,
+                                  String userName, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+        helper.setFrom(fromEmail, fromName);
+        helper.setTo(to);
+        helper.setSubject(subject);
 
-        helper.setFrom("autorentdanang@gmail.com", "AutoRent Da Nang");
-        helper.setTo(adminEmail);
-        helper.setSubject("New Owner Application Submitted");
-
-        String html = loadTemplate("email-templates/admin-owner-application-notify.html")
+        String html = loadTemplate(templatePath)
                 .replace("${userName}", userName)
-                .replace("${userEmail}", userEmail)
                 .replace("${appUrl}", appUrl)
                 .replace("${year}", String.valueOf(LocalDate.now().getYear()));
 
         helper.setText(html, true);
-
         mailSender.send(message);
     }
 

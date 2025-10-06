@@ -3,13 +3,19 @@ package com.example.car_rental_admin.controller;
 import com.example.car_rental_admin.enums.ApplicationType;
 import com.example.car_rental_admin.enums.RequestStatus;
 import com.example.car_rental_admin.model.ApprovalApplication;
+import com.example.car_rental_admin.model.User;
+import com.example.car_rental_admin.service.MailService;
 import com.example.car_rental_admin.service.approval.IApprovalApplicationService;
 import com.example.car_rental_admin.service.notification.INotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.flogger.Flogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,6 +26,9 @@ import java.util.List;
 public class AdminApprovalApplicationController {
     private final IApprovalApplicationService approvalApplicationService;
     private final INotificationService notificationService;
+    private final MailService mailService;
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminApprovalApplicationController.class);
 
     @GetMapping
     public String approvalApplicationsPage(
@@ -59,20 +68,47 @@ public class AdminApprovalApplicationController {
     }
 
     @PostMapping("/approve/{id}")
-    public String approveApplication(@PathVariable("id") Long id) {
-        approvalApplicationService.approveApplication(id);
+    public String approveApplication(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        ApprovalApplication app = approvalApplicationService.approveApplication(id);
+        User user = app.getUser();
+        if (user != null) {
+            try {
+                mailService.sendApprovedMail(user.getEmail(), user.getName(), "/user/dashboard");
+            } catch (Exception e) {
+                logger.error("Lỗi gửi mail approve cho user {} - email {}: {}", user.getName(), user.getEmail(), e.getMessage(), e);
+                redirectAttributes.addFlashAttribute("mailError", "Gửi email thông báo duyệt đơn cho user không thành công!");
+            }
+        }
         return "redirect:/admin/approval-application";
     }
 
     @PostMapping("/reject/{id}")
-    public String rejectApplication(@PathVariable("id") Long id) {
-        approvalApplicationService.rejectApplication(id);
+    public String rejectApplication(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        ApprovalApplication app = approvalApplicationService.rejectApplication(id);
+        User user = app.getUser();
+        if (user != null) {
+            try {
+                mailService.sendRejectedMail(user.getEmail(), user.getName(), "/user/dashboard");
+            } catch (Exception e) {
+                logger.error("Lỗi gửi mail reject cho user {} - email {}: {}", user.getName(), user.getEmail(), e.getMessage(), e);
+                redirectAttributes.addFlashAttribute("mailError", "Gửi email thông báo từ chối đơn cho user không thành công!");
+            }
+        }
         return "redirect:/admin/approval-application";
     }
 
     @PostMapping("/revoke/{id}")
-    public String revokeApplication(@PathVariable("id") Long id) {
-        approvalApplicationService.revokeApplication(id);
+    public String revokeApplication(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        ApprovalApplication app = approvalApplicationService.revokeApplication(id);
+        User user = app.getUser();
+        if (user != null) {
+            try {
+                mailService.sendRevokedMail(user.getEmail(), user.getName(), "/user/dashboard");
+            } catch (Exception e) {
+                logger.error("Lỗi gửi mail revoke cho user {} - email {}: {}", user.getName(), user.getEmail(), e.getMessage(), e);
+                redirectAttributes.addFlashAttribute("mailError", "Gửi email thông báo thu hồi quyền owner cho user không thành công!");
+            }
+        }
         return "redirect:/admin/approval-application";
     }
 }

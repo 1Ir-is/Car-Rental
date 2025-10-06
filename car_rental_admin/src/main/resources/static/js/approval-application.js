@@ -3,7 +3,13 @@ function refreshApplications() {
     window.location.reload(); // hoặc gọi ajax nếu muốn load động
 }
 
-// SweetAlert confirm for APPROVE
+function showLoading() {
+    document.getElementById('loading-overlay').style.display = 'flex';
+}
+function hideLoading() {
+    document.getElementById('loading-overlay').style.display = 'none';
+}
+
 function confirmApprove(btn) {
     Swal.fire({
         title: 'Approve Application?',
@@ -16,12 +22,12 @@ function confirmApprove(btn) {
         cancelButtonText: 'Cancel'
     }).then(result => {
         if (result.isConfirmed) {
+            showLoading(); // Show loading overlay
             btn.closest('form').submit();
         }
     });
 }
 
-// SweetAlert confirm for REJECT
 function confirmReject(btn) {
     Swal.fire({
         title: 'Reject Application?',
@@ -34,12 +40,12 @@ function confirmReject(btn) {
         cancelButtonText: 'Cancel'
     }).then(result => {
         if (result.isConfirmed) {
+            showLoading();
             btn.closest('form').submit();
         }
     });
 }
 
-// SweetAlert confirm for REVOKE
 function confirmRevoke(btn) {
     Swal.fire({
         title: 'Revoke Owner Rights?',
@@ -52,6 +58,7 @@ function confirmRevoke(btn) {
         cancelButtonText: 'Cancel'
     }).then(result => {
         if (result.isConfirmed) {
+            showLoading();
             btn.closest('form').submit();
         }
     });

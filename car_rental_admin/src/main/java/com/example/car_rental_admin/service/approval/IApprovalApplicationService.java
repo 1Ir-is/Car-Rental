@@ -14,11 +14,11 @@ public interface IApprovalApplicationService {
 
     long countRejected();
 
-    void approveApplication(Long id);
+    ApprovalApplication approveApplication(Long id);
 
-    void rejectApplication(Long id);
+    ApprovalApplication rejectApplication(Long id);
 
-    void revokeApplication(Long id);
+    ApprovalApplication revokeApplication(Long id);
 
     Page<ApprovalApplication> findApprovalApplications(String status, String type, String search, int page, int size);
 
