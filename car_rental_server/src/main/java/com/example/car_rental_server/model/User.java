@@ -11,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -35,6 +36,15 @@ public class User implements UserDetails {
     private Boolean status = true;
     private Double trustPoint = 0.0;
     private LocalDate dateOfBirth;
+
+    @Column(name = "email_otp")
+    private String emailOtp;
+
+    @Column(name = "otp_created_at")
+    private LocalDateTime otpCreatedAt;
+
+    @Column(name = "verified")
+    private Boolean verified = false;
 
     @ManyToOne
     @JoinColumn(name = "role_id")

@@ -3,11 +3,13 @@ package com.example.car_rental_server.controller;
 import com.example.car_rental_server.dto.GoogleLoginRequestDTO;
 import com.example.car_rental_server.dto.LoginRequestDTO;
 import com.example.car_rental_server.dto.RegisterRequestDTO;
+import com.example.car_rental_server.dto.VerifyOtpRequestDTO;
 import com.example.car_rental_server.model.Role;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.security.JwtService;
 import com.example.car_rental_server.service.role.IRoleService;
 import com.example.car_rental_server.service.user.IUserService;
+import com.example.car_rental_server.utils.MailService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
@@ -23,18 +25,18 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Value("${google.client-id}")
     private String googleClientId;
@@ -46,6 +48,7 @@ public class AuthController {
     private final IRoleService roleService;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final MailService mailService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequestDTO req) {
@@ -62,8 +65,69 @@ public class AuthController {
         user.setAddress(req.getAddress());
         user.setRole(userRole);
         user.setStatus(true);
+
+        // Generate OTP
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        user.setEmailOtp(otp);
+        user.setOtpCreatedAt(LocalDateTime.now());
+        user.setVerified(false);
         userService.save(user);
-        return ResponseEntity.ok(Map.of("message", "Đăng ký thành công"));
+
+        try {
+            mailService.sendOtpEmail(user.getEmail(), user.getName(), otp);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Lỗi khi gửi email xác thực"));
+        }
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "needVerify", true,
+                "message", "Đăng ký thành công, vui lòng kiểm tra email để lấy mã xác thực!"
+        ));
+    }
+
+    @PostMapping("/verify-email-otp")
+    public ResponseEntity<?> verifyEmailOtp(@RequestBody VerifyOtpRequestDTO req) {
+        Optional<User> userOpt = userService.findByEmail(req.getEmail());
+        if (userOpt.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+        User user = userOpt.get();
+        if (user.getEmailOtp() != null
+                && user.getEmailOtp().equals(req.getOtp())
+                && user.getOtpCreatedAt() != null
+                && user.getOtpCreatedAt().isAfter(LocalDateTime.now().minusMinutes(15))) {
+            user.setVerified(true);
+            user.setEmailOtp(null);
+            user.setOtpCreatedAt(null);
+            userService.save(user);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Email đã được xác thực!"));
+        }
+        return ResponseEntity.status(400).body(Map.of("success", false, "error", "Mã OTP không đúng hoặc đã hết hạn"));
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "User not found"));
+        }
+        User user = userOpt.get();
+
+        // Sinh lại OTP mới
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        user.setEmailOtp(otp);
+        user.setOtpCreatedAt(LocalDateTime.now());
+        user.setVerified(false);
+        userService.save(user);
+
+        try {
+            mailService.sendOtpEmail(user.getEmail(), user.getName(), otp);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Đã gửi lại mã xác thực OTP qua email!"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "error", "Lỗi khi gửi lại email xác thực"));
+        }
     }
 
     @PostMapping("/login")
@@ -171,6 +235,8 @@ public class AuthController {
             return ResponseEntity.status(500).body(Map.of("success", false, "error", "SERVER_ERROR"));
         }
     }
+
+
 
 //    @PostMapping("/forgot-password")
 //    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequestDTO req) {

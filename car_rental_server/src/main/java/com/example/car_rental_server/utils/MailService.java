@@ -57,6 +57,21 @@ public class MailService {
         mailSender.send(message);
     }
 
+    public void sendOtpEmail(String to, String userName, String otp)
+            throws MessagingException, UnsupportedEncodingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+        helper.setFrom("autorentdanang@gmail.com", "AutoRent Da Nang");
+        helper.setTo(to);
+        helper.setSubject("Your Email Verification Code");
+        String html = loadTemplate("email-templates/verify-email-otp.html")
+                .replace("${userName}", userName)
+                .replace("${otp}", otp)
+                .replace("${year}", String.valueOf(LocalDate.now().getYear()));
+        helper.setText(html, true);
+        mailSender.send(message);
+    }
+
     private String loadTemplate(String path) {
         try (Scanner scanner = new Scanner(new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8.name())) {
             return scanner.useDelimiter("\\A").next();
