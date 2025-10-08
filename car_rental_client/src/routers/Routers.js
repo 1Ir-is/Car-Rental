@@ -16,6 +16,7 @@ import { Login, Register, ForgotPassword } from "../pages/auth";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 import VerifyEmailOtp from "../pages/VerifyEmailOtp";
 import ResetPassword from "../pages/auth/ResetPassword";
+import RedirectIfAuthenticated from "../components/RedirectIfAuthenticated";
 
 const Routers = () => {
   return (
@@ -28,9 +29,30 @@ const Routers = () => {
       <Route path="/blogs" element={<Blog />} />
       <Route path="/blogs/:slug" element={<BlogDetails />} />
       <Route path="/contact" element={<Contact />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route
+        path="/login"
+        element={
+          <RedirectIfAuthenticated>
+            <Login />
+          </RedirectIfAuthenticated>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <RedirectIfAuthenticated>
+            <Register />
+          </RedirectIfAuthenticated>
+        }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <RedirectIfAuthenticated>
+            <ForgotPassword />
+          </RedirectIfAuthenticated>
+        }
+      />
       <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route path="/verify-email-otp" element={<VerifyEmailOtp />} />

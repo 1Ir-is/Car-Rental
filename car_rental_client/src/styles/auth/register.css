@@ -486,3 +486,140 @@ input[type="password"]:not([type="text"]) {
   min-width: 200px;
   text-align: left;
 }
+
+/* ========== Expired Link Styles ========== */
+
+.expired-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.expired-icon i {
+  font-size: 2.5rem;
+  color: #ffffff;
+}
+
+.expired-info {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: #92400e;
+  font-size: 0.9rem;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item i {
+  font-size: 1.2rem;
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.back-to-login {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  transition: color 0.3s ease;
+}
+
+.link-btn:hover {
+  color: #1d4ed8;
+}
+
+/* ========== Already Logged In Styles ========== */
+
+.already-logged-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8, #1e40af);
+  border-radius: 50%;
+  margin: 0 auto;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+  animation: float 3s ease-in-out infinite;
+}
+
+.already-logged-icon::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6, #06b6d4);
+  border-radius: 50%;
+  z-index: -1;
+  opacity: 0.7;
+  animation: rotate 4s linear infinite;
+}
+
+.already-logged-icon i {
+  font-size: 3rem;
+  color: #ffffff;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.logged-in-info {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border: 2px solid #3b82f6;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);
+}

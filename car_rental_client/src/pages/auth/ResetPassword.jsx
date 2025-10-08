@@ -6,6 +6,7 @@ import Helmet from "../../components/Helmet/Helmet";
 import { toast } from "react-toastify";
 import { authAPI } from "../../services/authService";
 import FullPageLoader from "../../components/UI/FullPageLoader";
+import { authUtils } from "../../services/authService";
 
 import "../../styles/auth/register.css";
 
@@ -24,6 +25,8 @@ const ResetPassword = () => {
   const [oldPasswordHash, setOldPasswordHash] = useState("");
   const [oldPasswordError, setOldPasswordError] = useState("");
   const [dots, setDots] = useState("");
+  const [tokenValid, setTokenValid] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
 
   const [passwordRequirements, setPasswordRequirements] = useState({
     minLength: false,
@@ -32,6 +35,23 @@ const ResetPassword = () => {
     hasNumber: false,
     hasSpecialChar: false,
   });
+
+  // Check login status on mount
+  useEffect(() => {
+    setIsAuthenticated(authUtils.isAuthenticated());
+  }, []);
+
+  useEffect(() => {
+    async function checkToken() {
+      if (!token) {
+        setTokenValid(false);
+        return;
+      }
+      const res = await authAPI.validateResetToken(token);
+      setTokenValid(res.success);
+    }
+    checkToken();
+  }, [token]);
 
   // Animate dots for redirecting message
   useEffect(() => {
@@ -65,7 +85,6 @@ const ResetPassword = () => {
     fetchOldPasswordHash();
   }, [token]);
 
-  // Function to check password requirements
   const checkPasswordRequirements = (password) => {
     return {
       minLength: password.length >= 6,
@@ -76,7 +95,6 @@ const ResetPassword = () => {
     };
   };
 
-  // Function to check if all password requirements are met
   const arePasswordRequirementsMet = () => {
     return (
       passwordRequirements.minLength &&
@@ -87,7 +105,6 @@ const ResetPassword = () => {
     );
   };
 
-  // Function to check if form is ready to submit
   const isFormValid = () => {
     return (
       password !== "" &&
@@ -99,12 +116,10 @@ const ResetPassword = () => {
     );
   };
 
-  // Validate password requirements & check with old password hash
   const handlePasswordChange = async (e) => {
     const value = e.target.value;
     setPassword(value);
 
-    // Check password requirements
     if (value) {
       const requirements = checkPasswordRequirements(value);
       setPasswordRequirements(requirements);
@@ -118,9 +133,7 @@ const ResetPassword = () => {
       });
     }
 
-    // Check password trùng cũ
     if (oldPasswordHash && value) {
-      // bcrypt.compare returns a promise!
       const isSame = await bcrypt.compare(value, oldPasswordHash);
       if (isSame) {
         setOldPasswordError(
@@ -133,7 +146,6 @@ const ResetPassword = () => {
       setOldPasswordError("");
     }
 
-    // Validate confirm password if it exists
     if (confirmPassword) {
       if (confirmPassword && value !== confirmPassword) {
         setConfirmPasswordError("Passwords do not match");
@@ -147,7 +159,6 @@ const ResetPassword = () => {
     const value = e.target.value;
     setConfirmPassword(value);
 
-    // Validate confirm password
     if (value && password && value !== password) {
       setConfirmPasswordError("Passwords do not match");
     } else {
@@ -160,42 +171,34 @@ const ResetPassword = () => {
       toast.error("Please fill in all fields");
       return false;
     }
-
     if (!passwordRequirements.minLength) {
       toast.error("Password must be at least 6 characters long");
       return false;
     }
-
     if (!passwordRequirements.hasUpperCase) {
       toast.error("Password must contain at least one uppercase letter");
       return false;
     }
-
     if (!passwordRequirements.hasLowerCase) {
       toast.error("Password must contain at least one lowercase letter");
       return false;
     }
-
     if (!passwordRequirements.hasNumber) {
       toast.error("Password must contain at least one number");
       return false;
     }
-
     if (!passwordRequirements.hasSpecialChar) {
       toast.error("Password must contain at least one special character");
       return false;
     }
-
     if (oldPasswordError) {
       toast.error(oldPasswordError);
       return false;
     }
-
     if (password !== confirmPassword) {
       toast.error("Passwords don't match!");
       return false;
     }
-
     return true;
   };
 
@@ -231,6 +234,145 @@ const ResetPassword = () => {
     }
   };
 
+  if (isAuthenticated === null) {
+    return (
+      <FullPageLoader
+        isLoading={true}
+        tip="Đang kiểm tra trạng thái đăng nhập..."
+      />
+    );
+  }
+
+  // Nếu đã đăng nhập, hiển thị thông báo UX đúng chuẩn
+  if (isAuthenticated) {
+    return (
+      <Helmet title="Already Logged In">
+        <section>
+          <Container>
+            <Row>
+              <Col lg="8" md="10" sm="12" className="m-auto">
+                <div className="register__container">
+                  <div className="register__form text-center">
+                    <div className="already-logged-icon mb-4">
+                      <i className="ri-user-settings-line"></i>
+                    </div>
+                    <h2 className="section__title">
+                      You're Already Logged In!
+                    </h2>
+                    <p className="register__subtitle mb-4">
+                      Password reset links can only be used when you're not
+                      logged in. <br />
+                      To change your password, please use the{" "}
+                      <strong>Settings</strong> page.
+                    </p>
+
+                    <div className="logged-in-info mb-4">
+                      <div className="info-item">
+                        <i className="ri-shield-user-line"></i>
+                        <span>Secure account management through Settings</span>
+                      </div>
+                      <div className="info-item">
+                        <i className="ri-settings-3-line"></i>
+                        <span>
+                          Change password safely with current password
+                          verification
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      className="auth__btn w-100 mb-3"
+                      onClick={() => navigate("/settings")}
+                    >
+                      <i className="ri-settings-line me-2"></i>
+                      GO TO SETTINGS
+                    </button>
+
+                    <div className="back-to-login">
+                      <p className="mb-0">
+                        Or{" "}
+                        <button
+                          className="link-btn"
+                          onClick={() => navigate("/")}
+                        >
+                          back to home page
+                        </button>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Container>
+        </section>
+      </Helmet>
+    );
+  }
+
+  // Hiển thị trang báo link hết hạn
+  if (tokenValid === false) {
+    return (
+      <Helmet title="Reset Link Expired">
+        <section>
+          <Container>
+            <Row>
+              <Col lg="8" md="10" sm="12" className="m-auto">
+                <div className="register__container">
+                  <div className="register__form text-center">
+                    <div className="expired-icon mb-4">
+                      <i className="ri-time-line"></i>
+                    </div>
+                    <h2 className="section__title">Oops! Link Has Expired</h2>
+                    <p className="register__subtitle mb-4">
+                      Your password reset link has expired. <br />
+                      Don't worry, we can send you a new one right away!
+                    </p>
+                    <div className="expired-info mb-4">
+                      <div className="info-item">
+                        <i className="ri-shield-check-line"></i>
+                        <span>
+                          High security - Links are only valid for a short time
+                        </span>
+                      </div>
+                      <div className="info-item">
+                        <i className="ri-refresh-line"></i>
+                        <span>
+                          Easy to get a new link in just a few seconds
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      className="auth__btn w-100 mb-3"
+                      onClick={() => navigate("/forgot-password")}
+                    >
+                      <i className="ri-mail-send-line me-2"></i>
+                      SEND NEW LINK
+                    </button>
+                    <div className="back-to-login">
+                      <p className="mb-0">
+                        Or{" "}
+                        <button
+                          className="link-btn"
+                          onClick={() => navigate("/login")}
+                        >
+                          back to login
+                        </button>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </Container>
+        </section>
+      </Helmet>
+    );
+  }
+
+  if (tokenValid === null) {
+    return <FullPageLoader isLoading={true} tip="Đang kiểm tra liên kết..." />;
+  }
+
   return (
     <>
       <Helmet title="Reset Password">
@@ -246,7 +388,6 @@ const ResetPassword = () => {
                         <p className="register__subtitle">
                           Create a new secure password for your account
                         </p>
-
                         <Form onSubmit={handleSubmit}>
                           <FormGroup>
                             <div className="password-input-wrapper">
@@ -276,7 +417,6 @@ const ResetPassword = () => {
                                 ></i>
                               </button>
                             </div>
-                            {/* Password Requirements - Always show */}
                             <div className="password-requirements">
                               <div className="requirements-title">
                                 Password Requirements:
@@ -360,14 +500,12 @@ const ResetPassword = () => {
                                 </div>
                               </div>
                             </div>
-                            {/* Old password validation */}
                             {oldPasswordError && (
                               <div className="password-error">
                                 {oldPasswordError}
                               </div>
                             )}
                           </FormGroup>
-
                           <FormGroup>
                             <div className="password-input-wrapper">
                               <Input
@@ -401,14 +539,12 @@ const ResetPassword = () => {
                                 ></i>
                               </button>
                             </div>
-                            {/* Confirm Password Validation */}
                             {confirmPasswordError && (
                               <div className="password-error">
                                 {confirmPasswordError}
                               </div>
                             )}
                           </FormGroup>
-
                           <button
                             type="submit"
                             className="auth__btn w-100"
@@ -443,7 +579,6 @@ const ResetPassword = () => {
           </Container>
         </section>
       </Helmet>
-
       <FullPageLoader isLoading={loading} tip="Resetting password..." />
     </>
   );

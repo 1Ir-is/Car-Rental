@@ -284,6 +284,20 @@ export const authAPI = {
     }
   },
 
+  validateResetToken: async (token) => {
+    try {
+      const response = await apiClient.get(
+        `/auth/validate-reset-token?token=${token}`
+      );
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.error || "Token đã hết hạn",
+      };
+    }
+  },
+
   loginWithGoogle: async (idToken) => {
     try {
       const response = await apiClient.post("/auth/google", { idToken });

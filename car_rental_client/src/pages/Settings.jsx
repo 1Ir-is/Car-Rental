@@ -27,6 +27,14 @@ const Settings = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [loadingChangePassword, setLoadingChangePassword] = useState(false);
+  const [passwordChangedAt, setPasswordChangedAt] = useState(null);
+
+  // State for password input visibility & validation
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
 
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -48,7 +56,6 @@ const Settings = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   useEffect(() => {
-    // Load user settings from localStorage or API
     const savedSettings = localStorage.getItem("userSettings");
     if (savedSettings) {
       setSettings((prevSettings) => ({
@@ -56,6 +63,14 @@ const Settings = () => {
         ...JSON.parse(savedSettings),
       }));
     }
+
+    async function fetchPasswordChangedAt() {
+      const res = await authAPI.getProfile();
+      if (res.success && res.passwordChangedAt) {
+        setPasswordChangedAt(res.passwordChangedAt);
+      }
+    }
+    fetchPasswordChangedAt();
   }, []);
 
   const handleSettingChange = (setting, value) => {
@@ -65,16 +80,50 @@ const Settings = () => {
     toast.success("Settings updated!");
   };
 
+  // Password validation logic
+  const handleNewPasswordChange = (e) => {
+    const value = e.target.value;
+    setPasswordData((prev) => ({ ...prev, newPassword: value }));
+
+    // Basic validation - just check minimum length
+    let error = "";
+    if (value && value.length < 6) {
+      error = "Password must be at least 6 characters.";
+    }
+    setNewPasswordError(error);
+
+    // Confirm password live check
+    if (
+      passwordData.confirmPassword &&
+      value !== passwordData.confirmPassword
+    ) {
+      setConfirmPasswordError("Passwords do not match!");
+    } else {
+      setConfirmPasswordError("");
+    }
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    const value = e.target.value;
+    setPasswordData((prev) => ({ ...prev, confirmPassword: value }));
+
+    if (passwordData.newPassword && value !== passwordData.newPassword) {
+      setConfirmPasswordError("Passwords do not match!");
+    } else {
+      setConfirmPasswordError("");
+    }
+  };
+
   const handlePasswordChange = async (e) => {
     e.preventDefault();
 
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("New passwords do not match!");
+    if (passwordData.newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters.");
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters long!");
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New passwords do not match!");
       return;
     }
 
@@ -92,6 +141,12 @@ const Settings = () => {
         newPassword: "",
         confirmPassword: "",
       });
+      setNewPasswordError("");
+      setConfirmPasswordError("");
+      const profile = await authAPI.getProfile();
+      if (profile.success && profile.passwordChangedAt) {
+        setPasswordChangedAt(profile.passwordChangedAt);
+      }
     } else {
       toast.error(result.message || "Failed to change password");
     }
@@ -104,9 +159,7 @@ const Settings = () => {
     }
 
     try {
-      // Simulate API call to delete account
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
       toast.success("Account deleted successfully");
       await logout();
       navigate("/");
@@ -119,6 +172,18 @@ const Settings = () => {
     localStorage.clear();
     toast.success("All local data cleared!");
     window.location.reload();
+  };
+
+  // Format passwordChangedAt to DD/MM/YYYY HH:mm:ss
+  const formatPasswordChangedAt = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const pad = (n) => (n < 10 ? "0" + n : n);
+    return `${pad(date.getDate())}/${pad(
+      date.getMonth() + 1
+    )}/${date.getFullYear()} ${pad(date.getHours())}:${pad(
+      date.getMinutes()
+    )}:${pad(date.getSeconds())}`;
   };
 
   return (
@@ -135,7 +200,6 @@ const Settings = () => {
                     <i className="ri-notification-line me-2"></i>
                     Notification Preferences
                   </h4>
-
                   <FormGroup switch>
                     <Input
                       type="switch"
@@ -152,7 +216,6 @@ const Settings = () => {
                       Receive booking confirmations and updates via email
                     </small>
                   </FormGroup>
-
                   <FormGroup switch>
                     <Input
                       type="switch"
@@ -169,7 +232,6 @@ const Settings = () => {
                       Receive booking reminders via SMS
                     </small>
                   </FormGroup>
-
                   <FormGroup switch>
                     <Input
                       type="switch"
@@ -183,7 +245,6 @@ const Settings = () => {
                       Receive promotional offers and newsletters
                     </small>
                   </FormGroup>
-
                   <FormGroup switch>
                     <Input
                       type="switch"
@@ -210,7 +271,6 @@ const Settings = () => {
                     <i className="ri-settings-line me-2"></i>
                     Preferences
                   </h4>
-
                   <Row>
                     <Col md="6">
                       <FormGroup>
@@ -249,7 +309,6 @@ const Settings = () => {
                       </FormGroup>
                     </Col>
                   </Row>
-
                   <FormGroup>
                     <Label for="theme">Theme</Label>
                     <Input
@@ -275,40 +334,109 @@ const Settings = () => {
                     <i className="ri-lock-line me-2"></i>
                     Change Password
                   </h4>
-
                   <Form onSubmit={handlePasswordChange}>
                     <FormGroup>
                       <Label for="currentPassword">Current Password</Label>
-                      <Input
-                        type="password"
-                        id="currentPassword"
-                        value={passwordData.currentPassword}
-                        onChange={(e) =>
-                          setPasswordData({
-                            ...passwordData,
-                            currentPassword: e.target.value,
-                          })
-                        }
-                        required
-                      />
+                      <div
+                        className="password-input-wrapper"
+                        style={{ position: "relative" }}
+                      >
+                        <Input
+                          type={showCurrentPassword ? "text" : "password"}
+                          id="currentPassword"
+                          value={passwordData.currentPassword}
+                          onChange={(e) =>
+                            setPasswordData({
+                              ...passwordData,
+                              currentPassword: e.target.value,
+                            })
+                          }
+                          required
+                          disabled={loadingChangePassword}
+                          autoComplete="current-password"
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() =>
+                            setShowCurrentPassword((prev) => !prev)
+                          }
+                          tabIndex={-1}
+                          style={{
+                            position: "absolute",
+                            right: 10,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: "none",
+                            border: "none",
+                            outline: "none",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <i
+                            className={`ri-eye${
+                              showCurrentPassword ? "-off" : ""
+                            }-line`}
+                          ></i>
+                        </button>
+                      </div>
+                      {passwordChangedAt && (
+                        <div
+                          className="mt-1 text-muted"
+                          style={{ fontSize: 13 }}
+                        >
+                          <i className="ri-history-line"></i> Last changed:{" "}
+                          {formatPasswordChangedAt(passwordChangedAt)}
+                        </div>
+                      )}
                     </FormGroup>
-
                     <Row>
                       <Col md="6">
                         <FormGroup>
                           <Label for="newPassword">New Password</Label>
-                          <Input
-                            type="password"
-                            id="newPassword"
-                            value={passwordData.newPassword}
-                            onChange={(e) =>
-                              setPasswordData({
-                                ...passwordData,
-                                newPassword: e.target.value,
-                              })
-                            }
-                            required
-                          />
+                          <div
+                            className="password-input-wrapper"
+                            style={{ position: "relative" }}
+                          >
+                            <Input
+                              type={showNewPassword ? "text" : "password"}
+                              id="newPassword"
+                              value={passwordData.newPassword}
+                              onChange={handleNewPasswordChange}
+                              required
+                              autoComplete="new-password"
+                              disabled={loadingChangePassword}
+                            />
+                            <button
+                              type="button"
+                              className="password-toggle-btn"
+                              onClick={() =>
+                                setShowNewPassword((prev) => !prev)
+                              }
+                              tabIndex={-1}
+                              style={{
+                                position: "absolute",
+                                right: 10,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                background: "none",
+                                border: "none",
+                                outline: "none",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <i
+                                className={`ri-eye${
+                                  showNewPassword ? "-off" : ""
+                                }-line`}
+                              ></i>
+                            </button>
+                          </div>
+                          {newPasswordError && (
+                            <div className="password-error text-danger mt-1">
+                              {newPasswordError}
+                            </div>
+                          )}
                         </FormGroup>
                       </Col>
                       <Col md="6">
@@ -316,26 +444,60 @@ const Settings = () => {
                           <Label for="confirmPassword">
                             Confirm New Password
                           </Label>
-                          <Input
-                            type="password"
-                            id="confirmPassword"
-                            value={passwordData.confirmPassword}
-                            onChange={(e) =>
-                              setPasswordData({
-                                ...passwordData,
-                                confirmPassword: e.target.value,
-                              })
-                            }
-                            required
-                          />
+                          <div
+                            className="password-input-wrapper"
+                            style={{ position: "relative" }}
+                          >
+                            <Input
+                              type={showConfirmPassword ? "text" : "password"}
+                              id="confirmPassword"
+                              value={passwordData.confirmPassword}
+                              onChange={handleConfirmPasswordChange}
+                              required
+                              autoComplete="new-password"
+                              disabled={loadingChangePassword}
+                            />
+                            <button
+                              type="button"
+                              className="password-toggle-btn"
+                              onClick={() =>
+                                setShowConfirmPassword((prev) => !prev)
+                              }
+                              tabIndex={-1}
+                              style={{
+                                position: "absolute",
+                                right: 10,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                background: "none",
+                                border: "none",
+                                outline: "none",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <i
+                                className={`ri-eye${
+                                  showConfirmPassword ? "-off" : ""
+                                }-line`}
+                              ></i>
+                            </button>
+                          </div>
+                          {confirmPasswordError && (
+                            <div className="password-error text-danger mt-1">
+                              {confirmPasswordError}
+                            </div>
+                          )}
                         </FormGroup>
                       </Col>
                     </Row>
-
                     <Button
                       type="submit"
                       color="primary"
-                      disabled={loadingChangePassword}
+                      disabled={
+                        loadingChangePassword ||
+                        newPasswordError ||
+                        confirmPasswordError
+                      }
                     >
                       {loadingChangePassword
                         ? "Changing..."
@@ -352,7 +514,6 @@ const Settings = () => {
                     <i className="ri-shield-user-line me-2"></i>
                     Data & Privacy
                   </h4>
-
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <div>
                       <h6>Download Your Data</h6>
@@ -365,7 +526,6 @@ const Settings = () => {
                       Download
                     </Button>
                   </div>
-
                   <div className="d-flex justify-content-between align-items-center mb-3">
                     <div>
                       <h6>Clear Local Data</h6>
@@ -383,7 +543,6 @@ const Settings = () => {
                   </div>
                 </CardBody>
               </Card>
-
               {/* Danger Zone */}
               <Card className="border-danger">
                 <CardBody>
@@ -391,12 +550,10 @@ const Settings = () => {
                     <i className="ri-error-warning-line me-2"></i>
                     Danger Zone
                   </h4>
-
                   <Alert color="warning">
                     <strong>Warning:</strong> These actions are irreversible.
                     Please be certain before proceeding.
                   </Alert>
-
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
                       <h6>Delete Account</h6>
@@ -418,8 +575,7 @@ const Settings = () => {
           </Row>
         </Container>
       </section>
-
-      {/* Delete Account Modal */}
+      {/* Delete Account Modal giữ nguyên */}
       <Modal isOpen={showDeleteModal} toggle={() => setShowDeleteModal(false)}>
         <ModalHeader toggle={() => setShowDeleteModal(false)}>
           Delete Account
