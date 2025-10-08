@@ -1,26 +1,31 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useLocation, useNavigate } from "react-router-dom";
 import { authAPI } from "../services/authService";
 import FullPageLoader from "../components/UI/FullPageLoader";
 
 const VerifyEmailOtp = () => {
-  const location = useLocation();
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [email, setEmail] = useState(location.state?.email || "");
+  // Lấy email từ localStorage (ưu tiên) hoặc location.state (cũ)
+  const [email, setEmail] = useState(
+    () => localStorage.getItem("pendingVerifyEmail") || ""
+  );
   const [resending, setResending] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleOtpChange = (index, value) => {
-    if (!/^\d*$/.test(value)) return; // Chỉ cho phép số
+  useEffect(() => {
+    // Nếu không có email, redirect về /register hoặc login
+    if (!email) {
+      navigate("/register");
+    }
+  }, [email, navigate]);
 
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
-    // Tự động focus sang ô tiếp theo
     if (value && index < 5) {
       const nextInput = document.getElementById(`otp-${index + 1}`);
       if (nextInput) nextInput.focus();
@@ -28,7 +33,6 @@ const VerifyEmailOtp = () => {
   };
 
   const handleOtpKeyDown = (index, e) => {
-    // Xử lý phím Backspace
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       const prevInput = document.getElementById(`otp-${index - 1}`);
       if (prevInput) prevInput.focus();
@@ -43,12 +47,13 @@ const VerifyEmailOtp = () => {
       return;
     }
     setLoading(true);
-    // Gọi API từ service
     const result = await authAPI.verifyEmailOtp(email, otpString);
     setLoading(false);
 
     if (result.success) {
       toast.success(result.message || "Email verified!");
+      // Xóa email pending khỏi localStorage
+      localStorage.removeItem("pendingVerifyEmail");
       navigate("/login");
     } else {
       toast.error(result.message || "Verification failed!");

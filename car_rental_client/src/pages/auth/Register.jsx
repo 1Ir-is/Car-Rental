@@ -166,13 +166,14 @@ const Register = () => {
         password: userData.password,
       };
       const result = await register(registrationData);
-      console.log(result); // Xem giá trị thực tế
 
       if (result.success && result.data && result.data.needVerify) {
         toast.success(
           result.data.message || result.message || "Registration successful!"
         );
-        navigate("/verify-email-otp", { state: { email: userData.email } });
+        // Lưu lại email pending vào localStorage để verify-email-otp có thể lấy lại
+        localStorage.setItem("pendingVerifyEmail", userData.email);
+        navigate("/verify-email-otp");
       } else {
         toast.error(
           result.data?.message || result.message || "Registration failed"
@@ -182,6 +183,7 @@ const Register = () => {
       toast.error("An error occurred during registration");
     }
   };
+
   return (
     <>
       <Helmet title="Register">

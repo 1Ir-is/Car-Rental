@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Container, Row, Col, Form, FormGroup, Input } from "reactstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import { useAuth } from "../../context/AuthContext";
 import Helmet from "../../components/Helmet/Helmet";
 import GoogleLoginButton from "../../components/Google/GoogleLoginButton";
@@ -33,7 +34,6 @@ const Login = () => {
     }
 
     try {
-      // Gọi login ở context, context sẽ tự fetch user info sau khi login thành công
       const result = await login({
         email: credentials.email,
         password: credentials.password,
@@ -44,7 +44,33 @@ const Login = () => {
         toast.success(result.message || "Login successful!");
         navigate("/home");
       } else {
-        toast.error(result.message || "Login failed");
+        // SweetAlert for email not verified
+        if (
+          result.error === "EMAIL_NOT_VERIFIED" ||
+          result.message?.includes("Email chưa được xác thực")
+        ) {
+          Swal.fire({
+            icon: "warning",
+            title: "Email chưa được xác thực!",
+            html: `
+              <p>Vui lòng kiểm tra hộp thư của bạn để xác thực tài khoản.</p>
+              <p>Nếu bạn chưa nhận được email, hãy kiểm tra cả mục Spam.</p>
+              <button id="verifyOtpBtn" class="swal2-confirm swal2-styled" style="margin-top:10px;">Nhập mã xác thực</button>
+            `,
+            showConfirmButton: false,
+            showCloseButton: true,
+            didOpen: () => {
+              document.getElementById("verifyOtpBtn").onclick = () => {
+                // Lưu email vào localStorage để trang verify-email-otp tự lấy
+                localStorage.setItem("pendingVerifyEmail", credentials.email);
+                navigate("/verify-email-otp");
+                Swal.close();
+              };
+            },
+          });
+        } else {
+          toast.error(result.message || "Login failed");
+        }
       }
     } catch (error) {
       toast.error("An error occurred during login");
