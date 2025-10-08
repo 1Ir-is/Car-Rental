@@ -10,19 +10,32 @@ import {
 } from "reactstrap";
 import { Link } from "react-router-dom";
 import Helmet from "../../components/Helmet/Helmet";
+import { toast } from "react-toastify";
+import { authAPI } from "../../services/authService"; 
 
 import "../../styles/auth/forgot-password.css";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!email) {
+      toast.error("Please enter your email address!");
+      return;
+    }
+    setLoading(true);
+    const result = await authAPI.forgotPassword(email);
+    setLoading(false);
 
-    // Handle forgot password logic here
-    console.log("Reset password for email:", email);
-    setIsSubmitted(true);
+    if (result.success) {
+      toast.success("Password reset link sent!");
+      setIsSubmitted(true);
+    } else {
+      toast.error(result.message || "Failed to send reset link!");
+    }
   };
 
   return (
@@ -50,11 +63,16 @@ const ForgotPassword = () => {
                             required
                             onChange={(e) => setEmail(e.target.value)}
                             value={email}
+                            disabled={loading}
                           />
                         </FormGroup>
 
-                        <Button type="submit" className="auth__btn w-100 mb-3">
-                          Send Reset Link
+                        <Button
+                          type="submit"
+                          className="auth__btn w-100 mb-3"
+                          disabled={loading}
+                        >
+                          {loading ? "Sending..." : "Send Reset Link"}
                         </Button>
                       </Form>
 

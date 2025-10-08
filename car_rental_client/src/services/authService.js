@@ -164,7 +164,7 @@ export const authAPI = {
     try {
       const response = await apiClient.post("/auth/forgot-password", { email });
       return {
-        success: true,
+        success: response.data.success,
         data: response.data,
         message: response.data.message || "Password reset email sent",
       };
@@ -185,7 +185,7 @@ export const authAPI = {
         password: newPassword,
       });
       return {
-        success: true,
+        success: response.data.success,
         data: response.data,
         message: response.data.message || "Password reset successful",
       };
@@ -193,6 +193,39 @@ export const authAPI = {
       return {
         success: false,
         message: error.response?.data?.message || "Password reset failed",
+        errors: error.response?.data?.errors || [],
+      };
+    }
+  },
+
+  // Get old password hash for reset password validation
+  getOldPasswordHash: async (token) => {
+    try {
+      const response = await apiClient.get(
+        `/auth/get-old-password-hash?token=${token}`
+      );
+      return response.data;
+    } catch (error) {
+      return { success: false };
+    }
+  },
+
+  // Change password for logged-in user
+  changePassword: async (oldPassword, newPassword) => {
+    try {
+      const response = await apiClient.post("/auth/change-password", {
+        oldPassword,
+        newPassword,
+      });
+      return {
+        success: response.data.success,
+        data: response.data,
+        message: response.data.message || "Password changed successfully",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Password change failed",
         errors: error.response?.data?.errors || [],
       };
     }

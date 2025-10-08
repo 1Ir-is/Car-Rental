@@ -430,3 +430,59 @@ input[type="password"]:not([type="text"]) {
     font-size: 12px;
   }
 }
+
+/* ========== Reset Password Success Styles ========== */
+
+.reset-success {
+  padding: 40px 20px;
+}
+
+.success-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  border-radius: 50%;
+  margin: 0 auto 20px;
+}
+
+.success-icon i {
+  font-size: 2.5rem;
+  color: #ffffff;
+}
+
+.reset-success .section__title {
+  color: #16a34a;
+  margin-bottom: 15px;
+}
+
+.reset-success .register__subtitle {
+  color: #6b7280;
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+.redirect-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #f0f9ff;
+  border: 1px solid #0ea5e9;
+  border-radius: 8px;
+  color: #0369a1;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.redirect-info i {
+  font-size: 1.1rem;
+}
+
+.redirect-info span {
+  min-width: 200px;
+  text-align: left;
+}
