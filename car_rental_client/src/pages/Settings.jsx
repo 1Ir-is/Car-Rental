@@ -21,10 +21,12 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import Helmet from "../components/Helmet/Helmet";
 import CommonSection from "../components/UI/CommonSection";
+import { authAPI } from "../services/authService";
 
 const Settings = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const [loadingChangePassword, setLoadingChangePassword] = useState(false);
 
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -76,17 +78,22 @@ const Settings = () => {
       return;
     }
 
-    try {
-      // Simulate API call to change password
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      toast.success("Password changed successfully!");
+    setLoadingChangePassword(true);
+    const result = await authAPI.changePassword(
+      passwordData.currentPassword,
+      passwordData.newPassword
+    );
+    setLoadingChangePassword(false);
+
+    if (result.success) {
+      toast.success(result.message || "Password changed successfully!");
       setPasswordData({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
       });
-    } catch (error) {
-      toast.error("Failed to change password");
+    } else {
+      toast.error(result.message || "Failed to change password");
     }
   };
 
@@ -325,8 +332,14 @@ const Settings = () => {
                       </Col>
                     </Row>
 
-                    <Button type="submit" color="primary">
-                      Change Password
+                    <Button
+                      type="submit"
+                      color="primary"
+                      disabled={loadingChangePassword}
+                    >
+                      {loadingChangePassword
+                        ? "Changing..."
+                        : "Change Password"}
                     </Button>
                   </Form>
                 </CardBody>

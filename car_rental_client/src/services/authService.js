@@ -210,7 +210,24 @@ export const authAPI = {
     }
   },
 
-  // Change password for logged-in user
+  getProfile: async () => {
+    try {
+      const response = await apiClient.get("/auth/profile");
+      return {
+        success: true,
+        data: response.data,
+        user: response.data.user,
+        passwordChangedAt: response.data.passwordChangedAt,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to fetch profile",
+        errors: error.response?.data?.errors || [],
+      };
+    }
+  },
+
   changePassword: async (oldPassword, newPassword) => {
     try {
       const response = await apiClient.post("/auth/change-password", {
@@ -226,24 +243,6 @@ export const authAPI = {
       return {
         success: false,
         message: error.response?.data?.message || "Password change failed",
-        errors: error.response?.data?.errors || [],
-      };
-    }
-  },
-
-  // Get current user profile
-  getProfile: async () => {
-    try {
-      const response = await apiClient.get("/auth/profile");
-      return {
-        success: true,
-        data: response.data,
-        user: response.data.user,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || "Failed to fetch profile",
         errors: error.response?.data?.errors || [],
       };
     }
