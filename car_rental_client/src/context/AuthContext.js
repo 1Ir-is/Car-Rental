@@ -150,59 +150,26 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (credentials) => {
     dispatch({ type: AuthActionTypes.LOGIN_START });
-
     try {
       const result = await authAPI.login(credentials);
 
       if (result.success) {
-        console.log("✅ Login successful, fetching fresh user profile...");
-
-        // Sau khi login thành công, lấy user profile mới nhất từ backend
-        try {
-          const profileResult = await userService.getCurrentProfile();
-
-          if (profileResult.success) {
-            // Sử dụng data mới nhất từ profile API
-            const freshUser = profileResult.data;
-            authUtils.saveUser(freshUser);
-            console.log("💾 Fresh user data saved:", freshUser);
-
-            dispatch({
-              type: AuthActionTypes.LOGIN_SUCCESS,
-              payload: { user: freshUser },
-            });
-
-            return { success: true, user: freshUser };
-          } else {
-            // Fallback: sử dụng data từ login response nếu không lấy được profile
-            console.log(
-              "⚠️ Could not fetch fresh profile, using login response data"
-            );
-            const loginUser = result.user;
-            if (loginUser) {
-              authUtils.saveUser(loginUser);
-            }
-
-            dispatch({
-              type: AuthActionTypes.LOGIN_SUCCESS,
-              payload: { user: loginUser },
-            });
-
-            return result;
-          }
-        } catch (profileError) {
-          console.error("❌ Error fetching fresh profile:", profileError);
-          // Fallback: sử dụng data từ login response
-          const loginUser = result.user;
-          if (loginUser) {
-            authUtils.saveUser(loginUser);
-          }
-
+        // Fetch profile mới nhất sau login
+        const profileResult = await userService.getCurrentProfile();
+        if (profileResult.success) {
+          const freshUser = profileResult.data;
+          authUtils.saveUser(freshUser); // Lưu vào localStorage
           dispatch({
             type: AuthActionTypes.LOGIN_SUCCESS,
-            payload: { user: loginUser },
+            payload: { user: freshUser },
           });
-
+          return { success: true, user: freshUser };
+        } else {
+          // Fallback
+          dispatch({
+            type: AuthActionTypes.LOGIN_SUCCESS,
+            payload: { user: result.user },
+          });
           return result;
         }
       } else {
@@ -213,12 +180,11 @@ export const AuthProvider = ({ children }) => {
         return result;
       }
     } catch (error) {
-      const errorMessage = "Login failed. Please try again.";
       dispatch({
         type: AuthActionTypes.LOGIN_FAILURE,
-        payload: { error: errorMessage },
+        payload: { error: "Login failed" },
       });
-      return { success: false, message: errorMessage };
+      return { success: false, message: "Login failed" };
     }
   };
 
