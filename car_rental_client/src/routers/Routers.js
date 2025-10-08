@@ -14,6 +14,7 @@ import Settings from "../pages/Settings";
 import BecomeDriver from "../pages/BecomeDriver";
 import { Login, Register, ForgotPassword } from "../pages/auth";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
+import VerifyEmailOtp from "../pages/VerifyEmailOtp";
 
 const Routers = () => {
   return (
@@ -29,6 +30,8 @@ const Routers = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+
+      <Route path="/verify-email-otp" element={<VerifyEmailOtp />} />
 
       {/* Become Driver Route */}
       <Route

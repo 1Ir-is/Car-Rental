@@ -12,7 +12,7 @@
 .login__form .section__title {
   text-align: center;
   margin-bottom: 10px;
-  color: #000d6b;
+  color: #1d4ed8;
   font-weight: 600;
 }
 
@@ -37,8 +37,55 @@
 }
 
 .login__form .form-control:focus {
-  border-color: #000d6b;
-  box-shadow: 0 0 0 0.2rem rgba(0, 13, 107, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.2);
+}
+
+/* Password Input with Toggle */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+  z-index: 10;
+  transition: color 0.3s ease;
+  outline: none;
+}
+
+.password-toggle-btn:hover {
+  color: #3b82f6;
+}
+
+.password-toggle-btn:focus {
+  color: #3b82f6;
+  outline: none;
+}
+
+/* Disable browser's built-in password toggle */
+.password-input-wrapper input::-ms-reveal,
+.password-input-wrapper input::-ms-clear {
+  display: none;
+}
+
+.password-input-wrapper input::-webkit-credentials-auto-fill-button,
+.password-input-wrapper input::-webkit-strong-password-auto-fill-button {
+  display: none !important;
+  position: absolute;
+  right: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .login__options {
@@ -54,7 +101,7 @@
   width: 18px;
   height: 18px;
   margin-right: 8px;
-  accent-color: #000d6b;
+  accent-color: #3b82f6;
 }
 
 .remember__me label {
@@ -64,7 +111,7 @@
 }
 
 .forgot__password {
-  color: #000d6b;
+  color: #3b82f6;
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
@@ -72,12 +119,12 @@
 }
 
 .forgot__password:hover {
-  color: #0056b3;
+  color: #1d4ed8;
   text-decoration: underline;
 }
 
 .auth__btn {
-  background: #000d6b;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   border: none;
   height: 50px;
   border-radius: 8px;
@@ -86,11 +133,22 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  color: #ffffff;
+  cursor: pointer;
 }
 
 .auth__btn:hover {
-  background: #0056b3;
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.auth__btn:disabled {
+  background: linear-gradient(135deg, #9ca3af, #6b7280);
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
 }
 
 .auth__link {
@@ -107,14 +165,14 @@
 }
 
 .auth__link a {
-  color: #000d6b;
+  color: #3b82f6;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .auth__link a:hover {
-  color: #0056b3;
+  color: #1d4ed8;
   text-decoration: underline;
 }
 

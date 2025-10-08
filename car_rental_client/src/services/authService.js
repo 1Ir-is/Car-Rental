@@ -216,23 +216,42 @@ export const authAPI = {
     }
   },
 
-  // Verify email
-  verifyEmail: async (token) => {
+  /** Xác thực OTP email */
+  verifyEmailOtp: async (email, otp) => {
     try {
-      const response = await apiClient.post("/auth/verify-email", { token });
+      const response = await apiClient.post("/auth/verify-email-otp", {
+        email,
+        otp,
+      });
+      // Nếu backend trả về kiểu: { success, message, ... }
       return {
-        success: true,
+        success: response.data.success,
+        message: response.data.message,
         data: response.data,
-        message: response.data.message || "Email verified successfully",
       };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || "Email verification failed",
-        errors: error.response?.data?.errors || [],
+        message: error.response?.data?.error || "Verification failed",
       };
     }
   },
+
+  resendOtp: async (email) => {
+    try {
+      const response = await apiClient.post("/auth/resend-otp", { email });
+      return {
+        success: response.data.success,
+        message: response.data.message,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.error || "Resend OTP failed",
+      };
+    }
+  },
+
   loginWithGoogle: async (idToken) => {
     try {
       const response = await apiClient.post("/auth/google", { idToken });

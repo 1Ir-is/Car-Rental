@@ -1,19 +1,11 @@
 import React, { useState } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  FormGroup,
-  Input,
-  Button,
-  Spinner,
-} from "reactstrap";
+import { Container, Row, Col, Form, FormGroup, Input } from "reactstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import Helmet from "../../components/Helmet/Helmet";
 import GoogleLoginButton from "../../components/Google/GoogleLoginButton";
+import FullPageLoader from "../../components/UI/FullPageLoader";
 
 import "../../styles/auth/login.css";
 
@@ -26,6 +18,7 @@ const Login = () => {
     password: "",
   });
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setCredentials((prev) => ({ ...prev, [e.target.id]: e.target.value }));
@@ -59,98 +52,114 @@ const Login = () => {
   };
 
   return (
-    <Helmet title="Login">
-      <section>
-        <Container>
-          <Row>
-            <Col lg="6" md="8" sm="12" className="m-auto">
-              <div className="login__container">
-                <div className="login__form">
-                  <h2 className="section__title">Login to Your Account</h2>
-                  <p className="login__subtitle">
-                    Welcome back! Please enter your credentials to continue.
-                  </p>
+    <>
+      <Helmet title="Login">
+        <section>
+          <Container>
+            <Row>
+              <Col lg="6" md="8" sm="12" className="m-auto">
+                <div className="login__container">
+                  <div className="login__form">
+                    <h2 className="section__title">Login to Your Account</h2>
+                    <p className="login__subtitle">
+                      Welcome back! Please enter your credentials to continue.
+                    </p>
 
-                  <Form onSubmit={handleSubmit}>
-                    <FormGroup>
-                      <Input
-                        type="email"
-                        placeholder="Enter your email"
-                        id="email"
-                        required
-                        onChange={handleChange}
-                        value={credentials.email}
-                        disabled={loading}
-                      />
-                    </FormGroup>
-
-                    <FormGroup>
-                      <Input
-                        type="password"
-                        placeholder="Enter your password"
-                        id="password"
-                        required
-                        onChange={handleChange}
-                        value={credentials.password}
-                        disabled={loading}
-                      />
-                    </FormGroup>
-
-                    <div className="login__options d-flex align-items-center justify-content-between mb-4">
-                      <div className="remember__me">
+                    <Form onSubmit={handleSubmit}>
+                      <FormGroup>
                         <Input
-                          type="checkbox"
-                          id="remember"
-                          checked={rememberMe}
-                          onChange={(e) => setRememberMe(e.target.checked)}
+                          type="email"
+                          placeholder="Enter your email"
+                          id="email"
+                          required
+                          onChange={handleChange}
+                          value={credentials.email}
                           disabled={loading}
                         />
-                        <label htmlFor="remember" className="ms-2">
-                          Remember me
-                        </label>
+                      </FormGroup>
+
+                      <FormGroup>
+                        <div className="password-input-wrapper">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            id="password"
+                            required
+                            onChange={handleChange}
+                            value={credentials.password}
+                            disabled={loading}
+                            autoComplete="current-password"
+                            style={{ paddingRight: "45px" }}
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle-btn"
+                            onClick={() => setShowPassword(!showPassword)}
+                            tabIndex={-1}
+                          >
+                            <i
+                              className={`ri-eye${
+                                showPassword ? "-off" : ""
+                              }-line`}
+                            ></i>
+                          </button>
+                        </div>
+                      </FormGroup>
+
+                      <div className="login__options d-flex align-items-center justify-content-between mb-4">
+                        <div className="remember__me">
+                          <Input
+                            type="checkbox"
+                            id="remember"
+                            checked={rememberMe}
+                            onChange={(e) => setRememberMe(e.target.checked)}
+                            disabled={loading}
+                          />
+                          <label htmlFor="remember" className="ms-2">
+                            Remember me
+                          </label>
+                        </div>
+                        <Link
+                          to="/forgot-password"
+                          className="forgot__password"
+                        >
+                          Forgot Password?
+                        </Link>
                       </div>
-                      <Link to="/forgot-password" className="forgot__password">
-                        Forgot Password?
-                      </Link>
+
+                      <button
+                        type="submit"
+                        className="auth__btn w-100"
+                        disabled={loading}
+                      >
+                        LOGIN
+                      </button>
+                    </Form>
+
+                    <div className="auth__link">
+                      <p>
+                        Don't have an account?{" "}
+                        <Link to="/register">Create one here</Link>
+                      </p>
                     </div>
 
-                    <Button
-                      type="submit"
-                      className="auth__btn w-100"
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <Spinner size="sm" className="me-2" />
-                          Logging in...
-                        </>
-                      ) : (
-                        "Login"
-                      )}
-                    </Button>
-                  </Form>
-
-                  <div className="auth__link">
-                    <p>
-                      Don't have an account?{" "}
-                      <Link to="/register">Create one here</Link>
-                    </p>
-                  </div>
-
-                  <div className="social__login">
-                    <p className="text-center mb-3">Or login with</p>
-                    <div className="social__buttons d-flex gap-3 justify-content-center">
-                      <GoogleLoginButton />
-                      {/* Nếu muốn Facebook sau này thì để đây */}
+                    <div className="social__login">
+                      <p className="text-center mb-3">Or login with</p>
+                      <div className="social__buttons d-flex gap-3 justify-content-center">
+                        <GoogleLoginButton />
+                        {/* Nếu muốn Facebook sau này thì để đây */}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Col>
-          </Row>
-        </Container>
-      </section>
-    </Helmet>
+              </Col>
+            </Row>
+          </Container>
+        </section>
+      </Helmet>
+
+      <FullPageLoader isLoading={loading} tip="Đang đăng nhập..." />
+    </>
   );
 };
 

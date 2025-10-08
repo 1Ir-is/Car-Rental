@@ -49,6 +49,39 @@ h6 {
 h3,
 h4 {
   font-size: 1.6rem;
+
+  /* Ant Design DatePicker custom styling */
+  .ant-picker {
+    border: 1px solid #ced4da !important;
+    border-radius: 0.25rem !important;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  }
+
+  .ant-picker:hover {
+    border-color: #86b7fe !important;
+  }
+
+  .ant-picker-focused {
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+  }
+
+  .ant-picker-input > input {
+    font-size: 1rem !important;
+    color: #495057 !important;
+  }
+
+  .ant-picker-input > input::placeholder {
+    color: #6c757d !important;
+  }
+
+  .ant-picker-suffix {
+    color: #6c757d !important;
+  }
+
+  .ant-picker-clear {
+    color: #6c757d !important;
+  }
 }
 
 h5,

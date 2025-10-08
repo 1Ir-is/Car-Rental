@@ -12,7 +12,7 @@
 .register__form .section__title {
   text-align: center;
   margin-bottom: 10px;
-  color: #000d6b;
+  color: #1d4ed8;
   font-weight: 600;
 }
 
@@ -37,8 +37,194 @@
 }
 
 .register__form .form-control:focus {
-  border-color: #000d6b;
-  box-shadow: 0 0 0 0.2rem rgba(0, 13, 107, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.2);
+}
+
+.register__form .form-control.is-invalid {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 0.2rem rgba(220, 38, 38, 0.1);
+}
+
+/* Password Input with Toggle */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  position: relative;
+  z-index: 1;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+  z-index: 10;
+  transition: color 0.3s ease;
+  outline: none;
+}
+
+.password-toggle-btn:hover {
+  color: #3b82f6;
+}
+
+.password-toggle-btn:focus {
+  color: #3b82f6;
+  outline: none;
+}
+
+/* Disable browser's built-in password toggle and autofill icons */
+.password-input-wrapper input::-ms-reveal,
+.password-input-wrapper input::-ms-clear {
+  display: none !important;
+}
+
+.password-input-wrapper input::-webkit-credentials-auto-fill-button,
+.password-input-wrapper input::-webkit-strong-password-auto-fill-button {
+  display: none !important;
+  position: absolute;
+  right: 0;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Hide all browser autofill icons - comprehensive approach */
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-strong-password-auto-fill-button,
+input[type="password"]::-webkit-password-reveal,
+input[type="password"]::-webkit-caps-lock-indicator {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  right: -999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+}
+
+/* Additional browser compatibility */
+input[type="password"]::-ms-reveal {
+  display: none !important;
+}
+
+input[type="password"]::-ms-clear {
+  display: none !important;
+}
+
+/* Force hide Edge/Chrome password reveal button */
+input[type="password"]::-webkit-textfield-decoration-container {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  right: -999px !important;
+}
+
+/* Completely disable password reveal for all password inputs */
+input[type="password"] {
+  -webkit-text-security: disc !important;
+}
+
+input[type="password"]:not([type="text"]) {
+  -webkit-text-security: disc !important;
+}
+
+/* Hide any possible icons in password input wrapper */
+.password-input-wrapper input::after,
+.password-input-wrapper input::before {
+  display: none !important;
+}
+
+/* Force hide any background images or icons in password inputs */
+.password-input-wrapper input[type="password"] {
+  background-image: none !important;
+  background-position: 0 0 !important;
+  background-repeat: no-repeat !important;
+  background-size: 0 !important;
+}
+
+/* Hide Reactstrap/Bootstrap input icons */
+.password-input-wrapper .form-control::after,
+.password-input-wrapper .form-control::before {
+  display: none !important;
+}
+
+/* Override any RemixIcon classes that might appear */
+.password-input-wrapper
+  [class*="ri-"]:not(.password-toggle-btn [class*="ri-"]) {
+  display: none !important;
+}
+
+/* Password Requirements */
+.password-requirements {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.requirements-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 10px;
+}
+
+.requirements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.requirement-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  transition: all 0.3s ease;
+}
+
+.requirement-item i {
+  font-size: 14px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.requirement-item.met {
+  color: #16a34a;
+}
+
+.requirement-item.met i {
+  color: #16a34a;
+}
+
+.requirement-item:not(.met) i {
+  color: #dc2626;
+}
+
+/* Password Error Message */
+.password-error {
+  margin-top: 5px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .terms__conditions {
@@ -51,7 +237,7 @@
   width: 18px;
   height: 18px;
   margin-top: 3px;
-  accent-color: #000d6b;
+  accent-color: #3b82f6;
   flex-shrink: 0;
 }
 
@@ -63,19 +249,19 @@
 }
 
 .terms__link {
-  color: #000d6b;
+  color: #3b82f6;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.3s ease;
 }
 
 .terms__link:hover {
-  color: #0056b3;
+  color: #1d4ed8;
   text-decoration: underline;
 }
 
 .auth__btn {
-  background: #000d6b;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   border: none;
   height: 50px;
   border-radius: 8px;
@@ -84,11 +270,47 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  color: #ffffff;
+  cursor: pointer;
 }
 
 .auth__btn:hover {
-  background: #0056b3;
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.auth__btn:disabled {
+  background: linear-gradient(135deg, #9ca3af, #6b7280);
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+.auth__btn:disabled:hover {
+  background: linear-gradient(135deg, #9ca3af, #6b7280);
+  transform: none;
+  box-shadow: none;
+}
+
+/* Custom Ant Design Spin overlay */
+.ant-spin-container {
+  position: relative;
+}
+
+.ant-spin-spinning .ant-spin-dot {
+  color: #3b82f6 !important;
+}
+
+.ant-spin-spinning .ant-spin-dot-item {
+  background-color: #3b82f6 !important;
+}
+
+.ant-spin-text {
+  color: #3b82f6 !important;
+  font-weight: 500;
 }
 
 .auth__link {
@@ -105,14 +327,14 @@
 }
 
 .auth__link a {
-  color: #000d6b;
+  color: #3b82f6;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.3s ease;
 }
 
 .auth__link a:hover {
-  color: #0056b3;
+  color: #1d4ed8;
   text-decoration: underline;
 }
 
@@ -194,5 +416,17 @@
 
   .terms__conditions input[type="checkbox"] {
     margin-top: 0;
+  }
+
+  .password-requirements {
+    padding: 12px;
+  }
+
+  .requirements-title {
+    font-size: 13px;
+  }
+
+  .requirement-item {
+    font-size: 12px;
   }
 }

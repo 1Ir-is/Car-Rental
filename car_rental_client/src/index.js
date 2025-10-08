@@ -6,6 +6,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "remixicon/fonts/remixicon.css";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import "antd/dist/reset.css";
 
 import { BrowserRouter as Router } from "react-router-dom";
 

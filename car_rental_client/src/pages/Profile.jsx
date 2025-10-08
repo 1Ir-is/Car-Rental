@@ -12,6 +12,8 @@ import {
   Button,
   Spinner,
 } from "reactstrap";
+import { DatePicker } from "antd";
+import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import Helmet from "../components/Helmet/Helmet";
@@ -30,6 +32,7 @@ const Profile = () => {
     dateOfBirth: "",
     avatar: "",
   });
+  const [selectedDate, setSelectedDate] = useState(null);
 
   // Load user data when component mounts
   useEffect(() => {
@@ -44,6 +47,19 @@ const Profile = () => {
       };
       setFormData(userData);
       setAvatarPreview(user.avatar || "");
+
+      // Set selected date for DatePicker
+      if (user.dateOfBirth) {
+        try {
+          // Parse date ensuring correct timezone handling
+          const dateStr = user.dateOfBirth.includes("T")
+            ? user.dateOfBirth.split("T")[0]
+            : user.dateOfBirth;
+          setSelectedDate(dayjs(dateStr));
+        } catch (error) {
+          setSelectedDate(null);
+        }
+      }
     }
   }, [user]);
 
@@ -52,6 +68,14 @@ const Profile = () => {
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
+    }));
+  };
+
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+    setFormData((prevData) => ({
+      ...prevData,
+      dateOfBirth: date ? date.format("YYYY-MM-DD") : "",
     }));
   };
 
@@ -179,20 +203,6 @@ const Profile = () => {
       )}`.toUpperCase();
     }
     return name.charAt(0).toUpperCase();
-  };
-
-  // Helper function to convert date to input format (YYYY-MM-DD)
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return "";
-    try {
-      const date = new Date(dateString);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    } catch (error) {
-      return "";
-    }
   };
 
   if (!user) {
@@ -446,14 +456,33 @@ const Profile = () => {
                       <Col md="6">
                         <FormGroup>
                           <Label for="dateOfBirth">Date of Birth</Label>
-                          <Input
-                            type="date"
-                            id="dateOfBirth"
-                            name="dateOfBirth"
-                            value={formatDateForInput(formData.dateOfBirth)}
-                            onChange={handleInputChange}
-                            max={new Date().toISOString().split("T")[0]} // Prevent future dates
-                          />
+                          <div className="position-relative">
+                            <DatePicker
+                              id="dateOfBirth"
+                              value={selectedDate}
+                              onChange={handleDateChange}
+                              format="DD/MM/YYYY"
+                              maxDate={dayjs()}
+                              placeholder="Select your date of birth"
+                              style={{
+                                width: "100%",
+                                height: "38px",
+                                borderRadius: "4px",
+                                borderColor: "#ced4da",
+                              }}
+                              allowClear
+                              changeOnBlur
+                              showToday={false}
+                              picker="date"
+                              size="large"
+                              suffixIcon={
+                                <i
+                                  className="ri-calendar-line"
+                                  style={{ color: "#6c757d" }}
+                                ></i>
+                              }
+                            />
+                          </div>
                         </FormGroup>
                       </Col>
                     </Row>
