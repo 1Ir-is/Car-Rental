@@ -11,7 +11,6 @@ import {
   Label,
   Input,
   Button,
-  Spinner,
   Alert,
 } from "reactstrap";
 import { toast } from "react-toastify";
@@ -20,6 +19,7 @@ import { applicationService } from "../services/applicationService";
 import { useNavigate } from "react-router-dom";
 import Helmet from "../components/Helmet/Helmet";
 import CommonSection from "../components/UI/CommonSection";
+import FullPageLoader from "../components/UI/FullPageLoader";
 import "../styles/become-driver.css";
 
 const BecomeDriver = () => {
@@ -81,29 +81,6 @@ const BecomeDriver = () => {
       ...prev,
       [name]: value,
     }));
-  };
-
-  // Smooth scroll to top function
-  const smoothScrollToTop = () => {
-    const start = window.pageYOffset;
-    const startTime = performance.now();
-    const duration = 800; // 800ms for smooth scroll
-
-    const animateScroll = (currentTime) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Easing function for smooth animation
-      const easeOutCubic = 1 - Math.pow(1 - progress, 3);
-
-      window.scrollTo(0, start * (1 - easeOutCubic));
-
-      if (progress < 1) {
-        requestAnimationFrame(animateScroll);
-      }
-    };
-
-    requestAnimationFrame(animateScroll);
   };
 
   const handleSubmit = async (e) => {
@@ -183,7 +160,7 @@ const BecomeDriver = () => {
         className="d-flex justify-content-center align-items-center"
         style={{ minHeight: "50vh" }}
       >
-        <Spinner color="primary" />
+        <div className="spinner-border text-primary" role="status"></div>
         <span className="ms-2">
           {!isAuthenticated
             ? "Redirecting to login..."
@@ -200,7 +177,7 @@ const BecomeDriver = () => {
       <section className="become-driver-section">
         <Container>
           <Row className="justify-content-center">
-            <Col lg="8" md="10">
+            <Col lg="12" md="12">
               {/* Application Status Card - Show if user has existing application */}
               {existingApplication && (
                 <Card className="application-status-card mb-4">
@@ -338,15 +315,15 @@ const BecomeDriver = () => {
 
                   <CardBody>
                     <Form onSubmit={handleSubmit}>
-                      {/* Personal Information Section */}
-                      <div className="form-section">
-                        <h5 className="section-title">
-                          <i className="ri-user-line me-2"></i>
-                          Personal Information
-                        </h5>
+                      <Row>
+                        {/* Personal Information Section */}
+                        <Col lg="6">
+                          <div className="form-section">
+                            <h5 className="section-title">
+                              <i className="ri-user-line me-2"></i>
+                              Personal Information
+                            </h5>
 
-                        <Row>
-                          <Col md="6">
                             <FormGroup>
                               <Label for="name">
                                 Full Name <span className="required">*</span>
@@ -361,9 +338,7 @@ const BecomeDriver = () => {
                                 required
                               />
                             </FormGroup>
-                          </Col>
 
-                          <Col md="6">
                             <FormGroup>
                               <Label for="email">
                                 Email Address{" "}
@@ -379,11 +354,7 @@ const BecomeDriver = () => {
                                 required
                               />
                             </FormGroup>
-                          </Col>
-                        </Row>
 
-                        <Row>
-                          <Col md="6">
                             <FormGroup>
                               <Label for="phone">
                                 Phone Number <span className="required">*</span>
@@ -398,9 +369,7 @@ const BecomeDriver = () => {
                                 required
                               />
                             </FormGroup>
-                          </Col>
 
-                          <Col md="6">
                             <FormGroup>
                               <Label for="identity">
                                 Identity Number (CCCD/CMND){" "}
@@ -416,35 +385,33 @@ const BecomeDriver = () => {
                                 required
                               />
                             </FormGroup>
-                          </Col>
-                        </Row>
 
-                        <FormGroup>
-                          <Label for="address">
-                            Address <span className="required">*</span>
-                          </Label>
-                          <Input
-                            type="textarea"
-                            id="address"
-                            name="address"
-                            rows="3"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                            placeholder="Enter your full address"
-                            required
-                          />
-                        </FormGroup>
-                      </div>
+                            <FormGroup>
+                              <Label for="address">
+                                Address <span className="required">*</span>
+                              </Label>
+                              <Input
+                                type="textarea"
+                                id="address"
+                                name="address"
+                                rows="3"
+                                value={formData.address}
+                                onChange={handleInputChange}
+                                placeholder="Enter your full address"
+                                required
+                              />
+                            </FormGroup>
+                          </div>
+                        </Col>
 
-                      {/* Application Details Section */}
-                      <div className="form-section">
-                        <h5 className="section-title">
-                          <i className="ri-settings-line me-2"></i>
-                          Application Details
-                        </h5>
+                        {/* Application Details Section */}
+                        <Col lg="6">
+                          <div className="form-section">
+                            <h5 className="section-title">
+                              <i className="ri-settings-line me-2"></i>
+                              Application Details
+                            </h5>
 
-                        <Row>
-                          <Col md="6">
                             <FormGroup>
                               <Label for="type">
                                 Application Type{" "}
@@ -471,9 +438,7 @@ const BecomeDriver = () => {
                                   : "Business entity with multiple vehicles"}
                               </small>
                             </FormGroup>
-                          </Col>
 
-                          <Col md="6">
                             <FormGroup>
                               <Label for="title">
                                 Application Title{" "}
@@ -489,52 +454,54 @@ const BecomeDriver = () => {
                                 required
                               />
                             </FormGroup>
-                          </Col>
-                        </Row>
 
-                        <FormGroup>
-                          <Label for="description">
-                            Description / Additional Information
-                          </Label>
-                          <Input
-                            type="textarea"
-                            id="description"
-                            name="description"
-                            rows="4"
-                            value={formData.description}
-                            onChange={handleInputChange}
-                            placeholder="Tell us about your driving experience, vehicle details, or any additional information..."
-                          />
-                          <small className="form-text text-muted">
-                            Include information about your driving experience,
-                            vehicle type, availability, etc.
-                          </small>
-                        </FormGroup>
-                      </div>
+                            <FormGroup>
+                              <Label for="description">
+                                Description / Additional Information
+                              </Label>
+                              <Input
+                                type="textarea"
+                                id="description"
+                                name="description"
+                                rows="4"
+                                value={formData.description}
+                                onChange={handleInputChange}
+                                placeholder="Tell us about your driving experience, vehicle details, or any additional information..."
+                              />
+                              <small className="form-text text-muted">
+                                Include information about your driving
+                                experience, vehicle type, availability, etc.
+                              </small>
+                            </FormGroup>
 
-                      {/* Terms and Conditions */}
-                      <Alert color="info" className="terms-alert">
-                        <h6>
-                          <i className="ri-information-line me-2"></i>Important
-                          Information
-                        </h6>
-                        <ul className="mb-0">
-                          <li>
-                            Your application will be reviewed within 3-5
-                            business days
-                          </li>
-                          <li>
-                            You must have a valid driver's license and insurance
-                          </li>
-                          <li>
-                            Vehicle inspection may be required upon approval
-                          </li>
-                          <li>
-                            All information provided must be accurate and
-                            verifiable
-                          </li>
-                        </ul>
-                      </Alert>
+                            {/* Important Information Alert */}
+                            <Alert color="info" className="mt-4">
+                              <h6 className="alert-heading">
+                                <i className="ri-information-line me-2"></i>
+                                Important Information
+                              </h6>
+                              <ul className="mb-0">
+                                <li>
+                                  Your application will be reviewed within 3-5
+                                  business days
+                                </li>
+                                <li>
+                                  You must have a valid driver's license and
+                                  insurance
+                                </li>
+                                <li>
+                                  Vehicle inspection may be required upon
+                                  approval
+                                </li>
+                                <li>
+                                  All information provided must be accurate and
+                                  verifiable
+                                </li>
+                              </ul>
+                            </Alert>
+                          </div>
+                        </Col>
+                      </Row>
 
                       {/* Submit Button */}
                       <div className="text-center mt-4">
@@ -545,17 +512,8 @@ const BecomeDriver = () => {
                           disabled={loading}
                           className="submit-btn"
                         >
-                          {loading ? (
-                            <>
-                              <Spinner size="sm" className="me-2" />
-                              Submitting Application...
-                            </>
-                          ) : (
-                            <>
-                              <i className="ri-send-plane-line me-2"></i>
-                              Submit Application
-                            </>
-                          )}
+                          <i className="ri-send-plane-line me-2"></i>
+                          Submit Application
                         </Button>
                       </div>
                     </Form>
@@ -566,6 +524,8 @@ const BecomeDriver = () => {
           </Row>
         </Container>
       </section>
+
+      <FullPageLoader isLoading={loading} tip="Đang gửi đơn đăng ký..." />
     </Helmet>
   );
 };

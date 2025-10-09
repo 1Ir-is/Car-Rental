@@ -177,6 +177,7 @@ export const AuthProvider = ({ children }) => {
           type: AuthActionTypes.LOGIN_FAILURE,
           payload: { error: result.message },
         });
+        // Return the full result object to preserve error details
         return result;
       }
     } catch (error) {
@@ -387,6 +388,7 @@ export const AuthProvider = ({ children }) => {
           type: AuthActionTypes.LOGIN_FAILURE,
           payload: { error: result.message },
         });
+        // Return the full result object to preserve error details
         return result;
       }
     } catch (error) {

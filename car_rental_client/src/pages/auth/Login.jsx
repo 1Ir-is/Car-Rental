@@ -43,40 +43,46 @@ const Login = () => {
       if (result.success) {
         toast.success(result.message || "Login successful!");
         navigate("/home");
-      } else {
-        // SweetAlert for email not verified
-        if (
-          result.error === "EMAIL_NOT_VERIFIED" ||
-          result.message?.includes("Email chưa được xác thực")
-        ) {
-          Swal.fire({
-            icon: "warning",
-            title: "Email chưa được xác thực!",
-            html: `
-              <p>Vui lòng kiểm tra hộp thư của bạn để xác thực tài khoản.</p>
-              <p>Nếu bạn chưa nhận được email, hãy kiểm tra cả mục Spam.</p>
-              <button id="verifyOtpBtn" class="swal2-confirm swal2-styled" style="margin-top:10px;">Nhập mã xác thực</button>
-            `,
-            showConfirmButton: false,
-            showCloseButton: true,
-            didOpen: () => {
-              document.getElementById("verifyOtpBtn").onclick = () => {
-                // Lưu email vào localStorage để trang verify-email-otp tự lấy
-                localStorage.setItem("pendingVerifyEmail", credentials.email);
-                navigate("/verify-email-otp");
-                Swal.close();
-              };
-            },
-          });
-        } else {
-          toast.error(result.message || "Login failed");
-        }
+        return;
       }
+
+      // FIX: Điều hướng khi bị block
+      if (result.error === "ACCOUNT_DISABLED") {
+        navigate("/account-suspended");
+        return;
+      }
+
+      if (
+        result.error === "EMAIL_NOT_VERIFIED" ||
+        result.message?.includes("Email chưa được xác thực")
+      ) {
+        Swal.fire({
+          icon: "warning",
+          title: "Email chưa được xác thực!",
+          html: `
+            <p>Vui lòng kiểm tra hộp thư của bạn để xác thực tài khoản.</p>
+            <p>Nếu bạn chưa nhận được email, hãy kiểm tra cả mục Spam.</p>
+            <button id="verifyOtpBtn" class="swal2-confirm swal2-styled" style="margin-top:10px;">Nhập mã xác thực</button>
+          `,
+          showConfirmButton: false,
+          showCloseButton: true,
+          didOpen: () => {
+            document.getElementById("verifyOtpBtn").onclick = () => {
+              localStorage.setItem("pendingVerifyEmail", credentials.email);
+              navigate("/verify-email-otp");
+              Swal.close();
+            };
+          },
+        });
+        return;
+      }
+
+      // Các trường hợp lỗi khác
+      toast.error(result.message || "Login failed");
     } catch (error) {
       toast.error("An error occurred during login");
     }
   };
-
   return (
     <>
       <Helmet title="Login">

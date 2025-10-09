@@ -17,6 +17,7 @@ import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 import VerifyEmailOtp from "../pages/VerifyEmailOtp";
 import ResetPassword from "../pages/auth/ResetPassword";
 import RedirectIfAuthenticated from "../components/RedirectIfAuthenticated";
+import AccountSuspended from "../pages/AccountSuspended";
 
 const Routers = () => {
   return (
@@ -29,6 +30,7 @@ const Routers = () => {
       <Route path="/blogs" element={<Blog />} />
       <Route path="/blogs/:slug" element={<BlogDetails />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/account-suspended" element={<AccountSuspended />} />
       <Route
         path="/login"
         element={

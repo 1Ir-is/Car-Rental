@@ -570,7 +570,7 @@ input[type="password"]:not([type="text"]) {
 }
 
 .already-logged-icon::before {
-  content: '';
+  content: "";
   position: absolute;
   top: -4px;
   left: -4px;
@@ -590,7 +590,8 @@ input[type="password"]:not([type="text"]) {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {
@@ -608,7 +609,8 @@ input[type="password"]:not([type="text"]) {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {

@@ -75,12 +75,8 @@ export const authAPI = {
       console.log("📨 Backend response:", response.data);
       console.log("📨 Status:", response.status);
 
-      // Handle HttpOnly cookie-based authentication
       if (response.data.success === true && response.status === 200) {
         console.log("✅ Login successful with HttpOnly cookies!");
-
-        // Backend đã set HttpOnly cookie, không cần lưu token
-        // Chỉ cần lưu user data để hiển thị UI
         const user = response.data.user || {
           id: Date.now(),
           name: credentials.email.split("@")[0],
@@ -88,7 +84,6 @@ export const authAPI = {
           avatar: null,
         };
 
-        // Chỉ lưu user data, không lưu token (vì đã có HttpOnly cookie)
         localStorage.setItem("user", JSON.stringify(user));
         console.log("💾 Stored user data (token in HttpOnly cookie):", user);
 
@@ -109,7 +104,6 @@ export const authAPI = {
       const user = response.data.user || response.data.data;
 
       if (token && user) {
-        // Store real auth data (backup cho trường hợp không dùng HttpOnly cookies)
         localStorage.setItem("authToken", token);
         localStorage.setItem("user", JSON.stringify(user));
         console.log("💾 Stored real auth data");
@@ -123,15 +117,41 @@ export const authAPI = {
         };
       }
 
-      // If we get here, backend response is unexpected
       return {
         success: false,
         message: "Unexpected response format from server",
       };
     } catch (error) {
+      // Fix: Detect account disabled (HTTP 403)
+      if (error.response?.status === 403) {
+        // Ưu tiên lấy thông tin cụ thể nếu backend trả về
+        const backendError = error.response?.data?.error;
+        const backendMessage = error.response?.data?.message;
+        if (
+          backendError === "ACCOUNT_DISABLED" ||
+          backendMessage?.includes("ACCOUNT_DISABLED") ||
+          backendMessage?.includes("Tài khoản đã bị tạm ngừng") ||
+          backendMessage?.includes("bị khóa")
+        ) {
+          return {
+            success: false,
+            error: "ACCOUNT_DISABLED",
+            message: backendMessage || "Tài khoản đã bị tạm ngừng",
+          };
+        }
+        // Nếu backend chỉ trả về message "Login failed"
+        return {
+          success: false,
+          error: "ACCOUNT_DISABLED",
+          message: "Tài khoản đã bị tạm ngừng hoặc bị khóa",
+        };
+      }
+
+      // Các lỗi khác
       console.error("❌ Login error:", error);
       return {
         success: false,
+        error: error.response?.data?.error,
         message: error.response?.data?.message || "Login failed",
         errors: error.response?.data?.errors || [],
       };
@@ -294,6 +314,27 @@ export const authAPI = {
       return {
         success: false,
         error: error.response?.data?.error || "Token đã hết hạn",
+      };
+    }
+  },
+
+  // Kiểm tra trạng thái tài khoản
+  checkAccountStatus: async (email) => {
+    try {
+      const response = await apiClient.post("/auth/check-account-status", {
+        email,
+      });
+      return {
+        success: true,
+        data: response.data,
+        isDisabled: response.data.isDisabled || false,
+        status: response.data.status,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Failed to check account status",
       };
     }
   },

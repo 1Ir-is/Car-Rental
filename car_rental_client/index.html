@@ -1,265 +1,452 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Owner Application Submitted - Car Rental</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>User Details - Auto Rent Admin</title>
+    <link rel="stylesheet" th:href="@{/css/customer-detail.css}" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
+      /* Profile Header styles for "Image 1" look */
+      .customer-profile-header-v2 {
+        margin: 30px 0 0 0;
       }
 
-      body {
-        background: #f8fafc;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Oxygen, Ubuntu, Cantarell, sans-serif;
-        margin: 0;
-        padding: 20px;
-        color: #333;
-        min-height: 100vh;
+      .customer-details-grid {
+        margin-top: 32px; /* hoặc 36px, 40px tuỳ ý */
       }
 
-      .email-wrapper {
-        max-width: 900px;
-        margin: 0 auto;
-        background: #ffffff;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e2e8f0;
+      .profile-actions-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 0 0 14px 0;
       }
 
-      .content {
-        padding: 50px 90px 40px;
+      .profile-actions {
+        display: flex;
+        gap: 12px;
       }
 
-      .title {
-        font-size: 28px;
-        font-weight: 700;
-        color: #1a202c;
-        margin-bottom: 20px;
-        text-align: center;
-        line-height: 1.3;
+      .profile-avatar {
+        width: 112px;
+        height: 112px;
+        border-radius: 50%;
+        border: 5px solid #fff;
+        background: #4f46e5;
+        box-shadow: 0 2px 16px rgba(59, 130, 246, 0.13);
+        font-size: 42px;
+        object-fit: cover;
       }
 
-      .greeting {
-        font-size: 18px;
-        color: #4a5568;
-        margin-bottom: 30px;
-        line-height: 1.6;
+      .profile-username {
+        margin-bottom: 10px;
+        font-size: 1.18rem;
+        font-weight: 400;
+        opacity: 0.93;
       }
 
-      .user-name {
-        font-weight: 700;
-        color: #2563eb;
+      .profile-badges {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 18px;
       }
 
-      .status-container {
-        text-align: center;
-        margin: 35px 0;
-      }
-
-      .status {
-        background: #fef3c7;
-        color: #92400e;
-        font-weight: 700;
-        padding: 12px 24px;
-        border-radius: 25px;
-        font-size: 16px;
-        display: inline-block;
-        box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
-        border: 1px solid #fbbf24;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .status::before {
-        content: "⏳";
-        margin-right: 8px;
-        font-size: 18px;
-      }
-
-      .message {
-        font-size: 16px;
-        color: #4a5568;
-        line-height: 1.8;
-        margin-bottom: 35px;
-        background: #f8fafc;
-        padding: 25px;
-        border-radius: 8px;
-        border-left: 4px solid #2563eb;
-      }
-
-      .btn-container {
-        text-align: center;
-        margin: 40px 0;
-      }
-
-      .btn {
-        display: inline-block;
-        background: #2563eb !important;
-        color: #ffffff !important;
-        text-decoration: none !important;
-        padding: 14px 32px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 16px;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
-        position: relative;
-        overflow: hidden;
-        border: none !important;
-      }
-
-      .btn::before {
-        display: none;
-      }
-
-      .btn:hover {
-        transform: translateY(-1px);
-        background: #1d4ed8 !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-      }
-
-      .divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
-        margin: 40px 0;
-      }
-
-      .footer {
-        background: #f8fafc;
-        padding: 30px 90px;
-        text-align: center;
-        border-top: 1px solid #e2e8f0;
-      }
-
-      .footer-text {
-        font-size: 14px;
-        color: #718096;
-        line-height: 1.6;
-        margin-bottom: 15px;
-      }
-
-      .footer-links {
-        margin: 20px 0;
-      }
-
-      .footer-link {
-        color: #2563eb;
-        text-decoration: none;
-        margin: 0 15px;
+      .profile-badge {
+        background: rgba(255, 255, 255, 0.13);
+        color: #fff;
+        border-radius: 16px;
+        padding: 6px 18px;
+        font-size: 1rem;
         font-weight: 500;
-        transition: color 0.3s ease;
+        letter-spacing: 1px;
+        text-transform: capitalize;
       }
 
-      .footer-link:hover {
-        color: #1d4ed8;
+      .profile-badge.active {
+        background: rgba(52, 211, 153, 0.18);
+        color: #34d399;
       }
 
-      .copyright {
-        font-size: 12px;
-        color: #a0aec0;
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #e2e8f0;
+      .profile-badge.inactive {
+        background: rgba(239, 68, 68, 0.13);
+        color: #ef4444;
       }
 
-      /* Responsive Design */
-      @media (max-width: 900px) {
-        body {
-          padding: 10px;
-        }
+      .profile-stats {
+        display: flex;
+        gap: 48px;
+      }
 
-        .content {
-          padding: 40px 30px;
-        }
+      .profile-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
 
-        .title {
-          font-size: 24px;
-        }
+      .quick-actions-bar {
+        margin: 36px auto 0 auto;
+        display: flex;
+        justify-content: flex-start;
+        gap: 18px;
+        background: #f9fafc;
+        border-radius: 18px;
+        box-shadow: 0 2px 12px 0 rgba(55, 65, 81, 0.08);
+        padding: 18px 32px;
+      }
 
-        .btn {
-          padding: 15px 30px;
-          font-size: 15px;
-        }
+      .quick-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        min-width: 88px;
+        border-radius: 16px;
+        padding: 16px 12px 12px 12px;
+        cursor: pointer;
+        background: #fff;
+        color: #6366f1;
+        border: 1px solid #e5eaff;
+        box-shadow: 0 2px 8px rgba(80, 86, 194, 0.08);
+        font-weight: 600;
+        font-size: 1.07rem;
+        transition: background 0.15s, box-shadow 0.15s, color 0.15s,
+          border 0.15s;
+      }
 
-        .footer {
-          padding: 25px 30px;
-        }
+      .quick-action i {
+        font-size: 1.25rem;
+        margin-bottom: 4px;
+      }
+
+      .quick-action:hover,
+      .quick-action:focus {
+        background: #eef2ff;
+        color: #3730a3;
+      }
+
+      /* Đảm bảo các số liệu trong stat là màu trắng */
+      .profile-stats .stat-value,
+      .profile-stats .profile-stat-value {
+        color: #fff !important;
+      }
+
+      /* Nếu có dùng .stat-label thì giữ màu nhạt hơn */
+      .profile-stats .stat-label {
+        color: #d1d5db;
+        opacity: 0.8;
       }
     </style>
   </head>
   <body>
-    <div class="email-wrapper">
+    <div class="admin-container">
+      <!-- Sidebar -->
+      <div
+        th:replace="fragments/sidebar :: admin-sidebar(activeMenu='customers')"
+      ></div>
       <!-- Main Content -->
-      <div class="content">
-        <h1 class="title">🎉 Application Received Successfully!</h1>
+      <main class="main-content">
+        <!-- Navbar -->
+        <div th:replace="fragments/navbar :: admin-navbar"></div>
+        <!-- Customer Details Content -->
+        <div class="customer-detail-content">
+          <!-- Breadcrumb -->
+          <div class="breadcrumb">
+            <a class="breadcrumb-item" th:href="@{/admin/customers}">
+              <i class="fas fa-users"></i>
+              Customers
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span
+              class="breadcrumb-item active"
+              id="breadcrumb-customer-name"
+              th:text="${user.name}"
+            ></span>
+          </div>
 
-        <div class="greeting">
-          Hello <span class="user-name">${userName}</span>,<br />
-          Thank you for choosing AutoRent for your owner application!
+          <!-- Profile Header v2 -->
+          <div class="customer-profile-header-v2">
+            <div class="profile-actions-row">
+              <a class="btn btn-outline" th:href="@{/admin/customers}">
+                <i class="fas fa-arrow-left"></i>
+                Back to Customers
+              </a>
+            </div>
+            <div class="customer-profile-header" id="customer-profile-header">
+              <div class="profile-header-content">
+                <img
+                  class="profile-avatar"
+                  th:alt="${user.name}"
+                  th:src="${user.avatar != null && !#strings.isEmpty(user.avatar) ? user.avatar : 'https://ui-avatars.com/api/?name=' + user.name + '&background=4f46e5&color=fff'}"
+                />
+                <div class="profile-info">
+                  <h1 th:text="${user.name}"></h1>
+                  <div class="profile-username" th:text="${user.email}"></div>
+                  <div class="profile-badges">
+                    <span
+                      class="profile-badge"
+                      th:text="${user.role.name}"
+                    ></span>
+                    <span
+                      class="profile-badge"
+                      th:classappend="${user.status} ? 'active' : 'inactive'"
+                      th:text="${user.status} ? 'Active' : 'Inactive'"
+                    ></span>
+                  </div>
+                  <div class="profile-stats">
+                    <div class="profile-stat">
+                      <span
+                        class="profile-stat-value"
+                        th:text="${user.trustPoint != null && user.trustPoint > 0 ? user.trustPoint : 0}"
+                      ></span>
+                      <span class="profile-stat-label">Trust Points</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Quick Actions Bar -->
+            <div class="quick-actions-bar">
+              <button
+                class="quick-action"
+                onclick="callCustomer()"
+                title="Call Customer"
+              >
+                <i class="fas fa-phone"></i>
+                <span>Call</span>
+              </button>
+              <button
+                class="quick-action"
+                onclick="emailCustomer()"
+                title="Send Email"
+              >
+                <i class="fas fa-envelope"></i>
+                <span>Email</span>
+              </button>
+              <button
+                class="quick-action"
+                onclick="viewBookings()"
+                title="View Bookings"
+              >
+                <i class="fas fa-calendar"></i>
+                <span>Bookings</span>
+              </button>
+              <button class="quick-action" onclick="addNote()" title="Add Note">
+                <i class="fas fa-sticky-note"></i>
+                <span>Note</span>
+              </button>
+              <button
+                class="quick-action"
+                onclick="blockCustomer()"
+                title="Block Customer"
+              >
+                <i class="fas fa-ban"></i>
+                <span>Block</span>
+              </button>
+            </div>
+
+            <!-- Customer Details Grid -->
+            <div class="customer-details-grid">
+              <!-- Personal Information -->
+              <div class="detail-card">
+                <div class="card-header">
+                  <h3><i class="fas fa-user"></i> Personal Information</h3>
+                </div>
+                <div class="card-body" id="personal-info">
+                  <div class="info-list">
+                    <div class="info-item">
+                      <span class="info-label">Full Name</span>
+                      <span class="info-value" th:text="${user.name}"></span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Date of Birth</span>
+                      <span
+                        class="info-value"
+                        th:text="${user.dateOfBirth != null} ? ${#temporals.format(user.dateOfBirth, 'dd/MM/yyyy')} : 'Not updated'"
+                      ></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Account Information -->
+              <div class="detail-card">
+                <div class="card-header">
+                  <h3><i class="fas fa-cog"></i> Account Information</h3>
+                  <button
+                    class="btn btn-sm btn-outline"
+                    onclick="resetPassword()"
+                    title="Reset Password"
+                  >
+                    <i class="fas fa-key"></i>
+                  </button>
+                </div>
+                <div class="card-body" id="account-info">
+                  <div class="info-list">
+                    <div class="info-item">
+                      <span class="info-label">Role</span>
+                      <span class="info-value">
+                        <span
+                          class="badge badge-role-2"
+                          th:text="${user.role.name}"
+                        ></span>
+                      </span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Status</span>
+                      <span class="info-value">
+                        <span
+                          class="status-badge active"
+                          th:classappend="${user.status} ? 'active' : 'inactive'"
+                          th:text="${user.status} ? 'Active' : 'Inactive'"
+                        ></span>
+                      </span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Trust Points</span>
+                      <span class="info-value trust-score">
+                        <i class="fas fa-star"></i>
+                        <span th:text="${user.trustPoint}"></span> points
+                      </span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Member Since</span>
+                      <span
+                        class="info-value"
+                        th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}"
+                      ></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contact Information -->
+              <div class="detail-card">
+                <div class="card-header">
+                  <h3>
+                    <i class="fas fa-address-book"></i> Contact Information
+                  </h3>
+                  <button
+                    class="btn btn-sm btn-outline"
+                    onclick="copyContact()"
+                    title="Copy Contact"
+                  >
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+                <div class="card-body" id="contact-info">
+                  <div class="info-list">
+                    <div class="info-item">
+                      <span class="info-label">
+                        <i class="fas fa-envelope"></i>
+                        Email
+                      </span>
+                      <span class="info-value" th:text="${user.email}"></span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">
+                        <i class="fas fa-phone"></i>
+                        Phone
+                      </span>
+                      <span
+                        class="info-value"
+                        th:text="${user.phone != null && !#strings.isEmpty(user.phone) ? user.phone : 'Not updated'}"
+                      ></span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Address
+                      </span>
+                      <span
+                        class="info-value"
+                        th:text="${user.address != null && !#strings.isEmpty(user.address) ? user.address : 'Not updated'}"
+                      ></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Activity -->
+              <div class="detail-card full-width">
+                <div class="card-header">
+                  <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                  <button class="btn btn-sm btn-outline">
+                    <i class="fas fa-external-link-alt"></i>
+                    View All Activity
+                  </button>
+                </div>
+                <div class="card-body" id="recent-activity">
+                  <div class="activity-list">
+                    <div class="activity-item">
+                      <div class="activity-icon booking">
+                        <i class="fas fa-calendar-plus"></i>
+                      </div>
+                      <div class="activity-content">
+                        <div class="activity-title">New booking created</div>
+                        <div class="activity-description">
+                          Booked Honda Civic for 3 days
+                        </div>
+                        <div class="activity-time">2 hours ago</div>
+                      </div>
+                    </div>
+                    <div class="activity-item">
+                      <div class="activity-icon payment">
+                        <i class="fas fa-credit-card"></i>
+                      </div>
+                      <div class="activity-content">
+                        <div class="activity-title">Payment completed</div>
+                        <div class="activity-description">
+                          Paid $450 for booking #BOK001
+                        </div>
+                        <div class="activity-time">1 day ago</div>
+                      </div>
+                    </div>
+                    <div class="activity-item">
+                      <div class="activity-icon profile">
+                        <i class="fas fa-user-edit"></i>
+                      </div>
+                      <div class="activity-content">
+                        <div class="activity-title">Profile updated</div>
+                        <div class="activity-description">
+                          Updated contact information
+                        </div>
+                        <div class="activity-time">3 days ago</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div class="status-container">
-          <div class="status">Status: Pending Review</div>
-        </div>
-
-        <div class="message">
-          <strong>What happens next?</strong><br /><br />
-          📋 Our expert admin team will carefully review your application<br />
-          📧 You'll receive a detailed email update once the review is
-          complete<br />
-          ⚡ Most applications are processed within 2-3 business days<br />
-          🔔 We'll notify you immediately about approval or any additional
-          requirements
-        </div>
-
-        <div class="btn-container">
-          <a
-            class="btn"
-            href="${appUrl}"
-            target="_blank"
-            style="
-              background: #2563eb !important;
-              color: #ffffff !important;
-              text-decoration: none !important;
-              border: none !important;
-            "
-          >
-            📱 Track Your Application
-          </a>
-        </div>
-
-        <div class="divider"></div>
-
-        <div style="text-align: center; color: #4a5568">
-          <p><strong>Need immediate assistance?</strong></p>
-          <p>Our support team is here to help you 24/7</p>
-        </div>
-      </div>
-
-      <!-- Footer Section -->
-      <div class="footer">
-        <div class="footer-text">
-          <strong>Questions or concerns?</strong><br />
-          Simply reply to this email and our team will get back to you promptly.
-        </div>
-
-        <div class="footer-links">
-          <a href="#" class="footer-link">Help Center</a>
-          <a href="#" class="footer-link">Contact Support</a>
-          <a href="#" class="footer-link">Terms of Service</a>
-        </div>
-
-        <div class="copyright">
-          © ${year} AutoRent Da Nang. All rights reserved.<br />
-          Making car rental simple, reliable, and affordable.
-        </div>
-      </div>
+      </main>
     </div>
+    <script th:src="@{/js/main.js}"></script>
+    <script th:src="@{/js/customers.js}"></script>
+    <!-- Import thư viện SockJS và StompJS trước -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <!-- Import file JS WebSocket riêng -->
+    <script th:src="@{/js/websocket-notify.js}"></script>
+    <script>
+      function deleteCurrentCustomer(userId) {
+        if (confirm("Are you sure you want to delete this customer?")) {
+          window.location.href = "/admin/customers/" + userId + "/delete";
+        }
+      }
+
+      function addNote() {
+        alert("Add note feature coming soon!");
+      }
+
+      function blockCustomer(userId) {
+        alert("Block feature coming soon for user " + userId + "!");
+      }
+    </script>
   </body>
 </html>

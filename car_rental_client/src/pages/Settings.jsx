@@ -66,8 +66,13 @@ const Settings = () => {
 
     async function fetchPasswordChangedAt() {
       const res = await authAPI.getProfile();
-      if (res.success && res.passwordChangedAt) {
-        setPasswordChangedAt(res.passwordChangedAt);
+      if (res.success) {
+        // Luôn cập nhật state, kể cả khi passwordChangedAt = null
+        setPasswordChangedAt(res.passwordChangedAt || null);
+      }
+      // Nếu res.success là false, có thể navigate về login
+      else {
+        navigate("/login");
       }
     }
     fetchPasswordChangedAt();
@@ -380,13 +385,21 @@ const Settings = () => {
                           ></i>
                         </button>
                       </div>
-                      {passwordChangedAt && (
+                      {passwordChangedAt ? (
                         <div
                           className="mt-1 text-muted"
                           style={{ fontSize: 13 }}
                         >
                           <i className="ri-history-line"></i> Last changed:{" "}
                           {formatPasswordChangedAt(passwordChangedAt)}
+                        </div>
+                      ) : (
+                        <div
+                          className="mt-1 text-muted"
+                          style={{ fontSize: 13 }}
+                        >
+                          <i className="ri-history-line"></i> You have not
+                          changed your password yet.
                         </div>
                       )}
                     </FormGroup>

@@ -1,0 +1,255 @@
+/* Account Suspended Page Styles */
+.account-suspended-section {
+  min-height: 100vh;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  padding: 60px 0;
+  position: relative;
+}
+
+.account-suspended__container {
+  background: white;
+  border-radius: 20px;
+  padding: 60px 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.8s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.suspended-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 30px;
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: pulse 2s infinite;
+}
+
+.suspended-icon i {
+  font-size: 60px;
+  color: white;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 20px rgba(255, 107, 107, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+  }
+}
+
+.suspended-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  line-height: 1.2;
+}
+
+.suspended-subtitle {
+  font-size: 1.1rem;
+  color: #7f8c8d;
+  margin-bottom: 30px;
+  line-height: 1.6;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.suspended-description {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 40px;
+  line-height: 1.8;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.contact-info {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border-radius: 15px;
+  padding: 30px;
+  margin: 30px 0 40px;
+  border-left: 5px solid #000d6b;
+}
+
+.contact-info h5 {
+  color: #000d6b;
+  font-weight: 600;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.contact-info p {
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.contact-info .contact-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.contact-info .contact-item i {
+  color: #000d6b;
+  width: 20px;
+  margin-right: 10px;
+  font-size: 1.1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-back-login {
+  background: linear-gradient(135deg, #000d6b, #1e40af);
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 13, 107, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-back-login:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 13, 107, 0.4);
+  color: white;
+  text-decoration: none;
+}
+
+.btn-contact-admin {
+  background: transparent;
+  color: #000d6b;
+  border: 2px solid #000d6b;
+  padding: 15px 30px;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-contact-admin:hover {
+  background: #000d6b;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 13, 107, 0.3);
+  text-decoration: none;
+}
+
+.help-tips {
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 15px;
+  padding: 25px;
+  margin-top: 30px;
+  border: 1px solid rgba(52, 152, 219, 0.2);
+}
+
+.help-tips h6 {
+  color: #3498db;
+  font-weight: 600;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.help-tips ul {
+  text-align: left;
+  margin: 0;
+  padding-left: 20px;
+  color: #555;
+}
+
+.help-tips ul li {
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .account-suspended__container {
+    padding: 40px 25px;
+    margin: 20px;
+  }
+
+  .suspended-title {
+    font-size: 2rem;
+  }
+
+  .suspended-icon {
+    width: 100px;
+    height: 100px;
+  }
+
+  .suspended-icon i {
+    font-size: 50px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn-back-login,
+  .btn-contact-admin {
+    width: 100%;
+    justify-content: center;
+    max-width: 280px;
+  }
+
+  .contact-info {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-suspended-section {
+    padding: 30px 0;
+  }
+
+  .suspended-title {
+    font-size: 1.8rem;
+  }
+
+  .suspended-subtitle {
+    font-size: 1rem;
+  }
+}
