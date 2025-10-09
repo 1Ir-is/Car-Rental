@@ -53,6 +53,11 @@ public class User implements UserDetails {
     @CreationTimestamp
     private LocalDate createdAt;
 
+    private String resetPasswordToken;
+    private LocalDateTime resetTokenCreatedAt;
+
+    private LocalDateTime passwordChangedAt;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.getName()));

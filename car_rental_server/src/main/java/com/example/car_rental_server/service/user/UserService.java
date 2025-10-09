@@ -91,4 +91,9 @@ public class UserService implements IUserService {
         userRepository.save(user);
         return UserProfileDTO.from(user);
     }
+
+    @Override
+    public Optional<User> findByResetPasswordToken(String token) {
+        return userRepository.findByResetPasswordToken(token);
+    }
 }

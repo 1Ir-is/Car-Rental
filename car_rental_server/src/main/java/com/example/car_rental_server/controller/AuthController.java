@@ -25,6 +25,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -49,6 +50,7 @@ public class AuthController {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final MailService mailService;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequestDTO req) {
@@ -130,6 +132,111 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            // Trả về thành công giả lập để tránh dò email
+            return ResponseEntity.ok(Map.of("success", true, "message", "Nếu email tồn tại, chúng tôi đã gửi hướng dẫn đổi mật khẩu."));
+        }
+        User user = userOpt.get();
+        // Tạo mã token reset password (có thể là UUID)
+        String resetToken = UUID.randomUUID().toString();
+        user.setResetPasswordToken(resetToken);
+        user.setResetTokenCreatedAt(LocalDateTime.now());
+        userService.save(user);
+
+        String resetUrl = frontendUrl + "/reset-password?token=" + resetToken;
+
+        try {
+            mailService.sendResetPasswordEmail(user.getEmail(), user.getName(), resetUrl);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Nếu email tồn tại, chúng tôi đã gửi hướng dẫn đổi mật khẩu."));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "error", "Không thể gửi email!"));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        String newPassword = body.get("password");
+        Optional<User> userOpt = userService.findByResetPasswordToken(token);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(400).body(Map.of("success", false, "error", "Token không hợp lệ hoặc đã hết hạn"));
+        }
+        User user = userOpt.get();
+
+        // Kiểm tra thời gian hiệu lực token
+        if (user.getResetTokenCreatedAt() == null || user.getResetTokenCreatedAt().isBefore(LocalDateTime.now().minusMinutes(30))) {
+            return ResponseEntity.status(400).body(Map.of("success", false, "error", "Token đã hết hạn"));
+        }
+
+        // Kiểm tra password mới có giống password cũ không?
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("success", false, "error", "Bạn đã nhập mật khẩu trước đó của bạn"));
+        }
+
+        user.setPassword(newPassword);
+        user.setResetPasswordToken(null);
+        user.setResetTokenCreatedAt(null);
+        user.setPasswordChangedAt(LocalDateTime.now());
+        userService.save(user);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đổi mật khẩu thành công!"));
+    }
+
+    @GetMapping("/validate-reset-token")
+    public ResponseEntity<?> validateResetToken(@RequestParam String token) {
+        Optional<User> userOpt = userService.findByResetPasswordToken(token);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(400).body(Map.of("success", false, "error", "Token không hợp lệ hoặc đã hết hạn"));
+        }
+        User user = userOpt.get();
+        if (user.getResetTokenCreatedAt() == null
+                || user.getResetTokenCreatedAt().isBefore(LocalDateTime.now().minusMinutes(30))) {
+            return ResponseEntity.status(400).body(Map.of("success", false, "error", "Token đã hết hạn"));
+        }
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    @GetMapping("/get-old-password-hash")
+    public ResponseEntity<?> getOldPasswordHash(@RequestParam String token) {
+        Optional<User> userOpt = userService.findByResetPasswordToken(token);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(400).body(Map.of("success", false, "error", "Token không hợp lệ hoặc đã hết hạn"));
+        }
+        User user = userOpt.get();
+        return ResponseEntity.ok(Map.of("success", true, "oldPasswordHash", user.getPassword()));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> body, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "error", "Chưa đăng nhập"));
+        }
+        String email = authentication.getName();
+        String oldPassword = body.get("oldPassword");
+        String newPassword = body.get("newPassword");
+
+        Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "error", "User not found"));
+        }
+        User user = userOpt.get();
+
+        // Dùng passwordEncoder để kiểm tra
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            return ResponseEntity.status(400).body(Map.of("success", false, "error", "Mật khẩu cũ không đúng"));
+        }
+
+        user.setPassword(newPassword);
+        user.setPasswordChangedAt(LocalDateTime.now());
+        userService.save(user);
+
+        return ResponseEntity.ok(Map.of("success", true, "message", "Đổi mật khẩu thành công!"));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest, HttpServletResponse response) {
         try {
@@ -139,10 +246,18 @@ public class AuthController {
             User user = (User) authentication.getPrincipal();
             if (!Boolean.TRUE.equals(user.getStatus())) {
                 return ResponseEntity.status(403)
-                        .body(Map.of("success", false, "error", "ACCOUNT_DISABLED"));
+                        .body(Map.of("success", false, "error", "ACCOUNT_DISABLED", "message", "Tài khoản đã bị tạm ngừng"));
+            }
+            if (!user.getVerified()) {
+                return ResponseEntity.status(403)
+                        .body(Map.of(
+                                "success", false,
+                                "error", "EMAIL_NOT_VERIFIED",
+                                "message", "Email chưa được xác thực. Vui lòng kiểm tra email để xác thực tài khoản."
+                        ));
             }
 
-            long maxAge = 3600; // 1h, hoặc bạn có thể lấy từ loginRequest nếu có rememberMe
+            long maxAge = 3600;
             String token = jwtService.generateToken(user);
             ResponseCookie cookie = ResponseCookie.from("jwt", token)
                     .httpOnly(true)
@@ -176,6 +291,21 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công"));
     }
 
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "error", "Not authenticated"));
+        }
+        User user = (User) authentication.getPrincipal();
+        // Nếu passwordChangedAt là null, trả về 0
+        Object passwordChangedValue = user.getPasswordChangedAt() == null ? 0 : user.getPasswordChangedAt();
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "user", user,
+                "passwordChangedAt", passwordChangedValue
+        ));
+    }
+
     @PostMapping("/google")
     public ResponseEntity<?> loginWithGoogle(@RequestBody GoogleLoginRequestDTO request, HttpServletResponse response) {
         try {
@@ -207,10 +337,18 @@ public class AuthController {
                 user.setAvatar(picture);
                 user.setStatus(true);
                 user.setRole(userRole);
+                // Đã xác thực email qua Google
+                user.setVerified(true);
                 userService.save(user);
-            } else if (user.getAvatar() == null || user.getAvatar().isEmpty()) {
+            } else {
                 // Nếu user đã tồn tại mà chưa có avatar thì cập nhật avatar luôn
-                user.setAvatar(picture);
+                if (user.getAvatar() == null || user.getAvatar().isEmpty()) {
+                    user.setAvatar(picture);
+                }
+                // Nếu chưa xác thực email thì tự động xác thực
+                if (!Boolean.TRUE.equals(user.getVerified())) {
+                    user.setVerified(true);
+                }
                 userService.save(user);
             }
 
@@ -231,40 +369,8 @@ public class AuthController {
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
-            e.printStackTrace(); // In stacktrace để tìm lỗi
+            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("success", false, "error", "SERVER_ERROR"));
         }
     }
-
-
-
-//    @PostMapping("/forgot-password")
-//    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequestDTO req) {
-//        // TODO: Gửi email reset password (nếu bạn triển khai)
-//        // Nếu không, có thể trả về lỗi hoặc thông báo thành công giả lập
-//        return ResponseEntity.ok(Map.of("message", "Nếu email tồn tại, chúng tôi đã gửi hướng dẫn đổi mật khẩu!"));
-//    }
-//
-//    @PostMapping("/reset-password")
-//    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequestDTO req) {
-//        // TODO: Đổi mật khẩu dựa trên token/logic của bạn
-//        return ResponseEntity.ok(Map.of("message", "Đặt lại mật khẩu thành công!"));
-//    }
-//
-//    @GetMapping("/status")
-//    public ResponseEntity<?> checkAuthStatus(Authentication auth) {
-//        if (auth == null || !auth.isAuthenticated()) {
-//            return ResponseEntity.status(401).body(Map.of("authenticated", false));
-//        }
-//        return ResponseEntity.ok(Map.of("authenticated", true));
-//    }
-//
-//    @GetMapping("/me")
-//    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
-//        }
-//        User user = (User) authentication.getPrincipal();
-//        return ResponseEntity.ok(UserSummaryDTO.from(user));
-//    }
 }

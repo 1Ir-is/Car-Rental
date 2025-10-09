@@ -22,4 +22,6 @@ public interface IUserService {
     UserProfileDTO getCurrentUserInfo(String email);
 
     UserProfileDTO updateCurrentUserInfo(String email, UserProfileDTO userUpdateDTO);
+
+    Optional<User> findByResetPasswordToken(String token);
 }

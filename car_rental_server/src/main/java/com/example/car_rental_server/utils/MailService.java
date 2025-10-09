@@ -72,6 +72,23 @@ public class MailService {
         mailSender.send(message);
     }
 
+    public void sendResetPasswordEmail(String to, String userName, String resetUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+        helper.setFrom("autorentdanang@gmail.com", "AutoRent Da Nang");
+        helper.setTo(to);
+        helper.setSubject("Reset Your Password - AutoRent Da Nang");
+
+        String html = loadTemplate("email-templates/reset-password.html")
+                .replace("${userName}", userName)
+                .replace("${resetUrl}", resetUrl)
+                .replace("${year}", String.valueOf(LocalDate.now().getYear()));
+
+        helper.setText(html, true);
+        mailSender.send(message);
+    }
+
     private String loadTemplate(String path) {
         try (Scanner scanner = new Scanner(new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8.name())) {
             return scanner.useDelimiter("\\A").next();
