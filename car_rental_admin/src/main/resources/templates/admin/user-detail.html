@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>User Details - Auto Rent Admin</title>
-    <link rel="stylesheet" th:href="@{/css/customer-detail.css}"/>
-    <link rel="stylesheet" th:href="@{/css/style.css}"/>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/customer-detail.css}" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet"
+    />
     <style>
         /* Profile Header styles for "Image 1" look */
         .customer-profile-header-v2 {
@@ -111,7 +114,8 @@
             box-shadow: 0 2px 8px rgba(80, 86, 194, 0.08);
             font-weight: 600;
             font-size: 1.07rem;
-            transition: background 0.15s, box-shadow 0.15s, color 0.15s, border 0.15s;
+            transition: background 0.15s, box-shadow 0.15s, color 0.15s,
+            border 0.15s;
         }
 
         .quick-action i {
@@ -119,7 +123,8 @@
             margin-bottom: 4px;
         }
 
-        .quick-action:hover, .quick-action:focus {
+        .quick-action:hover,
+        .quick-action:focus {
             background: #eef2ff;
             color: #3730a3;
         }
@@ -135,19 +140,66 @@
             color: #d1d5db;
             opacity: 0.8;
         }
+
+        #toast-container {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 9999;
+        }
+        .toast {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.13);
+            margin-bottom: 12px;
+            padding: 14px 22px;
+            min-width: 310px;
+            max-width: 380px;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(.4,0,.2,1);
+            border-left: 5px solid #6366f1;
+            font-family: inherit;
+        }
+        .toast.toast-success { border-left-color: #34d399; }
+        .toast.toast-error { border-left-color: #ef4444; }
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .toast-content i {
+            font-size: 20px;
+        }
+        .toast.toast-success .toast-content i {
+            color: #34d399;
+        }
+        .toast.toast-error .toast-content i {
+            color: #ef4444;
+        }
+        .toast-content span {
+            font-size: 15px;
+            font-weight: 500;
+            color: #22223b;
+        }
     </style>
 </head>
 <body>
 <div class="admin-container">
     <!-- Sidebar -->
-    <div th:replace="fragments/sidebar :: admin-sidebar(activeMenu='customers')"></div>
+    <div
+            th:replace="fragments/sidebar :: admin-sidebar(activeMenu='customers')"
+    ></div>
     <!-- Main Content -->
     <main class="main-content">
         <!-- Navbar -->
         <div th:replace="fragments/navbar :: admin-navbar"></div>
         <!-- Customer Details Content -->
         <div class="customer-detail-content">
-
             <!-- Breadcrumb -->
             <div class="breadcrumb">
                 <a class="breadcrumb-item" th:href="@{/admin/customers}">
@@ -155,9 +207,12 @@
                     Customers
                 </a>
                 <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item active" id="breadcrumb-customer-name" th:text="${user.name}"></span>
+                <span
+                        class="breadcrumb-item active"
+                        id="breadcrumb-customer-name"
+                        th:text="${user.name}"
+                ></span>
             </div>
-
 
             <!-- Profile Header v2 -->
             <div class="customer-profile-header-v2">
@@ -169,22 +224,31 @@
                 </div>
                 <div class="customer-profile-header" id="customer-profile-header">
                     <div class="profile-header-content">
-                        <img class="profile-avatar"
-                             th:alt="${user.name}"
-                             th:src="${user.avatar != null && !#strings.isEmpty(user.avatar) ? user.avatar : 'https://ui-avatars.com/api/?name=' + user.name + '&background=4f46e5&color=fff'}"/>
+                        <img
+                                class="profile-avatar"
+                                th:alt="${user.name}"
+                                th:src="${user.avatar != null && !#strings.isEmpty(user.avatar) ? user.avatar : 'https://ui-avatars.com/api/?name=' + user.name + '&background=4f46e5&color=fff'}"
+                        />
                         <div class="profile-info">
                             <h1 th:text="${user.name}"></h1>
                             <div class="profile-username" th:text="${user.email}"></div>
                             <div class="profile-badges">
-                                <span class="profile-badge" th:text="${user.role.name}"></span>
-                                <span class="profile-badge"
-                                      th:classappend="${user.status} ? 'active' : 'inactive'"
-                                      th:text="${user.status} ? 'Active' : 'Inactive'"></span>
+                    <span
+                            class="profile-badge"
+                            th:text="${user.role.name}"
+                    ></span>
+                                <span
+                                        class="profile-badge"
+                                        th:classappend="${user.status} ? 'active' : 'inactive'"
+                                        th:text="${user.status} ? 'Active' : 'Inactive'"
+                                ></span>
                             </div>
                             <div class="profile-stats">
                                 <div class="profile-stat">
-                                    <span class="profile-stat-value"
-                                          th:text="${user.trustPoint != null && user.trustPoint > 0 ? user.trustPoint : 0}"></span>
+                      <span
+                              class="profile-stat-value"
+                              th:text="${user.trustPoint != null && user.trustPoint > 0 ? user.trustPoint : 0}"
+                      ></span>
                                     <span class="profile-stat-label">Trust Points</span>
                                 </div>
                             </div>
@@ -221,14 +285,28 @@
                         <i class="fas fa-sticky-note"></i>
                         <span>Note</span>
                     </button>
-                    <button
-                            class="quick-action"
-                            onclick="blockCustomer()"
-                            title="Block Customer"
-                    >
-                        <i class="fas fa-ban"></i>
-                        <span>Block</span>
-                    </button>
+                    <!-- Nếu user đang active -->
+                    <th:block th:if="${user.status}">
+                        <form id="blockUserForm" th:action="@{'/admin/customers/' + ${user.id} + '/block'}" method="post" style="display:none"></form>
+                        <button class="quick-action"
+                                onclick="confirmBlockUser(this)"
+                                title="Block Customer"
+                                th:attr="data-username=${user.name}">
+                            <i class="fas fa-ban"></i>
+                            <span>Block</span>
+                        </button>
+                    </th:block>
+                    <!-- Nếu user đang inactive -->
+                    <th:block th:if="${!user.status}">
+                        <form id="unblockUserForm" th:action="@{'/admin/customers/' + ${user.id} + '/unblock'}" method="post" style="display:none"></form>
+                        <button class="quick-action"
+                                onclick="confirmUnblockUser(this)"
+                                title="Unblock Customer"
+                                th:attr="data-username=${user.name}">
+                            <i class="fas fa-unlock"></i>
+                            <span>Unblock</span>
+                        </button>
+                    </th:block>
                 </div>
 
                 <!-- Customer Details Grid -->
@@ -246,8 +324,10 @@
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">Date of Birth</span>
-                                    <span class="info-value"
-                                          th:text="${user.dateOfBirth != null} ? ${#temporals.format(user.dateOfBirth, 'dd/MM/yyyy')} : 'Not updated'"></span>
+                                    <span
+                                            class="info-value"
+                                            th:text="${user.dateOfBirth != null} ? ${#temporals.format(user.dateOfBirth, 'dd/MM/yyyy')} : 'Not updated'"
+                                    ></span>
                                 </div>
                             </div>
                         </div>
@@ -270,27 +350,35 @@
                                 <div class="info-item">
                                     <span class="info-label">Role</span>
                                     <span class="info-value">
-                      <span class="badge badge-role-2" th:text="${user.role.name}"></span>
-                    </span>
+                        <span
+                                class="badge badge-role-2"
+                                th:text="${user.role.name}"
+                        ></span>
+                      </span>
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">Status</span>
                                     <span class="info-value">
-                      <span class="status-badge active" th:classappend="${user.status} ? 'active' : 'inactive'"
-                            th:text="${user.status} ? 'Active' : 'Inactive'"></span>
-                    </span>
+                        <span
+                                class="status-badge active"
+                                th:classappend="${user.status} ? 'active' : 'inactive'"
+                                th:text="${user.status} ? 'Active' : 'Inactive'"
+                        ></span>
+                      </span>
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">Trust Points</span>
                                     <span class="info-value trust-score">
-                      <i class="fas fa-star"></i>
-                      <span th:text="${user.trustPoint}"></span> points
-                    </span>
+                        <i class="fas fa-star"></i>
+                        <span th:text="${user.trustPoint}"></span> points
+                      </span>
                                 </div>
                                 <div class="info-item">
                                     <span class="info-label">Member Since</span>
-                                    <span class="info-value"
-                                          th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}"></span>
+                                    <span
+                                            class="info-value"
+                                            th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}"
+                                    ></span>
                                 </div>
                             </div>
                         </div>
@@ -299,7 +387,9 @@
                     <!-- Contact Information -->
                     <div class="detail-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-address-book"></i> Contact Information</h3>
+                            <h3>
+                                <i class="fas fa-address-book"></i> Contact Information
+                            </h3>
                             <button
                                     class="btn btn-sm btn-outline"
                                     onclick="copyContact()"
@@ -311,25 +401,31 @@
                         <div class="card-body" id="contact-info">
                             <div class="info-list">
                                 <div class="info-item">
-                    <span class="info-label">
-                      <i class="fas fa-envelope"></i>
-                      Email
-                    </span>
+                      <span class="info-label">
+                        <i class="fas fa-envelope"></i>
+                        Email
+                      </span>
                                     <span class="info-value" th:text="${user.email}"></span>
                                 </div>
                                 <div class="info-item">
-                    <span class="info-label">
-                      <i class="fas fa-phone"></i>
-                      Phone
-                    </span>
-                                    <span class="info-value" th:text="${user.phone}"></span>
+                      <span class="info-label">
+                        <i class="fas fa-phone"></i>
+                        Phone
+                      </span>
+                                    <span
+                                            class="info-value"
+                                            th:text="${user.phone != null && !#strings.isEmpty(user.phone) ? user.phone : 'Not updated'}"
+                                    ></span>
                                 </div>
                                 <div class="info-item">
-                    <span class="info-label">
-                      <i class="fas fa-map-marker-alt"></i>
-                      Address
-                    </span>
-                                    <span class="info-value" th:text="${user.address}"></span>
+                      <span class="info-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Address
+                      </span>
+                                    <span
+                                            class="info-value"
+                                            th:text="${user.address != null && !#strings.isEmpty(user.address) ? user.address : 'Not updated'}"
+                                    ></span>
                                 </div>
                             </div>
                         </div>
@@ -387,14 +483,17 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
     </main>
 </div>
+
+<!-- Toast notification container -->
+<div id="toast-container"></div>
+
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/customers.js}"></script>
-<!-- Import thư viện SockJS và StompJS trước -->
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <!-- Import file JS WebSocket riêng -->
@@ -402,17 +501,87 @@
 <script>
     function deleteCurrentCustomer(userId) {
         if (confirm("Are you sure you want to delete this customer?")) {
-            window.location.href = '/admin/customers/' + userId + '/delete';
+            window.location.href = "/admin/customers/" + userId + "/delete";
         }
     }
 
     function addNote() {
-        alert('Add note feature coming soon!');
+        alert("Add note feature coming soon!");
     }
 
-    function blockCustomer(userId) {
-        alert('Block feature coming soon for user ' + userId + '!');
+    function confirmBlockUser(btn) {
+        // Lấy tên user từ attribute data-username
+        const userName = btn.getAttribute('data-username');
+        Swal.fire({
+            title: `Do you want to block user ${userName}?`,
+            text: "This action will disable this account.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, block user",
+            cancelButtonText: "Cancel"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('blockUserForm').submit();
+            }
+        });
     }
+
+    function confirmUnblockUser(btn) {
+        const userName = btn.getAttribute('data-username');
+        Swal.fire({
+            title: `Do you want to unblock user ${userName}?`,
+            text: "User will be able to login again.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#34d399",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, unblock user",
+            cancelButtonText: "Cancel",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('unblockUserForm').submit();
+            }
+        });
+    }
+
+    function showToast(message, type = 'success') {
+        const toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+        toast.innerHTML = `
+            <div class="toast-content">
+                <i class="${icon}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        toastContainer.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 350);
+        }, 2400);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show toast for block/unblock based on URL param (?block=success, ?unblock=success)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('block')) {
+            showToast('User has been blocked!', 'error');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        if (urlParams.has('unblock')) {
+            showToast('User has been unblocked!', 'success');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
 </script>
 </body>
 </html>

@@ -16,4 +16,8 @@ public interface ICustomerService {
     long countNewUsersThisMonth();
 
     Page<User> searchUsers(String search, String role, String status, Pageable pageable);
+
+    void blockUserById(Long id);
+
+    void unblockUserById(Long id);
 }

@@ -63,4 +63,18 @@ public class CustomerService implements ICustomerService {
     public Optional<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
+
+    @Override
+    public void blockUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setStatus(false); // Block user
+        userRepository.save(user);
+    }
+
+    public void unblockUserById(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        user.setStatus(true); // Unblock user
+        userRepository.save(user);
+    }
 }
