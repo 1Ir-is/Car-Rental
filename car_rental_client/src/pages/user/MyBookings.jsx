@@ -10,8 +10,8 @@ import {
   Spinner,
 } from "reactstrap";
 import { toast } from "react-toastify";
-import Helmet from "../components/Helmet/Helmet";
-import CommonSection from "../components/UI/CommonSection";
+import Helmet from "../../components/Helmet/Helmet";
+import CommonSection from "../../components/UI/CommonSection";
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);

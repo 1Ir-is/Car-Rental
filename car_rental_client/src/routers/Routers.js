@@ -1,23 +1,31 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import Home from "../pages/Home";
-import About from "../pages/About";
-import CarListing from "../pages/CarListing";
-import CarDetails from "../pages/CarDetails";
-import Blog from "../pages/Blog";
-import BlogDetails from "../pages/BlogDetails";
-import NotFound from "../pages/NotFound";
-import Contact from "../pages/Contact";
-import Profile from "../pages/Profile";
-import MyBookings from "../pages/MyBookings";
-import Settings from "../pages/Settings";
-import BecomeDriver from "../pages/BecomeDriver";
-import { Login, Register, ForgotPassword } from "../pages/auth";
+import {
+  Home,
+  NotFound,
+  // Auth pages
+  Login,
+  Register,
+  ForgotPassword,
+  ResetPassword,
+  // Cars pages
+  CarListing,
+  CarDetails,
+  // User pages
+  Profile,
+  MyBookings,
+  Settings,
+  VerifyEmailOtp,
+  AccountSuspended,
+  // Content pages
+  About,
+  Blog,
+  BlogDetails,
+  Contact,
+  BecomeDriver,
+} from "../pages";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
-import VerifyEmailOtp from "../pages/VerifyEmailOtp";
-import ResetPassword from "../pages/auth/ResetPassword";
 import RedirectIfAuthenticated from "../components/RedirectIfAuthenticated";
-import AccountSuspended from "../pages/AccountSuspended";
 
 const Routers = () => {
   return (

@@ -1,3 +1,43 @@
+/* ============ Header Container ============ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Sticky Header Effect */
+.header-sticky {
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.header-sticky .header__top {
+  padding: 8px 0px;
+}
+
+.header-sticky .header__middle {
+  padding: 15px 0px;
+}
+
+.header-sticky .main__navbar {
+  padding: 12px 0px;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .header__top {
   padding: 10px 0px;
   background: #000d6b;
@@ -230,6 +270,125 @@
 
   .menu__active {
     display: block;
+  }
+}
+
+/* ========== Header Icons Styles ========== */
+.header__icons {
+  margin-right: 15px;
+}
+
+.icon-wrapper {
+  position: relative;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.icon-wrapper:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.icon-wrapper i {
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.icon-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  background: #dc3545;
+  color: #fff;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #000d6b;
+  animation: pulse 2s infinite;
+}
+
+.icon-badge.new-notification {
+  background: #ff4757;
+  animation: pulse 1.5s infinite, shake 0.5s ease-in-out 3s;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+/* Mobile Responsive for Header Icons */
+@media only screen and (max-width: 768px) {
+  .header__icons {
+    margin-right: 10px;
+    gap: 1px !important;
+  }
+
+  .icon-wrapper {
+    width: 35px;
+    height: 35px;
+    padding: 6px 8px;
+  }
+
+  .icon-wrapper i {
+    font-size: 1rem;
+  }
+
+  .icon-badge {
+    width: 16px;
+    height: 16px;
+    font-size: 0.6rem;
+    top: -2px;
+    right: -2px;
+  }
+}
+
+@media only screen and (max-width: 576px) {
+  .header__icons {
+    margin-right: 8px;
+    gap: 0px !important;
+  }
+
+  .icon-wrapper {
+    width: 32px;
+    height: 32px;
+    padding: 4px 6px;
+  }
+
+  .icon-wrapper i {
+    font-size: 0.9rem;
+  }
+
+  .icon-badge {
+    width: 14px;
+    height: 14px;
+    font-size: 0.55rem;
+    top: -1px;
+    right: -1px;
   }
 }
 

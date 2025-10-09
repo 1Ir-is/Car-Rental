@@ -1,8 +1,8 @@
 import React from "react";
 import { Container, Row, Col } from "reactstrap";
 import { Link } from "react-router-dom";
-import Helmet from "../components/Helmet/Helmet";
-import "../styles/account-suspended.css";
+import Helmet from "../../components/Helmet/Helmet";
+import "../../styles/account-suspended.css";
 
 const AccountSuspended = () => (
   <Helmet title="Account Suspended">

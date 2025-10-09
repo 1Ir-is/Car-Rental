@@ -15,10 +15,10 @@ import {
 import { DatePicker } from "antd";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
-import Helmet from "../components/Helmet/Helmet";
-import CommonSection from "../components/UI/CommonSection";
-import "../styles/avatar-upload.css";
+import { useAuth } from "../../context/AuthContext";
+import Helmet from "../../components/Helmet/Helmet";
+import CommonSection from "../../components/UI/CommonSection";
+import "../../styles/avatar-upload.css";
 
 const Profile = () => {
   const { user, updateUser } = useAuth();

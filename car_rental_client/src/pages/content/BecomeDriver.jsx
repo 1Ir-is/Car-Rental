@@ -14,13 +14,13 @@ import {
   Alert,
 } from "reactstrap";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
-import { applicationService } from "../services/applicationService";
+import { useAuth } from "../../context/AuthContext";
+import { applicationService } from "../../services/applicationService";
 import { useNavigate } from "react-router-dom";
-import Helmet from "../components/Helmet/Helmet";
-import CommonSection from "../components/UI/CommonSection";
-import FullPageLoader from "../components/UI/FullPageLoader";
-import "../styles/become-driver.css";
+import Helmet from "../../components/Helmet/Helmet";
+import CommonSection from "../../components/UI/CommonSection";
+import FullPageLoader from "../../components/UI/FullPageLoader";
+import "../../styles/become-driver.css";
 
 const BecomeDriver = () => {
   const { user, isAuthenticated } = useAuth();

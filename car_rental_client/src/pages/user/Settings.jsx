@@ -17,11 +17,11 @@ import {
   ModalFooter,
 } from "reactstrap";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import Helmet from "../components/Helmet/Helmet";
-import CommonSection from "../components/UI/CommonSection";
-import { authAPI } from "../services/authService";
+import Helmet from "../../components/Helmet/Helmet";
+import CommonSection from "../../components/UI/CommonSection";
+import { authAPI } from "../../services/authService";
 
 const Settings = () => {
   const { logout } = useAuth();

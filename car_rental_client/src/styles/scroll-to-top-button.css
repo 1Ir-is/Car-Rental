@@ -1,0 +1,65 @@
+.scroll-to-top-btn {
+  position: fixed !important;
+  bottom: 30px !important;
+  right: 30px !important;
+  z-index: 99999 !important;
+  background: linear-gradient(135deg, #000d6b, #1e40af) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 50px !important;
+  height: 50px !important;
+  font-size: 1.2rem !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 15px rgba(0, 13, 107, 0.3) !important;
+  transition: opacity 0.3s, visibility 0.3s !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  display: flex !important;
+}
+.scroll-to-top-btn.show {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  animation: fadeInUp 0.3s ease !important;
+}
+
+.scroll-to-top-btn:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 6px 20px rgba(0, 13, 107, 0.4) !important;
+  background: linear-gradient(135deg, #1e40af, #000d6b) !important;
+}
+
+.scroll-to-top-btn:active {
+  transform: translateY(-1px) !important;
+}
+
+.scroll-to-top-btn:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(0, 13, 107, 0.2) !important;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .scroll-to-top-btn {
+    bottom: 20px !important;
+    right: 20px !important;
+    width: 45px !important;
+    height: 45px !important;
+    font-size: 1.1rem !important;
+  }
+}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { authAPI } from "../services/authService";
-import FullPageLoader from "../components/UI/FullPageLoader";
+import { authAPI } from "../../services/authService";
+import FullPageLoader from "../../components/UI/FullPageLoader";
 
 const VerifyEmailOtp = () => {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
