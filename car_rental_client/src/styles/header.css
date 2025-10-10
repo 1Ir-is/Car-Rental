@@ -1,7 +1,7 @@
 /* ============ Header Container ============ */
 .header {
-  position: sticky;
-  top: 0;
+  position: relative; /* Changed from sticky to relative */
+  /* top: 0; */
   z-index: 1000;
   background: #fff;
   transition: all 0.3s ease;
@@ -230,10 +230,18 @@
 }
 
 @media only screen and (max-width: 768px) {
-  .header__top,
+  .header__top__left,
   .header__middle,
   .nav__right {
     display: none;
+  }
+
+  .header__top {
+    padding: 8px 0px;
+  }
+
+  .header__top__right {
+    justify-content: center !important;
   }
 
   .mobile__menu {
@@ -523,6 +531,17 @@
 
 /* Mobile Responsive for User Dropdown */
 @media only screen and (max-width: 768px) {
+  .header__top__right {
+    height: auto;
+    min-height: 50px;
+    gap: 2px !important;
+  }
+
+  .header__icons {
+    margin-right: 8px;
+    gap: 1px !important;
+  }
+
   .user-info {
     display: none;
   }
@@ -530,6 +549,7 @@
   .user-dropdown {
     gap: 8px !important;
     padding: 6px 10px;
+    min-height: 35px;
   }
 
   .dropdown-menu {

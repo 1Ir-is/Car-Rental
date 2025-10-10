@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 
 import {
   Container,
@@ -44,22 +44,25 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isSticky, setIsSticky] = useState(false);
+  // const [isSticky, setIsSticky] = useState(false);
 
-  // Sticky header effect
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      setIsSticky(scrollTop > 100);
-    };
+  // Sticky header effect - DISABLED
+  // useEffect(() => {
+  //   const handleScroll = () => {
+  //     const scrollTop = window.scrollY;
+  //     setIsSticky(scrollTop > 100);
+  //   };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  //   window.addEventListener("scroll", handleScroll);
+  //   return () => window.removeEventListener("scroll", handleScroll);
+  // }, []);
 
-  // Debug log
-  console.log("Header - isAuthenticated:", isAuthenticated);
-  console.log("Header - user:", user);
+  // Helper function to check if user is owner (handles both string and number)
+  const isOwner = (user) => {
+    if (!user || !user.role) return false;
+    // Check if role.id equals 3 (owner role)
+    return user.role.id && user.role.id.toString() === "3";
+  };
 
   const toggleMenu = () => menuRef.current.classList.toggle("menu__active");
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
@@ -94,10 +97,7 @@ const Header = () => {
   };
 
   return (
-    <header
-      className={`header ${isSticky ? "header-sticky" : ""}`}
-      ref={headerRef}
-    >
+    <header className="header" ref={headerRef}>
       {/* ============ header top ============ */}
       <div className="header__top">
         <Container>
@@ -228,6 +228,15 @@ const Header = () => {
                               <strong>{user.name}</strong>
                               <br />
                               <small className="text-muted">{user.email}</small>
+                              {/* Show role badge */}
+                              {isOwner(user) && (
+                                <div className="mt-1">
+                                  <span className="badge bg-success">
+                                    <i className="ri-vip-crown-line me-1"></i>
+                                    Owner
+                                  </span>
+                                </div>
+                              )}
                               {(user.trustPoint || user.trust_point) && (
                                 <div className="mt-1">
                                   <span className="badge bg-warning text-dark">
@@ -241,14 +250,47 @@ const Header = () => {
                           </div>
                         </DropdownItem>
                         <DropdownItem divider />
+
+                        {/* Owner Dashboard - Highlighted Option */}
+                        {isOwner(user) && (
+                          <>
+                            <DropdownItem
+                              onClick={() => navigate("/owner/dashboard")}
+                              className="owner-dashboard-option"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
+                                color: "white",
+                                borderRadius: "8px",
+                                margin: "0.5rem",
+                                fontWeight: "600",
+                              }}
+                            >
+                              <i className="ri-dashboard-line me-2"></i>
+                              🚀 Owner Dashboard
+                              <small
+                                className="d-block mt-1"
+                                style={{ opacity: 0.9 }}
+                              >
+                                Manage your rental business
+                              </small>
+                            </DropdownItem>
+                            <DropdownItem divider />
+                          </>
+                        )}
+
+                        {/* Common menu items */}
                         <DropdownItem onClick={() => navigate("/profile")}>
                           <i className="ri-user-line me-2"></i>
                           Profile
                         </DropdownItem>
+
+                        {/* My Bookings - Available for all users */}
                         <DropdownItem onClick={() => navigate("/bookings")}>
                           <i className="ri-car-line me-2"></i>
                           My Bookings
                         </DropdownItem>
+
                         <DropdownItem onClick={() => navigate("/settings")}>
                           <i className="ri-settings-line me-2"></i>
                           Settings

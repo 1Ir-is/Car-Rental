@@ -24,6 +24,7 @@ import {
   Contact,
   BecomeDriver,
 } from "../pages";
+import OwnerDashboard from "../pages/owner/OwnerDashboard";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 import RedirectIfAuthenticated from "../components/RedirectIfAuthenticated";
 
@@ -73,6 +74,16 @@ const Routers = () => {
         element={
           <ProtectedRoute>
             <BecomeDriver />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Owner Routes */}
+      <Route
+        path="/owner/dashboard"
+        element={
+          <ProtectedRoute>
+            <OwnerDashboard />
           </ProtectedRoute>
         }
       />
