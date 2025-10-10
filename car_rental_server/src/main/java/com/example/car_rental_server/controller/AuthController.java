@@ -259,6 +259,8 @@ public class AuthController {
 
             long maxAge = 3600;
             String token = jwtService.generateToken(user);
+
+            // Set-Cookie như cũ
             ResponseCookie cookie = ResponseCookie.from("jwt", token)
                     .httpOnly(true)
                     .sameSite("Lax")
@@ -266,7 +268,9 @@ public class AuthController {
                     .maxAge(maxAge)
                     .build();
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            return ResponseEntity.ok(Map.of("success", true));
+
+            // Thêm token vào body trả về
+            return ResponseEntity.ok(Map.of("success", true, "token", token));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401)
                     .body(Map.of("success", false, "error", "INVALID_CREDENTIALS"));

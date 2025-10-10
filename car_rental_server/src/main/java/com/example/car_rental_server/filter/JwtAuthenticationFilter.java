@@ -26,6 +26,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
+        if (request.getCookies() != null) {
+            for (Cookie c : request.getCookies()) {
+                System.out.println("Cookie: " + c.getName() + " = " + c.getValue());
+            }
+        }
         String token = null;
         // Ưu tiên lấy token từ cookie tên "jwt"
         if (request.getCookies() != null) {
@@ -48,6 +53,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String username = jwtService.getUsernameFromToken(token);
             UserDetails user = userDetailsService.loadUserByUsername(username);
 
+            // LOG authorities
+            System.out.println("JWT Token: " + token);
+            System.out.println("Username: " + username);
+            System.out.println("Authorities: " + user.getAuthorities());
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(auth);
         }

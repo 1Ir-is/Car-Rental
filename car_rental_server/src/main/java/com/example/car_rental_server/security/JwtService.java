@@ -54,6 +54,7 @@ public class JwtService {
                     .parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            e.printStackTrace(); // Thêm dòng này để log ra lỗi cụ thể
             return false;
         }
     }
