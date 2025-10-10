@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Row,
   Col,
@@ -12,17 +12,85 @@ import {
   Alert,
 } from "reactstrap";
 import vehicleService from "../../services/vehicleService";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import {
+  GoogleMap,
+  Marker,
+  useJsApiLoader,
+  Autocomplete,
+} from "@react-google-maps/api";
 import "leaflet/dist/leaflet.css";
 
-// Helper component for map click (set location)
-function LocationPicker({ setLocation }) {
-  useMapEvents({
-    click(e) {
-      setLocation({ latitude: e.latlng.lat, longitude: e.latlng.lng });
-    },
+// Google Maps API Key
+const GOOGLE_MAPS_KEY = "AIzaSyDWTx7bREpM5B6JKdbzOvMW-RRlhkukmVE";
+
+// Google Maps Picker Component
+function GoogleLocationPicker({ onLocationChange }) {
+  const [center, setCenter] = useState({ lat: 16.0544, lng: 108.2022 });
+  const [marker, setMarker] = useState(center);
+  const [placeId, setPlaceId] = useState("");
+  const autocompleteRef = useRef(null);
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: GOOGLE_MAPS_KEY,
+    libraries: ["places"],
   });
-  return null;
+
+  const onPlaceChanged = () => {
+    const place = autocompleteRef.current.getPlace();
+    if (place && place.geometry) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      setCenter({ lat, lng });
+      setMarker({ lat, lng });
+      setPlaceId(place.place_id);
+      onLocationChange({
+        latitude: lat,
+        longitude: lng,
+        placeId: place.place_id,
+        address: place.formatted_address,
+      });
+    }
+  };
+
+  return isLoaded ? (
+    <div>
+      <Autocomplete
+        onLoad={(ref) => (autocompleteRef.current = ref)}
+        onPlaceChanged={onPlaceChanged}
+      >
+        <input
+          type="text"
+          placeholder="Nhập địa chỉ hoặc địa điểm"
+          style={{
+            width: "100%",
+            height: "38px",
+            marginBottom: "8px",
+            padding: "6px",
+          }}
+        />
+      </Autocomplete>
+      <GoogleMap
+        center={center}
+        zoom={15}
+        mapContainerStyle={{ width: "100%", height: "300px" }}
+        onClick={(e) => {
+          const lat = e.latLng.lat();
+          const lng = e.latLng.lng();
+          setMarker({ lat, lng });
+          setCenter({ lat, lng });
+          // Optional: Reverse geocode để lấy place_id từ lat/lng nếu muốn
+        }}
+      >
+        <Marker position={marker} />
+      </GoogleMap>
+      {placeId && (
+        <div style={{ margin: "8px 0", fontSize: "13px" }}>
+          <b>Google Place ID:</b> {placeId}
+        </div>
+      )}
+    </div>
+  ) : (
+    <div>Loading map...</div>
+  );
 }
 
 const AddNewCar = () => {
@@ -41,6 +109,7 @@ const AddNewCar = () => {
     features: [],
     status: "available",
     address: "",
+    placeId: "",
   });
 
   const [images, setImages] = useState([]);
@@ -112,9 +181,9 @@ const AddNewCar = () => {
     "Wi-Fi Hotspot",
   ];
 
+  // Handle form
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     if (type === "checkbox" && name === "features") {
       setFormData((prev) => ({
         ...prev,
@@ -128,7 +197,6 @@ const AddNewCar = () => {
         [name]: value,
       }));
     }
-
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -140,7 +208,6 @@ const AddNewCar = () => {
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const maxImages = 5;
-
     if (images.length + files.length > maxImages) {
       setErrors((prev) => ({
         ...prev,
@@ -148,13 +215,11 @@ const AddNewCar = () => {
       }));
       return;
     }
-
     const newImages = files.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       id: Date.now() + Math.random(),
     }));
-
     setImages((prev) => [...prev, ...newImages]);
     setErrors((prev) => ({ ...prev, images: "" }));
   };
@@ -173,7 +238,6 @@ const AddNewCar = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.name.trim()) newErrors.name = "Car name is required";
     if (!formData.brand) newErrors.brand = "Brand is required";
     if (!formData.model.trim()) newErrors.model = "Model is required";
@@ -201,12 +265,26 @@ const AddNewCar = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Callback cho GoogleLocationPicker
+  const handleGoogleLocationChange = ({
+    latitude,
+    longitude,
+    placeId,
+    address,
+  }) => {
+    setLocation({ latitude, longitude });
+    setFormData((prev) => ({
+      ...prev,
+      placeId: placeId || "",
+      address: address || prev.address,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
     setIsSubmitting(true);
 
-    // Build VehicleDTO theo backend
     const vehicleDTO = {
       vehicleName: formData.name,
       brand: formData.brand,
@@ -225,6 +303,7 @@ const AddNewCar = () => {
       address: formData.address,
       latitude: location.latitude,
       longitude: location.longitude,
+      placeId: formData.placeId, // Thêm placeId vào DTO
     };
 
     const imageFiles = images.map((img) => img.file);
@@ -252,6 +331,7 @@ const AddNewCar = () => {
             features: [],
             status: "available",
             address: "",
+            placeId: "",
           });
           setImages([]);
           setShowSuccess(false);
@@ -507,7 +587,7 @@ const AddNewCar = () => {
                   )}
                 </FormGroup>
                 <FormGroup>
-                  <Label for="address">Address (optional)</Label>
+                  <Label for="address">Address</Label>
                   <Input
                     type="text"
                     name="address"
@@ -657,29 +737,39 @@ const AddNewCar = () => {
               </CardBody>
             </Card>
 
-            {/* OpenStreetMap + Leaflet.js */}
+            {/* Google Maps chọn vị trí và lấy placeId */}
             <Card className="mb-4">
               <CardBody>
                 <h5 className="card-title mb-3">
                   <i className="ri-map-pin-line me-2"></i>
-                  Select Car Location (click map)
+                  Select Car Location (Google Maps + Place ID)
                 </h5>
-                <div style={{ height: "300px", width: "100%" }}>
-                  <MapContainer
-                    center={[location.latitude, location.longitude]}
-                    zoom={13}
-                    style={{ height: "100%", width: "100%" }}
-                  >
-                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <LocationPicker setLocation={setLocation} />
-                    <Marker
-                      position={[location.latitude, location.longitude]}
-                    />
-                  </MapContainer>
-                </div>
+                <GoogleLocationPicker
+                  onLocationChange={handleGoogleLocationChange}
+                />
                 <small className="text-muted">
-                  Click on the map to set vehicle position for renters!
+                  Nhập địa chỉ phía trên hoặc chọn vị trí trên bản đồ. Hệ thống
+                  sẽ tự động lấy Place ID Google cho bạn!
                 </small>
+                {formData.placeId && (
+                  <div style={{ margin: "8px 0", fontSize: "13px" }}>
+                    <b>Google Place ID lưu vào hệ thống:</b> {formData.placeId}
+                  </div>
+                )}
+                {/* Hiển thị bản đồ Google Maps Embed */}
+                {formData.placeId && (
+                  <div style={{ width: "100%", margin: "12px 0" }}>
+                    <iframe
+                      title="Google Maps Location"
+                      className="thumbnail-img"
+                      style={{ border: "0", width: "100%" }}
+                      height="220"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_KEY}&q=place_id:${formData.placeId}`}
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                )}
               </CardBody>
             </Card>
           </Col>
