@@ -811,6 +811,19 @@
   margin-bottom: 0.5rem;
 }
 
+/* Make asterisk red in all labels */
+.add-new-car .form-label,
+.add-new-car label {
+  color: #495057;
+}
+
+/* Target the asterisk specifically */
+.add-new-car .required-asterisk {
+  color: #dc3545;
+  font-weight: bold;
+  margin-left: 2px;
+}
+
 .add-new-car .form-control,
 .add-new-car .form-select {
   border-radius: 8px;
@@ -876,6 +889,49 @@
 .remove-image-btn:hover {
   opacity: 1;
   transform: scale(1.1);
+}
+
+/* New circular remove button */
+.remove-image-btn-circle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  border: 2px solid #ffffff;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+  z-index: 10;
+}
+
+.remove-image-btn-circle:hover {
+  background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.5);
+}
+
+.remove-image-btn-circle:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4);
+}
+
+.remove-image-btn-circle:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+}
+
+.remove-image-btn-circle i {
+  font-size: 12px;
+  line-height: 1;
 }
 
 .primary-badge {
@@ -1023,3 +1079,187 @@
     margin-bottom: 1rem;
   }
 }
+
+/* Location Picker Styling */
+.location-search-container {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.search-input-group {
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: 8px;
+  flex: 1;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px 12px 10px 40px !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: #1e40af !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1) !important;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: #64748b;
+  font-size: 16px;
+  z-index: 2;
+}
+
+.search-btn {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;
+  border: none !important;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white !important;
+  font-weight: 500;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  min-width: 130px;
+  justify-content: center;
+}
+
+.search-btn:hover {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e2a5a 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+.search-btn:active {
+  transform: translateY(0);
+}
+
+.search-btn:disabled {
+  background: #94a3b8 !important;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.center-marker-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  border: none !important;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: white !important;
+  font-weight: 500;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  min-width: 44px;
+  height: 44px;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+.center-marker-btn:hover {
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+}
+
+.center-marker-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.3);
+}
+
+.center-marker-btn:focus {
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2);
+  outline: none;
+}
+
+.center-marker-btn i {
+  font-size: 18px;
+}
+
+.location-error {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.location-info {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #1e40af;
+}
+
+.info-item {
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: #475569;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.saved-address-info {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #166534;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .location-search-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .search-input-group {
+    width: 100%;
+  }
+
+  .search-input {
+    width: 100%;
+    padding-left: 40px !important;
+  }
+
+  .search-btn {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .center-marker-btn {
+    width: 100%;
+    min-width: auto;
+    height: 44px;
+    justify-content: center;
+  }
+
+  .center-marker-btn::after {
+    content: " Center to Marker";
+    margin-left: 8px;
+    font-size: 14px;
+  }
+}
+
+/* Loading styles cleaned up - now using FullPageLoader */
