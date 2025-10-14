@@ -1,0 +1,295 @@
+/* Car Image Gallery Styles */
+.car-image-gallery {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+/* For CarDetails page - remove extra spacing */
+.container .car-image-gallery,
+.col-lg-6 .car-image-gallery {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.main-image-container {
+  position: relative;
+  width: 100% !important;
+  height: 400px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent;
+}
+
+.main-image {
+  position: relative;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 10px;
+  overflow: hidden;
+  display: block;
+  background: transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  transition: transform 0.3s ease;
+}
+
+.main-image:hover img {
+  transform: scale(1.02);
+}
+
+.nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 20px;
+  z-index: 10;
+  opacity: 0.8;
+}
+
+.nav-arrow:hover {
+  background: rgba(0, 0, 0, 0.9);
+  transform: translateY(-50%) scale(1.1);
+  opacity: 1;
+}
+
+.nav-arrow-left {
+  left: 15px;
+}
+
+.nav-arrow-right {
+  right: 15px;
+}
+
+.image-counter {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+.thumbnail-container {
+  width: 100%;
+  overflow: hidden;
+  margin-top: 8px;
+  background: transparent;
+  padding: 0;
+}
+
+.thumbnails {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #ddd transparent;
+  justify-content: flex-start;
+}
+
+.thumbnails::-webkit-scrollbar {
+  height: 6px;
+}
+
+.thumbnails::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.thumbnails::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.thumbnails::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.thumbnail {
+  flex: 0 0 100px;
+  height: 80px;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail:hover {
+  border-color: #f9a826;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(249, 168, 38, 0.3);
+}
+
+.thumbnail.active {
+  border-color: #f9a826;
+  box-shadow: 0 0 0 3px rgba(249, 168, 38, 0.25);
+  transform: translateY(-2px);
+}
+
+.thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.thumbnail:hover img {
+  transform: scale(1.05);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .main-image-container {
+    height: 350px !important;
+  }
+
+  .nav-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .thumbnail {
+    flex: 0 0 90px;
+    height: 70px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-image-container {
+    height: 300px !important;
+  }
+
+  .nav-arrow {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+
+  .nav-arrow-left {
+    left: 10px;
+  }
+
+  .nav-arrow-right {
+    right: 10px;
+  }
+
+  .thumbnail {
+    flex: 0 0 80px;
+    height: 60px;
+  }
+
+  .thumbnails {
+    gap: 10px;
+  }
+
+  .image-counter {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .main-image-container {
+    height: 250px !important;
+  }
+
+  .nav-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .thumbnail {
+    flex: 0 0 70px;
+    height: 50px;
+  }
+
+  .thumbnails {
+    gap: 8px;
+  }
+
+  .thumbnail-container {
+    margin-top: 6px;
+  }
+}
+
+/* Custom styles for CarItem integration */
+.car__item .car-image-gallery .main-image-container {
+  height: 250px !important;
+}
+
+.car__item .car-image-gallery .main-image {
+  height: 100% !important;
+  border-radius: 8px;
+}
+
+.car__item .car-image-gallery .main-image img {
+  border-radius: 8px;
+}
+
+.car__item .car-image-gallery .thumbnail-container {
+  margin-top: 6px;
+}
+
+.car__item .car-image-gallery .thumbnail {
+  flex: 0 0 80px;
+  height: 60px;
+  border-radius: 8px;
+}
+
+.car__item .car-image-gallery .thumbnails {
+  gap: 10px;
+}
+
+.car__item .car-image-gallery .nav-arrow {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.car__item .car-image-gallery .nav-arrow-left {
+  left: 8px;
+}
+
+.car__item .car-image-gallery .nav-arrow-right {
+  right: 8px;
+}
+
+.car__item .car-image-gallery .image-counter {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+/* Hover effect for car item */
+.car__item:hover .car-image-gallery .nav-arrow {
+  opacity: 1;
+}

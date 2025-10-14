@@ -1,9 +1,9 @@
-package com.example.car_rental_server.service.vehicle;
+package com.example.car_rental_server.service.owner;
 
 import com.example.car_rental_server.dto.PostVehicleDTO;
 import com.example.car_rental_server.model.PostVehicle;
 import com.example.car_rental_server.model.User;
-import com.example.car_rental_server.repository.PostVehicleRepository;
+import com.example.car_rental_server.repository.IPostVehicleRepository;
 import com.example.car_rental_server.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PostVehicleServiceImpl implements IPostVehicleService {
-    private final PostVehicleRepository postVehicleRepo;
+    private final IPostVehicleRepository postVehicleRepo;
     private final IUserRepository userRepository;
 
     private PostVehicleDTO toDTO(PostVehicle v) {

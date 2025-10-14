@@ -11,7 +11,7 @@ import {
   Input,
   Alert,
 } from "reactstrap";
-import vehicleService from "../../services/vehicleService";
+import ownerService from "../../services/ownerService";
 import { toast } from "react-toastify";
 import FullPageLoader from "../UI/FullPageLoader";
 
@@ -400,10 +400,7 @@ const AddNewCar = ({ setActiveSection }) => {
     const imageFiles = images.map((img) => img.file);
 
     try {
-      const response = await vehicleService.createVehicle(
-        vehicleDTO,
-        imageFiles
-      );
+      const response = await ownerService.createVehicle(vehicleDTO, imageFiles);
       if (response.success) {
         // Show success toast
         toast.success("Car added successfully! Redirecting to Manage Cars...", {

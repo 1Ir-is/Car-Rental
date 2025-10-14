@@ -11,7 +11,7 @@ import {
   Input,
   Alert,
 } from "reactstrap";
-import vehicleService from "../../services/vehicleService";
+import ownerService from "../../services/ownerService";
 import { toast } from "react-toastify";
 import FullPageLoader from "../UI/FullPageLoader";
 
@@ -465,7 +465,7 @@ const EditCar = ({ setActiveSection, carData }) => {
     const imageFiles = images.map((img) => img.file);
 
     try {
-      const response = await vehicleService.updateVehicle(
+      const response = await ownerService.updateVehicle(
         carData.id,
         vehicleDTO,
         imageFiles || []

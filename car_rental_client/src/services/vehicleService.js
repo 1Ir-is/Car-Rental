@@ -1,187 +1,49 @@
-import axios from "axios";
+import apiClient from "../context/apiClient";
 
-// Base API configuration
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:8080/api";
-
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    // Note: multipart/form-data is set automatically by browser when sending FormData
-    "Content-Type": "application/json",
-  },
-  withCredentials: true,
-  timeout: 30000,
-});
-
-// Interceptors (optional)
-apiClient.interceptors.request.use(
-  (config) => {
-    console.log("🍪 Vehicle API Request:", config.url);
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error(
-      "❌ Vehicle API Error:",
-      error.response?.data || error.message
-    );
-    return Promise.reject(error);
-  }
-);
-
-const vehicleService = {
-  // Create a new vehicle (with Cloudinary upload)
-  createVehicle: async (vehicleDTO, imageFiles) => {
+// Vehicle API operations (public: khách/người thuê)
+export const vehicleAPI = {
+  // Lấy toàn bộ xe trên hệ thống
+  getAllVehicles: async () => {
     try {
-      // Build FormData for multipart/form-data request
-      const formData = new FormData();
-      formData.append(
-        "info",
-        new Blob([JSON.stringify(vehicleDTO)], { type: "application/json" })
-      );
-      // Append images (max 5)
-      imageFiles.forEach((file) => {
-        formData.append("images", file);
-      });
-
-      const response = await apiClient.post("/owner/vehicles", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
+      const response = await apiClient.get("/vehicles");
       return {
         success: true,
         data: response.data,
-        message: "Vehicle added successfully",
+        message: "Vehicles retrieved successfully",
       };
     } catch (error) {
+      console.error("❌ Get all vehicles error:", error);
       return {
         success: false,
         message:
           error.response?.data?.message ||
           error.response?.data ||
-          "Failed to add vehicle",
+          "Failed to get vehicles",
       };
     }
   },
 
-  // Get all vehicles by owner
-  getMyVehicles: async (userId) => {
-    try {
-      const response = await apiClient.get(
-        `/owner/vehicles/my?userId=${userId}`
-      );
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          error.response?.data ||
-          "Failed to fetch vehicles",
-      };
-    }
-  },
-
-  // Get vehicle detail
+  // Xem chi tiết xe bởi UUID
   getVehicleDetail: async (vehicleId) => {
     try {
-      const response = await apiClient.get(`/owner/vehicles/${vehicleId}`);
-      return { success: true, data: response.data };
-    } catch (error) {
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          error.response?.data ||
-          "Failed to fetch vehicle detail",
-      };
-    }
-  },
-
-  // Update vehicle
-  updateVehicle: async (vehicleId, vehicleDTO, imageFiles) => {
-    try {
-      const formData = new FormData();
-      formData.append(
-        "info",
-        new Blob([JSON.stringify(vehicleDTO)], { type: "application/json" })
-      );
-      imageFiles.forEach((file) => {
-        formData.append("images", file);
-      });
-
-      const response = await apiClient.put(
-        `/owner/vehicles/${vehicleId}`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
+      const response = await apiClient.get(`/vehicles/${vehicleId}`);
       return {
         success: true,
         data: response.data,
-        message: "Vehicle updated successfully",
+        message: "Vehicle detail retrieved successfully",
       };
     } catch (error) {
+      console.error("❌ Get vehicle detail error:", error);
       return {
         success: false,
         message:
           error.response?.data?.message ||
           error.response?.data ||
-          "Failed to update vehicle",
-      };
-    }
-  },
-
-  // Delete vehicle
-  deleteVehicle: async (vehicleId) => {
-    try {
-      await apiClient.delete(`/owner/vehicles/${vehicleId}`);
-      return { success: true, message: "Vehicle deleted successfully" };
-    } catch (error) {
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          error.response?.data ||
-          "Failed to delete vehicle",
-      };
-    }
-  },
-
-  // Optional: Upload images only (if needed)
-  uploadImages: async (imageFiles) => {
-    try {
-      const formData = new FormData();
-      imageFiles.forEach((file) => {
-        formData.append("files", file);
-      });
-      const response = await apiClient.post(
-        "/owner/vehicles/upload-images",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      return {
-        success: true,
-        urls: response.data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          error.response?.data ||
-          "Failed to upload images",
+          "Failed to get vehicle detail",
       };
     }
   },
 };
 
-export default vehicleService;
+// Export chuẩn để import: import { vehicleAPI } from "../services/vehicleService";
+export const vehicleService = vehicleAPI;

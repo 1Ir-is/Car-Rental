@@ -16,7 +16,7 @@ import {
   Spinner,
   Alert,
 } from "reactstrap";
-import vehicleService from "../../services/vehicleService";
+import ownerService from "../../services/ownerService";
 import AuthContext from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import "../../styles/car-detail-modal.css";
@@ -48,7 +48,7 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
           return;
         }
 
-        const response = await vehicleService.getMyVehicles(user.id);
+        const response = await ownerService.getMyVehicles(user.id);
 
         if (response.success) {
           setCars(response.data || []);
@@ -85,7 +85,7 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
 
     if (result.isConfirmed) {
       try {
-        const response = await vehicleService.deleteVehicle(car.id);
+        const response = await ownerService.deleteVehicle(car.id);
         if (response.success) {
           Swal.fire({
             title: "Đã xóa!",
