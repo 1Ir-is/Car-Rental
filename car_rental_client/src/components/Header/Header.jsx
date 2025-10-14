@@ -267,7 +267,7 @@ const Header = () => {
                               }}
                             >
                               <i className="ri-dashboard-line me-2"></i>
-                              🚀 Owner Dashboard
+                              Owner Dashboard
                               <small
                                 className="d-block mt-1"
                                 style={{ opacity: 0.9 }}

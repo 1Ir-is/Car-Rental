@@ -1,38 +1,4 @@
-import axios from "axios";
-
-// Base API configuration
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:8080/api";
-
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true, // Important: send cookies with requests
-  timeout: 10000, // 10 seconds timeout
-});
-
-// Add request interceptor
-apiClient.interceptors.request.use(
-  (config) => {
-    console.log("🍪 User API request with cookies to:", config.url);
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor for error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("❌ User API Error:", error.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
+import apiClient from "../context/apiClient";
 
 // User API operations
 export const userAPI = {
@@ -247,4 +213,3 @@ export const userUtils = {
 
 // Export userAPI as userService for consistency
 export const userService = userAPI;
-export default apiClient;

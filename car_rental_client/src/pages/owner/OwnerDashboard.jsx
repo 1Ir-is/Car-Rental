@@ -6,6 +6,7 @@ import OwnerSidebar from "../../components/Owner/OwnerSidebar";
 import OwnerStats from "../../components/Owner/OwnerStats";
 import OwnerCarManagement from "../../components/Owner/OwnerCarManagement";
 import AddNewCar from "../../components/Owner/AddNewCar";
+import EditCar from "../../components/Owner/EditCar";
 import OwnerBookings from "../../components/Owner/OwnerBookings";
 import OwnerEarnings from "../../components/Owner/OwnerEarnings";
 import OwnerReviews from "../../components/Owner/OwnerReviews";
@@ -15,6 +16,7 @@ import "../../styles/owner-dashboard.css";
 const OwnerDashboard = () => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [editingCar, setEditingCar] = useState(null);
 
   // Helper function to check if user is owner
   const isOwner = (user) => {
@@ -43,9 +45,18 @@ const OwnerDashboard = () => {
       case "dashboard":
         return <OwnerStats />;
       case "cars":
-        return <OwnerCarManagement setActiveSection={setActiveSection} />;
+        return (
+          <OwnerCarManagement
+            setActiveSection={setActiveSection}
+            setEditingCar={setEditingCar}
+          />
+        );
       case "add-car":
-        return <AddNewCar />;
+        return <AddNewCar setActiveSection={setActiveSection} />;
+      case "edit-car":
+        return (
+          <EditCar setActiveSection={setActiveSection} carData={editingCar} />
+        );
       case "bookings":
         return <OwnerBookings />;
       case "earnings":

@@ -1,51 +1,49 @@
-import axios from "axios";
+import apiClient from "../context/apiClient";
 
-// Base API configuration
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:8080/api";
-
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
+// Utility functions for HttpOnly cookie authentication
+export const authUtils = {
+  // Check if user is authenticated (chỉ cần kiểm tra user data)
+  isAuthenticated: () => {
+    const user = localStorage.getItem("user");
+    return !!user; // HttpOnly cookie sẽ được browser tự động gửi
   },
-  withCredentials: true, // Quan trọng: gửi cookies trong requests
-  timeout: 10000, // 10 seconds timeout
-});
 
-// Add request interceptor (không cần thêm token vào header nữa vì dùng cookies)
-apiClient.interceptors.request.use(
-  (config) => {
-    // Cookies sẽ được browser tự động gửi kèm với withCredentials: true
-    console.log("🍪 Request with cookies to:", config.url);
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor for error handling
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
-      console.log("🚨 401 error - clearing auth data");
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("user");
-      // Only redirect if not already on login/register page
-      if (
-        !window.location.pathname.includes("/login") &&
-        !window.location.pathname.includes("/register")
-      ) {
-        window.location.href = "/login";
-      }
+  // Get current user from localStorage
+  getCurrentUser: () => {
+    const user = localStorage.getItem("user");
+    try {
+      return user ? JSON.parse(user) : null;
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      return null;
     }
-    return Promise.reject(error);
-  }
-);
+  },
+
+  // Get auth token (không cần thiết với HttpOnly cookies)
+  getToken: () => {
+    // Với HttpOnly cookie, token không accessible từ JavaScript
+    // Return null để AuthContext biết là dùng cookie-based auth
+    return null;
+  },
+
+  // Save user data to localStorage (for caching)
+  saveUser: (userData) => {
+    try {
+      localStorage.setItem("user", JSON.stringify(userData));
+      console.log("💾 User data saved to localStorage:", userData);
+    } catch (error) {
+      console.error("Error saving user data:", error);
+    }
+  },
+
+  // Clear auth data
+  clearAuthData: () => {
+    // Chỉ clear user data, HttpOnly cookie sẽ được clear bởi backend
+    console.log("🗑️ Hàm clearAuthData được gọi!");
+    localStorage.removeItem("user");
+    // localStorage.removeItem("authToken"); // không cần với HttpOnly cookies
+  },
+};
 
 // Authentication API services
 export const authAPI = {
@@ -357,50 +355,3 @@ export const authAPI = {
     }
   },
 };
-
-// Utility functions for HttpOnly cookie authentication
-export const authUtils = {
-  // Check if user is authenticated (chỉ cần kiểm tra user data)
-  isAuthenticated: () => {
-    const user = localStorage.getItem("user");
-    return !!user; // HttpOnly cookie sẽ được browser tự động gửi
-  },
-
-  // Get current user from localStorage
-  getCurrentUser: () => {
-    const user = localStorage.getItem("user");
-    try {
-      return user ? JSON.parse(user) : null;
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      return null;
-    }
-  },
-
-  // Get auth token (không cần thiết với HttpOnly cookies)
-  getToken: () => {
-    // Với HttpOnly cookie, token không accessible từ JavaScript
-    // Return null để AuthContext biết là dùng cookie-based auth
-    return null;
-  },
-
-  // Save user data to localStorage (for caching)
-  saveUser: (userData) => {
-    try {
-      localStorage.setItem("user", JSON.stringify(userData));
-      console.log("💾 User data saved to localStorage:", userData);
-    } catch (error) {
-      console.error("Error saving user data:", error);
-    }
-  },
-
-  // Clear auth data
-  clearAuthData: () => {
-    // Chỉ clear user data, HttpOnly cookie sẽ được clear bởi backend
-    localStorage.removeItem("user");
-    console.log("🗑️ Auth data cleared from localStorage");
-    // localStorage.removeItem("authToken"); // không cần với HttpOnly cookies
-  },
-};
-
-export default apiClient;

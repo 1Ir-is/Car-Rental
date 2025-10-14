@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Row,
   Col,
@@ -70,22 +70,38 @@ function MapFlyTo({ position, zoom, flyTrigger }) {
   const map = useMap();
   React.useEffect(() => {
     if (flyTrigger) {
-      // Chỉ zoom/fly khi có trigger
       map.setView(position, zoom, { animate: true });
     }
   }, [flyTrigger, position, zoom, map]);
   return null;
 }
-function LocationPicker({ onLocationChange }) {
+
+function LocationPicker({ onLocationChange, initialPosition, initialAddress }) {
   const [search, setSearch] = useState("");
-  const [position, setPosition] = useState([16.0544, 108.2022]);
+  const [position, setPosition] = useState(
+    initialPosition || [16.0544, 108.2022]
+  );
   const [address, setAddress] = useState("");
   const [zoom, setZoom] = useState(15);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [flyToMarker, setFlyToMarker] = useState(false); // trigger "quay về marker"
+  const [flyToMarker, setFlyToMarker] = useState(false);
 
-  // Tìm địa chỉ bằng Nominatim API
+  // Update position when initialPosition changes
+  useEffect(() => {
+    if (initialPosition && initialPosition.length === 2) {
+      setPosition(initialPosition);
+      setZoom(17); // Set higher zoom for existing locations
+    }
+  }, [initialPosition]);
+
+  // Initialize and update address when initialAddress changes
+  useEffect(() => {
+    if (initialAddress) {
+      setAddress(initialAddress);
+    }
+  }, [initialAddress]);
+
   const handleSearch = async () => {
     if (!search.trim()) return;
     setLoading(true);
@@ -116,11 +132,10 @@ function LocationPicker({ onLocationChange }) {
       setError("Network error or Nominatim not responding!");
     } finally {
       setLoading(false);
-      setTimeout(() => setFlyToMarker(false), 500); // reset trigger sau khi fly
+      setTimeout(() => setFlyToMarker(false), 500);
     }
   };
 
-  // Click map cũng zoom sát
   const handleMapClick = (e) => {
     setPosition([e.latlng.lat, e.latlng.lng]);
     setZoom(19);
@@ -135,10 +150,9 @@ function LocationPicker({ onLocationChange }) {
     setTimeout(() => setFlyToMarker(false), 500);
   };
 
-  // Nút "Quay lại vị trí marker"
   const handleFlyToMarker = () => {
     setFlyToMarker(true);
-    setZoom(19); // zoom sát luôn
+    setZoom(19);
     setTimeout(() => setFlyToMarker(false), 500);
   };
 
@@ -184,8 +198,13 @@ function LocationPicker({ onLocationChange }) {
       )}
 
       <MapContainer
-        center={position}
-        zoom={zoom}
+        key={`map-${initialPosition ? initialPosition.join(",") : "default"}`}
+        center={
+          initialPosition && initialPosition.length === 2
+            ? initialPosition
+            : position
+        }
+        zoom={initialPosition && initialPosition.length === 2 ? 17 : zoom}
         style={{ width: "100%", height: "300px", marginTop: "12px" }}
         whenCreated={(map) => map.on("click", handleMapClick)}
       >
@@ -200,7 +219,8 @@ function LocationPicker({ onLocationChange }) {
 
       <div className="location-info">
         <div className="info-item">
-          <strong>Address:</strong> {address || "Not specified"}
+          <strong>Address:</strong>{" "}
+          {address || initialAddress || "Not specified"}
         </div>
         <div className="info-item">
           <strong>Coordinates:</strong> {position[0].toFixed(6)},{" "}
@@ -211,7 +231,7 @@ function LocationPicker({ onLocationChange }) {
   );
 }
 
-const AddNewCar = ({ setActiveSection }) => {
+const EditCar = ({ setActiveSection, carData }) => {
   const [formData, setFormData] = useState({
     name: "",
     brand: "",
@@ -231,13 +251,14 @@ const AddNewCar = ({ setActiveSection }) => {
   });
 
   const [images, setImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
   // For map location
   const [location, setLocation] = useState({
-    latitude: 16.0544, // Default Da Nang
+    latitude: 16.0544,
     longitude: 108.2022,
   });
 
@@ -286,6 +307,42 @@ const AddNewCar = ({ setActiveSection }) => {
     "Wi-Fi Hotspot",
   ];
 
+  // Initialize form with car data
+  useEffect(() => {
+    if (carData) {
+      setFormData({
+        name: carData.vehicleName || carData.name || "",
+        brand: carData.brand || "",
+        model: carData.model || "",
+        year: carData.year || new Date().getFullYear(),
+        color: carData.color || "",
+        licensePlate: carData.licensePlate || "",
+        transmission: carData.transmission || "automatic",
+        fuelType: carData.fuelType || "petrol",
+        seats: carData.vehicleSeat || carData.seats || 5,
+        price: carData.dailyPrice || carData.price || "",
+        description: carData.description || "",
+        features: carData.features || [],
+        status: carData.status || "available",
+        address: carData.address || "",
+        placeId: carData.placeId || "",
+      });
+
+      // Set location
+      if (carData.latitude && carData.longitude) {
+        setLocation({
+          latitude: carData.latitude,
+          longitude: carData.longitude,
+        });
+      }
+
+      // Set existing images
+      if (carData.imageList && carData.imageList.length > 0) {
+        setExistingImages(carData.imageList);
+      }
+    }
+  }, [carData]);
+
   // Handle form
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -313,13 +370,16 @@ const AddNewCar = ({ setActiveSection }) => {
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const maxImages = 5;
-    if (images.length + files.length > maxImages) {
+    const totalImages = existingImages.length + images.length + files.length;
+
+    if (totalImages > maxImages) {
       setErrors((prev) => ({
         ...prev,
         images: `Maximum ${maxImages} images allowed`,
       }));
       return;
     }
+
     const newImages = files.map((file) => ({
       file,
       preview: URL.createObjectURL(file),
@@ -329,7 +389,7 @@ const AddNewCar = ({ setActiveSection }) => {
     setErrors((prev) => ({ ...prev, images: "" }));
   };
 
-  const removeImage = (imageId) => {
+  const removeNewImage = (imageId) => {
     setImages((prev) => {
       const updated = prev.filter((img) => img.id !== imageId);
       prev.forEach((img) => {
@@ -339,6 +399,10 @@ const AddNewCar = ({ setActiveSection }) => {
       });
       return updated;
     });
+  };
+
+  const removeExistingImage = (imageUrl) => {
+    setExistingImages((prev) => prev.filter((url) => url !== imageUrl));
   };
 
   const validateForm = () => {
@@ -356,7 +420,7 @@ const AddNewCar = ({ setActiveSection }) => {
     if (formData.year < 1990 || formData.year > currentYear + 1) {
       newErrors.year = `Year must be between 1990 and ${currentYear + 1}`;
     }
-    if (images.length === 0) {
+    if (existingImages.length === 0 && images.length === 0) {
       newErrors.images = "At least one image is required";
     }
     const licensePlateRegex = /^[0-9]{2}[A-Z]-[0-9]{4,5}$/;
@@ -395,65 +459,47 @@ const AddNewCar = ({ setActiveSection }) => {
       longitude: location.longitude,
       placeId: formData.placeId,
       userId: user?.id,
+      keepExistingImages: existingImages, // Keep track of existing images
     };
 
     const imageFiles = images.map((img) => img.file);
 
     try {
-      const response = await vehicleService.createVehicle(
+      const response = await vehicleService.updateVehicle(
+        carData.id,
         vehicleDTO,
-        imageFiles
+        imageFiles || []
       );
       if (response.success) {
-        // Show success toast
-        toast.success("Car added successfully! Redirecting to Manage Cars...", {
-          position: "top-right",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          onOpen: () => {
-            // Scroll to top when toast appears
-            setTimeout(() => {
-              window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-              });
-            }, 100);
-          },
-        });
+        toast.success(
+          "Car updated successfully! Redirecting to Manage Cars...",
+          {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            onOpen: () => {
+              setTimeout(() => {
+                window.scrollTo({
+                  top: 0,
+                  behavior: "smooth",
+                });
+              }, 100);
+            },
+          }
+        );
 
-        // Reset form
-        setFormData({
-          name: "",
-          brand: "",
-          model: "",
-          year: new Date().getFullYear(),
-          color: "",
-          licensePlate: "",
-          transmission: "automatic",
-          fuelType: "petrol",
-          seats: 5,
-          price: "",
-          description: "",
-          features: [],
-          status: "available",
-          address: "",
-          placeId: "",
-        });
-        setImages([]);
-        setLocation({ latitude: 16.0544, longitude: 108.2022 });
-
-        // Navigate to Manage Cars tab after successful creation
+        // Navigate to Manage Cars tab after successful update
         setTimeout(() => {
           if (setActiveSection) {
             setActiveSection("cars");
           }
-        }, 1500); // Delay to let user see the success message
+        }, 1500);
       } else {
         toast.error(
-          response.message || "Failed to add car. Please try again.",
+          response.message || "Failed to update car. Please try again.",
           {
             position: "top-right",
             autoClose: 5000,
@@ -461,7 +507,7 @@ const AddNewCar = ({ setActiveSection }) => {
         );
       }
     } catch (error) {
-      toast.error("Failed to add car. Please try again.", {
+      toast.error("Failed to update car. Please try again.", {
         position: "top-right",
         autoClose: 5000,
       });
@@ -470,15 +516,25 @@ const AddNewCar = ({ setActiveSection }) => {
     }
   };
 
+  if (!carData) {
+    return (
+      <div className="text-center py-5">
+        <h4>No car data found</h4>
+        <Button color="primary" onClick={() => setActiveSection("cars")}>
+          Back to Manage Cars
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Full Page Loader */}
-      <FullPageLoader isLoading={isSubmitting} tip="Adding new car..." />
+      <FullPageLoader isLoading={isSubmitting} tip="Updating car..." />
 
       <div className="add-new-car">
         <div className="section-header mb-4">
-          <h4>Add New Car</h4>
-          <p className="text-muted">Add a new vehicle to your rental fleet</p>
+          <h4>Edit Car - {carData.vehicleName || carData.name}</h4>
+          <p className="text-muted">Update your vehicle information</p>
         </div>
 
         {errors.submit && (
@@ -771,8 +827,47 @@ const AddNewCar = ({ setActiveSection }) => {
                     Car Images <span className="required-asterisk">*</span>
                   </h5>
 
+                  {/* Existing Images */}
+                  {existingImages.length > 0 && (
+                    <div className="existing-images mb-3">
+                      <h6>Current Images:</h6>
+                      <Row>
+                        {existingImages.map((imageUrl, index) => (
+                          <Col
+                            xs="6"
+                            key={`existing-${index}`}
+                            className="mb-2"
+                          >
+                            <div className="image-preview-item">
+                              <img
+                                src={imageUrl}
+                                alt={`Existing ${index + 1}`}
+                                className="img-fluid rounded"
+                                onError={(e) => {
+                                  e.target.src =
+                                    "https://via.placeholder.com/150x100?text=Image";
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className="remove-image-btn-circle"
+                                onClick={() => removeExistingImage(imageUrl)}
+                                title="Remove image"
+                              >
+                                <i className="ri-close-line"></i>
+                              </button>
+                              {index === 0 && (
+                                <span className="primary-badge">Primary</span>
+                              )}
+                            </div>
+                          </Col>
+                        ))}
+                      </Row>
+                    </div>
+                  )}
+
                   <FormGroup>
-                    <Label for="images">Upload Images (Max 5)</Label>
+                    <Label for="images">Upload New Images (Max 5 total)</Label>
                     <Input
                       type="file"
                       name="images"
@@ -790,30 +885,27 @@ const AddNewCar = ({ setActiveSection }) => {
                     </small>
                   </FormGroup>
 
-                  {/* Image Previews */}
+                  {/* New Image Previews */}
                   {images.length > 0 && (
                     <div className="image-previews mt-3">
-                      <h6>Preview:</h6>
+                      <h6>New Images:</h6>
                       <Row>
                         {images.map((image, index) => (
                           <Col xs="6" key={image.id} className="mb-2">
                             <div className="image-preview-item">
                               <img
                                 src={image.preview}
-                                alt={`Preview ${index + 1}`}
+                                alt={`New ${index + 1}`}
                                 className="img-fluid rounded"
                               />
                               <button
                                 type="button"
                                 className="remove-image-btn-circle"
-                                onClick={() => removeImage(image.id)}
+                                onClick={() => removeNewImage(image.id)}
                                 title="Remove image"
                               >
                                 <i className="ri-close-line"></i>
                               </button>
-                              {index === 0 && (
-                                <span className="primary-badge">Primary</span>
-                              )}
                             </div>
                           </Col>
                         ))}
@@ -846,7 +938,8 @@ const AddNewCar = ({ setActiveSection }) => {
                     <h6>Summary:</h6>
                     <ul className="list-unstyled">
                       <li>
-                        <strong>Images:</strong> {images.length}/5
+                        <strong>Total Images:</strong>{" "}
+                        {existingImages.length + images.length}/5
                       </li>
                       <li>
                         <strong>Features:</strong> {formData.features.length}{" "}
@@ -873,9 +966,16 @@ const AddNewCar = ({ setActiveSection }) => {
                 <CardBody>
                   <h5 className="card-title mb-3">
                     <i className="ri-map-pin-line me-2"></i>
-                    Select Car Location
+                    Car Location
                   </h5>
                   <LocationPicker
+                    key={`location-${carData?.id || "new"}`} // Force re-render when car changes
+                    initialPosition={
+                      location.latitude && location.longitude
+                        ? [location.latitude, location.longitude]
+                        : null
+                    }
+                    initialAddress={formData.address || carData?.address}
                     onLocationChange={({ latitude, longitude, address }) => {
                       setLocation({ latitude, longitude });
                       setFormData((prev) => ({
@@ -914,8 +1014,6 @@ const AddNewCar = ({ setActiveSection }) => {
                         onClick={() => {
                           if (setActiveSection) {
                             setActiveSection("cars");
-                          } else {
-                            window.history.back();
                           }
                         }}
                       >
@@ -923,11 +1021,11 @@ const AddNewCar = ({ setActiveSection }) => {
                       </Button>
                       <Button
                         type="submit"
-                        color="primary"
+                        color="warning"
                         disabled={isSubmitting}
                       >
                         <i className="ri-save-line me-2"></i>
-                        Add Car
+                        Update Car
                       </Button>
                     </div>
                   </div>
@@ -941,4 +1039,4 @@ const AddNewCar = ({ setActiveSection }) => {
   );
 };
 
-export default AddNewCar;
+export default EditCar;

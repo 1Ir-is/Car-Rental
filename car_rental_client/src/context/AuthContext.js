@@ -100,51 +100,57 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Initialize auth state on app load
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log("=== AUTH INITIALIZATION START ===");
-
       try {
-        // Với HttpOnly cookies, chúng ta cần gọi API để check auth state
-        console.log("🍪 Checking auth state via API...");
         const response = await userService.getCurrentProfile();
-
         if (response.success && response.data) {
-          console.log("✅ User authenticated via cookies:", response.data);
           dispatch({
             type: AuthActionTypes.LOGIN_SUCCESS,
             payload: { user: response.data },
           });
         } else {
-          console.log("❌ No valid session found");
           dispatch({
             type: AuthActionTypes.SET_LOADING,
             payload: { loading: false },
           });
         }
       } catch (error) {
-        console.log("❌ Auth check failed:", error.message);
-        // Nếu API call thất bại, check localStorage như fallback
-        const user = authUtils.getCurrentUser();
-        if (user) {
-          console.log("📦 Using cached user data:", user);
-          dispatch({
-            type: AuthActionTypes.LOGIN_SUCCESS,
-            payload: { user },
-          });
-        } else {
+        if (error.response?.status === 401) {
+          authUtils.clearAuthData();
+          window.location.replace("/login"); // redirect về login mọi lúc nhận 401
           dispatch({
             type: AuthActionTypes.SET_LOADING,
             payload: { loading: false },
           });
+        } else {
+          const user = authUtils.getCurrentUser();
+          if (user) {
+            dispatch({
+              type: AuthActionTypes.LOGIN_SUCCESS,
+              payload: { user },
+            });
+          } else {
+            dispatch({
+              type: AuthActionTypes.SET_LOADING,
+              payload: { loading: false },
+            });
+          }
         }
       }
-
-      console.log("=== AUTH INITIALIZATION END ===");
     };
-
     initializeAuth();
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key === "user" && event.newValue === null) {
+        // User logged out or token expired in another tab
+        window.location.replace("/login");
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
   // Login function

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   Row,
   Col,
@@ -13,135 +13,107 @@ import {
   Pagination,
   PaginationItem,
   PaginationLink,
+  Spinner,
+  Alert,
 } from "reactstrap";
+import vehicleService from "../../services/vehicleService";
+import AuthContext from "../../context/AuthContext";
+import { toast } from "react-toastify";
+import "../../styles/car-detail-modal.css";
+import "../../styles/cars-table.css";
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import Swal from "sweetalert2";
 
-const OwnerCarManagement = ({ setActiveSection }) => {
+const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCar, setSelectedCar] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [cars, setCars] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const itemsPerPage = 10;
 
-  // Sample data với nhiều xe để test pagination
-  const cars = [
-    {
-      id: 1,
-      name: "Toyota Camry 2023",
-      brand: "Toyota",
-      model: "Camry",
-      year: 2023,
-      price: 45,
-      status: "available",
-      bookings: 12,
-      rating: 4.8,
-      licensePlate: "30A-12345",
-      color: "Silver",
-      transmission: "Automatic",
-      fuelType: "Petrol",
-      seats: 5,
-      description:
-        "A reliable and comfortable sedan perfect for business trips and family outings.",
-      images: [
-        "https://via.placeholder.com/600x400?text=Toyota+Camry+Front",
-        "https://via.placeholder.com/600x400?text=Toyota+Camry+Side",
-        "https://via.placeholder.com/600x400?text=Toyota+Camry+Interior",
-        "https://via.placeholder.com/600x400?text=Toyota+Camry+Back",
-      ],
-      features: [
-        "GPS Navigation",
-        "Bluetooth",
-        "Air Conditioning",
-        "Backup Camera",
-        "Cruise Control",
-      ],
-    },
-    {
-      id: 2,
-      name: "Honda Civic 2022",
-      brand: "Honda",
-      model: "Civic",
-      year: 2022,
-      price: 35,
-      status: "rented",
-      bookings: 8,
-      rating: 4.5,
-      licensePlate: "30B-67890",
-      color: "White",
-      transmission: "Manual",
-      fuelType: "Petrol",
-      seats: 5,
-      description:
-        "Sporty and fuel-efficient compact car, ideal for city driving.",
-      images: [
-        "https://via.placeholder.com/600x400?text=Honda+Civic+Front",
-        "https://via.placeholder.com/600x400?text=Honda+Civic+Side",
-        "https://via.placeholder.com/600x400?text=Honda+Civic+Interior",
-      ],
-      features: [
-        "Apple CarPlay",
-        "Android Auto",
-        "Lane Keeping Assist",
-        "Honda Sensing",
-      ],
-    },
-    {
-      id: 3,
-      name: "BMW X5 2024",
-      brand: "BMW",
-      model: "X5",
-      year: 2024,
-      price: 85,
-      status: "maintenance",
-      bookings: 15,
-      rating: 4.9,
-      licensePlate: "30C-11111",
-      color: "Black",
-      transmission: "Automatic",
-      fuelType: "Hybrid",
-      seats: 7,
-      description:
-        "Luxury SUV with premium features and exceptional performance.",
-      images: [
-        "https://via.placeholder.com/600x400?text=BMW+X5+Front",
-        "https://via.placeholder.com/600x400?text=BMW+X5+Side",
-        "https://via.placeholder.com/600x400?text=BMW+X5+Interior",
-        "https://via.placeholder.com/600x400?text=BMW+X5+Engine",
-        "https://via.placeholder.com/600x400?text=BMW+X5+Back",
-      ],
-      features: [
-        "Premium Sound System",
-        "Panoramic Roof",
-        "Adaptive Suspension",
-        "Wireless Charging",
-        "Gesture Control",
-      ],
-    },
-    // Thêm nhiều xe để test pagination
-    ...Array.from({ length: 25 }, (_, i) => ({
-      id: i + 4,
-      name: `Car Model ${i + 4}`,
-      brand: ["Toyota", "Honda", "BMW", "Mercedes", "Audi"][i % 5],
-      model: `Model ${i + 4}`,
-      year: 2020 + (i % 4),
-      price: 30 + (i % 50),
-      status: ["available", "rented", "maintenance"][i % 3],
-      bookings: Math.floor(Math.random() * 20),
-      rating: 4.0 + Math.random(),
-      licensePlate: `30${String.fromCharCode(65 + (i % 26))}-${String(
-        i + 4
-      ).padStart(5, "0")}`,
-      color: ["Red", "Blue", "White", "Black", "Silver"][i % 5],
-      transmission: ["Automatic", "Manual"][i % 2],
-      fuelType: ["Petrol", "Diesel", "Hybrid", "Electric"][i % 4],
-      seats: [4, 5, 7][i % 3],
-      description: `Description for car model ${i + 4}`,
-      images: [
-        `https://via.placeholder.com/600x400?text=Car+${i + 4}+Image+1`,
-        `https://via.placeholder.com/600x400?text=Car+${i + 4}+Image+2`,
-      ],
-      features: ["Feature 1", "Feature 2", "Feature 3"],
-    })),
-  ];
+  const { user } = useContext(AuthContext);
 
+  // Fetch cars from API
+  useEffect(() => {
+    const fetchMyCars = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        if (!user?.id) {
+          setError("User not found. Please login again.");
+          return;
+        }
+
+        const response = await vehicleService.getMyVehicles(user.id);
+
+        if (response.success) {
+          setCars(response.data || []);
+        } else {
+          setError(response.message || "Failed to fetch vehicles");
+          toast.error("Failed to load your vehicles");
+        }
+      } catch (error) {
+        console.error("Error fetching vehicles:", error);
+        setError("Network error. Please try again.");
+        toast.error("Network error. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMyCars();
+  }, [user?.id]);
+
+  // Hàm delete
+  const handleDeleteCar = async (car) => {
+    // SweetAlert xác nhận xóa
+    const result = await Swal.fire({
+      title: `Bạn có chắc muốn xóa xe "${car.vehicleName || car.name}"?`,
+      text: "Thao tác này không thể hoàn tác!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Xóa",
+      cancelButtonText: "Hủy",
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await vehicleService.deleteVehicle(car.id);
+        if (response.success) {
+          Swal.fire({
+            title: "Đã xóa!",
+            text: "Xe đã được xóa thành công.",
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+          // Xóa xong thì reload lại danh sách xe
+          setCars((prev) => prev.filter((c) => c.id !== car.id));
+        } else {
+          Swal.fire({
+            title: "Lỗi",
+            text: response.message || "Xóa xe thất bại.",
+            icon: "error",
+          });
+        }
+      } catch (error) {
+        Swal.fire({
+          title: "Lỗi",
+          text: "Xóa xe thất bại, vui lòng thử lại.",
+          icon: "error",
+        });
+      }
+    }
+  };
+
+  // Helper functions
   const getStatusColor = (status) => {
     switch (status) {
       case "available":
@@ -183,10 +155,94 @@ const OwnerCarManagement = ({ setActiveSection }) => {
     setShowDetailModal(true);
   };
 
+  const handleEditCar = (car) => {
+    setEditingCar(car);
+    setActiveSection("edit-car");
+  };
+
   const closeDetailModal = () => {
     setSelectedCar(null);
     setShowDetailModal(false);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="owner-car-management">
+        <div className="section-header d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h4>Manage Cars</h4>
+            <p className="text-muted">Loading your vehicle fleet...</p>
+          </div>
+        </div>
+        <div className="text-center py-5">
+          <Spinner size="lg" color="primary" />
+          <p className="mt-3">Loading cars...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="owner-car-management">
+        <div className="section-header d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h4>Manage Cars</h4>
+            <p className="text-muted">Manage your vehicle fleet</p>
+          </div>
+          <Button
+            color="primary"
+            className="add-car-btn"
+            onClick={() => setActiveSection("add-car")}
+          >
+            <i className="ri-add-circle-line me-2"></i>
+            Add New Car
+          </Button>
+        </div>
+        <Alert color="danger">
+          <i className="ri-error-warning-line me-2"></i>
+          {error}
+        </Alert>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (cars.length === 0) {
+    return (
+      <div className="owner-car-management">
+        <div className="section-header d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h4>Manage Cars</h4>
+            <p className="text-muted">No vehicles in your fleet yet</p>
+          </div>
+          <Button
+            color="primary"
+            className="add-car-btn"
+            onClick={() => setActiveSection("add-car")}
+          >
+            <i className="ri-add-circle-line me-2"></i>
+            Add New Car
+          </Button>
+        </div>
+        <Card className="text-center py-5">
+          <CardBody>
+            <i className="ri-car-line display-1 text-muted mb-3"></i>
+            <h5>No Cars Found</h5>
+            <p className="text-muted">
+              You haven't added any vehicles to your fleet yet.
+            </p>
+            <Button color="primary" onClick={() => setActiveSection("add-car")}>
+              <i className="ri-add-circle-line me-2"></i>
+              Add Your First Car
+            </Button>
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="owner-car-management">
@@ -212,47 +268,71 @@ const OwnerCarManagement = ({ setActiveSection }) => {
         <CardBody className="p-0">
           <div className="table-responsive">
             <Table className="cars-table mb-0" hover>
-              <thead>
+              <thead className="table-header">
                 <tr>
-                  <th>Car Details</th>
-                  <th>Price/Day</th>
-                  <th>Status</th>
-                  <th>Bookings</th>
-                  <th>Rating</th>
-                  <th>Actions</th>
+                  <th width="32%">CAR DETAILS</th>
+                  <th width="15%" className="text-center">
+                    PRICE/DAY
+                  </th>
+                  <th width="10%" className="text-center">
+                    STATUS
+                  </th>
+                  <th width="8%" className="text-center">
+                    BOOKINGS
+                  </th>
+                  <th width="10%" className="text-center">
+                    RATING
+                  </th>
+                  <th width="25%" className="text-center">
+                    ACTIONS
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {currentCars.map((car) => (
-                  <tr key={car.id}>
-                    <td>
+                  <tr key={car.id} className="table-row">
+                    <td className="car-details-td">
                       <div className="car-details-cell">
                         <div className="car-image-thumb">
-                          <img
-                            src={car.images[0]}
-                            alt={car.name}
-                            onError={(e) => {
-                              e.target.src =
-                                "https://via.placeholder.com/80x60?text=Car";
-                            }}
-                          />
+                          {car.imageList && car.imageList.length > 0 ? (
+                            <img
+                              src={car.imageList[0]}
+                              alt={car.vehicleName || car.name}
+                              onError={(e) => {
+                                e.target.src =
+                                  "https://via.placeholder.com/80x60?text=Car";
+                              }}
+                            />
+                          ) : (
+                            <div className="no-image">
+                              <i className="ri-car-line"></i>
+                            </div>
+                          )}
                         </div>
                         <div className="car-info">
-                          <h6 className="car-name mb-1">{car.name}</h6>
-                          <small className="text-muted">
-                            {car.licensePlate} • {car.color}
-                          </small>
-                          <br />
-                          <small className="text-muted">
-                            {car.transmission} • {car.fuelType}
+                          <h6 className="car-name">
+                            {car.vehicleName || car.name}
+                          </h6>
+                          <div className="car-details-text">
+                            <span className="car-brand">{car.brand}</span>
+                            <span className="car-model">{car.model}</span>
+                            <span className="car-year">({car.year})</span>
+                          </div>
+                          <small className="car-license">
+                            {car.licensePlate}
                           </small>
                         </div>
                       </div>
                     </td>
-                    <td>
-                      <span className="price-text">${car.price}/day</span>
+                    <td className="text-center price-td">
+                      <div className="price-wrapper">
+                        <span className="price-amount">
+                          ${car.dailyPrice || car.price}
+                        </span>
+                        <small className="price-period">/day</small>
+                      </div>
                     </td>
-                    <td>
+                    <td className="text-center status-td">
                       <Badge
                         color={getStatusColor(car.status)}
                         className="status-badge"
@@ -260,33 +340,49 @@ const OwnerCarManagement = ({ setActiveSection }) => {
                         {getStatusText(car.status)}
                       </Badge>
                     </td>
-                    <td>
-                      <span className="bookings-count">{car.bookings}</span>
-                    </td>
-                    <td>
-                      <div className="rating-cell">
-                        <i className="ri-star-fill text-warning me-1"></i>
-                        <span>{car.rating.toFixed(1)}</span>
+                    <td className="text-center bookings-td">
+                      <div className="bookings-wrapper">
+                        <span className="bookings-count">
+                          {car.bookings || 0}
+                        </span>
                       </div>
                     </td>
-                    <td>
+                    <td className="text-center rating-td">
+                      <div className="rating-wrapper">
+                        <i className="ri-star-fill text-warning me-1"></i>
+                        <span className="rating-value">
+                          {car.rating ? car.rating.toFixed(1) : "N/A"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="text-center actions-td">
                       <div className="action-buttons">
                         <Button
                           color="info"
                           size="sm"
-                          className="me-2"
+                          className="action-btn details-btn"
                           onClick={() => openDetailModal(car)}
                         >
-                          <i className="ri-eye-line me-1"></i>
-                          Details
+                          <i className="ri-eye-line"></i>
+                          <span className="btn-text">Details</span>
                         </Button>
-                        <Button color="primary" size="sm" className="me-2">
-                          <i className="ri-edit-line me-1"></i>
-                          Edit
+                        <Button
+                          color="warning"
+                          size="sm"
+                          className="action-btn edit-btn"
+                          onClick={() => handleEditCar(car)}
+                        >
+                          <i className="ri-edit-line"></i>
+                          <span className="btn-text">Edit</span>
                         </Button>
-                        <Button color="danger" size="sm">
-                          <i className="ri-delete-bin-line me-1"></i>
-                          Delete
+                        <Button
+                          color="danger"
+                          size="sm"
+                          className="action-btn delete-btn"
+                          onClick={() => handleDeleteCar(car)}
+                        >
+                          <i className="ri-delete-bin-line"></i>
+                          <span className="btn-text">Delete</span>
                         </Button>
                       </div>
                     </td>
@@ -300,27 +396,21 @@ const OwnerCarManagement = ({ setActiveSection }) => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="d-flex justify-content-between align-items-center mt-4">
-          <div className="pagination-info">
-            Showing {startIndex + 1} to {Math.min(endIndex, cars.length)} of{" "}
-            {cars.length} cars
-          </div>
-          <Pagination className="mb-0">
+        <div className="d-flex justify-content-center mt-4">
+          <Pagination>
             <PaginationItem disabled={currentPage === 1}>
               <PaginationLink
                 previous
                 onClick={() => handlePageChange(currentPage - 1)}
               />
             </PaginationItem>
-
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page} active={page === currentPage}>
+              <PaginationItem key={page} active={currentPage === page}>
                 <PaginationLink onClick={() => handlePageChange(page)}>
                   {page}
                 </PaginationLink>
               </PaginationItem>
             ))}
-
             <PaginationItem disabled={currentPage === totalPages}>
               <PaginationLink
                 next
@@ -341,22 +431,41 @@ const OwnerCarManagement = ({ setActiveSection }) => {
   );
 };
 
-// Car Detail Modal Component
 const CarDetailModal = ({ car, isOpen, toggle }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen) setCurrentImageIndex(0);
+  }, [isOpen, car?.id]);
 
   if (!car) return null;
 
+  // Go to location function
+  const goToLocation = () => {
+    if (mapRef.current && car.latitude && car.longitude) {
+      const map = mapRef.current;
+      map.setView([car.latitude, car.longitude], 17, {
+        animate: true,
+        duration: 1,
+      });
+    }
+  };
+
   const nextImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === car.images.length - 1 ? 0 : prev + 1
-    );
+    if (car.imageList && car.imageList.length > 0) {
+      setCurrentImageIndex((prev) =>
+        prev === car.imageList.length - 1 ? 0 : prev + 1
+      );
+    }
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? car.images.length - 1 : prev - 1
-    );
+    if (car.imageList && car.imageList.length > 0) {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? car.imageList.length - 1 : prev - 1
+      );
+    }
   };
 
   const getStatusColor = (status) => {
@@ -376,15 +485,40 @@ const CarDetailModal = ({ car, isOpen, toggle }) => {
     <Modal
       isOpen={isOpen}
       toggle={toggle}
-      size="lg"
+      size="xl"
       className="car-detail-modal"
     >
-      <ModalHeader toggle={toggle}>
-        <div className="modal-title-section">
-          <h4 className="mb-1">{car.name}</h4>
-          <Badge color={getStatusColor(car.status)} className="ms-2">
-            {car.status}
-          </Badge>
+      <ModalHeader toggle={toggle} className="modal-header-custom">
+        <div className="modal-header-content">
+          <div className="car-title-section">
+            <h4 className="car-title">{car.name}</h4>
+            <div className="car-subtitle">
+              <span className="car-brand-model">
+                {car.brand} {car.model}
+              </span>
+              <span className="car-year-license">
+                ({car.year}) • {car.licensePlate}
+              </span>
+            </div>
+          </div>
+          <div className="status-info-section">
+            <Badge
+              color={getStatusColor(car.status)}
+              className="status-badge-large"
+            >
+              {car.status?.toUpperCase()}
+            </Badge>
+            <div className="quick-info">
+              <div className="info-item">
+                <i className="ri-star-fill text-warning"></i>
+                <span>{car.rating ? car.rating.toFixed(1) : "N/A"}</span>
+              </div>
+              <div className="info-item">
+                <i className="ri-calendar-check-line text-primary"></i>
+                <span>{car.bookings || 0} bookings</span>
+              </div>
+            </div>
+          </div>
         </div>
       </ModalHeader>
       <ModalBody className="p-0">
@@ -393,51 +527,69 @@ const CarDetailModal = ({ car, isOpen, toggle }) => {
           <Col lg="6" className="image-gallery-section">
             <div className="image-gallery">
               <div className="main-image-container">
-                <img
-                  src={car.images[currentImageIndex]}
-                  alt={`${car.name} - ${currentImageIndex + 1}`}
-                  className="main-image"
-                  onError={(e) => {
-                    e.target.src =
-                      "https://via.placeholder.com/600x400?text=Car+Photo";
-                  }}
-                />
-
-                {car.images.length > 1 && (
+                {car.imageList && car.imageList.length > 0 ? (
                   <>
-                    <button className="nav-btn prev-btn" onClick={prevImage}>
-                      <i className="ri-arrow-left-line"></i>
-                    </button>
-                    <button className="nav-btn next-btn" onClick={nextImage}>
-                      <i className="ri-arrow-right-line"></i>
-                    </button>
-                  </>
-                )}
-
-                <div className="image-counter">
-                  {currentImageIndex + 1} / {car.images.length}
-                </div>
-              </div>
-
-              {car.images.length > 1 && (
-                <div className="thumbnail-gallery">
-                  {car.images.map((image, index) => (
                     <img
-                      key={index}
-                      src={image}
-                      alt={`Thumbnail ${index + 1}`}
-                      className={`thumbnail ${
-                        index === currentImageIndex ? "active" : ""
-                      }`}
-                      onClick={() => setCurrentImageIndex(index)}
+                      src={car.imageList[currentImageIndex]}
+                      alt={`${car.name} - ${currentImageIndex + 1}`}
+                      className="main-image"
                       onError={(e) => {
                         e.target.src =
-                          "https://via.placeholder.com/100x75?text=Thumb";
+                          "https://via.placeholder.com/600x400?text=Car+Photo";
                       }}
                     />
-                  ))}
-                </div>
-              )}
+
+                    {/* Navigation Arrows */}
+                    {car.imageList.length > 1 && (
+                      <>
+                        <button
+                          className="nav-btn prev-btn"
+                          onClick={prevImage}
+                        >
+                          <i className="ri-arrow-left-line"></i>
+                        </button>
+                        <button
+                          className="nav-btn next-btn"
+                          onClick={nextImage}
+                        >
+                          <i className="ri-arrow-right-line"></i>
+                        </button>
+
+                        {/* Image Counter */}
+                        <div className="image-counter">
+                          {currentImageIndex + 1} / {car.imageList.length}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <div className="no-image-placeholder">
+                    <i className="ri-image-line"></i>
+                    <p>No images available</p>
+                  </div>
+                )}
+
+                {/* Thumbnail Navigation */}
+                {car.imageList && car.imageList.length > 1 && (
+                  <div className="image-thumbnails mt-3">
+                    {car.imageList.map((image, index) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`Thumbnail ${index + 1}`}
+                        className={`thumbnail ${
+                          index === currentImageIndex ? "active" : ""
+                        }`}
+                        onClick={() => setCurrentImageIndex(index)}
+                        onError={(e) => {
+                          e.target.src =
+                            "https://via.placeholder.com/100x75?text=Thumb";
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </Col>
 
@@ -445,18 +597,23 @@ const CarDetailModal = ({ car, isOpen, toggle }) => {
           <Col lg="6" className="car-details-section">
             <div className="p-4">
               <div className="price-section mb-3">
-                <h3 className="price-display text-primary">${car.price}/day</h3>
+                <h3 className="price-display text-primary">
+                  ${car.price || car.dailyPrice}/day
+                </h3>
                 <div className="rating-display">
                   <i className="ri-star-fill text-warning me-1"></i>
                   <span>
-                    {car.rating.toFixed(1)} ({car.bookings} bookings)
+                    {car.rating ? car.rating.toFixed(1) : "N/A"} (
+                    {car.bookings || 0} bookings)
                   </span>
                 </div>
               </div>
 
               <div className="description-section mb-4">
                 <h6>Description</h6>
-                <p className="text-muted">{car.description}</p>
+                <p className="text-muted">
+                  {car.description || "No description available"}
+                </p>
               </div>
 
               <div className="specifications-section mb-4">
@@ -497,27 +654,72 @@ const CarDetailModal = ({ car, isOpen, toggle }) => {
                     </div>
                     <div className="spec-item">
                       <i className="ri-group-line me-2 text-muted"></i>
-                      <span className="spec-label">Seats:</span> {car.seats}
+                      <span className="spec-label">Seats:</span>{" "}
+                      {car.seats || car.vehicleSeat}
                     </div>
                   </Col>
                 </Row>
               </div>
 
-              <div className="features-section">
-                <h6>Features</h6>
-                <div className="features-list">
-                  {car.features.map((feature, index) => (
-                    <Badge
-                      key={index}
-                      color="light"
-                      className="feature-badge me-2 mb-2"
-                    >
-                      <i className="ri-check-line me-1 text-success"></i>
-                      {feature}
-                    </Badge>
-                  ))}
+              {car.features && car.features.length > 0 && (
+                <div className="features-section">
+                  <h6>Features</h6>
+                  <div className="features-list">
+                    {car.features.map((feature, index) => (
+                      <Badge
+                        key={index}
+                        color="light"
+                        className="feature-badge me-2 mb-2"
+                      >
+                        <i className="ri-check-line me-1 text-success"></i>
+                        {feature}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {car.latitude && car.longitude && (
+                <div className="car-location-section mt-4">
+                  <div className="location-header mb-3">
+                    <h6 className="location-title">LOCATION</h6>
+                    <Button
+                      color="primary"
+                      size="sm"
+                      className="go-to-location-btn"
+                      onClick={goToLocation}
+                    >
+                      <i className="ri-map-pin-line me-1"></i>
+                      Go to Location
+                    </Button>
+                  </div>
+                  <div className="map-container">
+                    <MapContainer
+                      center={[car.latitude, car.longitude]}
+                      zoom={17}
+                      scrollWheelZoom={false}
+                      style={{ width: "100%", height: "220px" }}
+                      ref={mapRef}
+                    >
+                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      <Marker
+                        position={[car.latitude, car.longitude]}
+                        icon={window.redMarkerIcon || window.redMarkerIconSVG}
+                      />
+                    </MapContainer>
+                  </div>
+                  <div className="location-info">
+                    <div className="location-text">
+                      <strong>Address: </strong>
+                      {car.address || "Address not available"}
+                    </div>
+                    <div className="coordinates-text">
+                      <strong>Coordinates: </strong>
+                      {car.latitude.toFixed(6)}, {car.longitude.toFixed(6)}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </Col>
         </Row>
