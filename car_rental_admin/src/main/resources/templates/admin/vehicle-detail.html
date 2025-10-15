@@ -1,52 +1,559 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>Admin - Vehicle Detail</title>
-  <link rel="stylesheet" th:href="@{/css/admin.css}" />
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>User Details - Auto Rent Admin</title>
+    <link rel="stylesheet" th:href="@{/css/vehicle-detail.css}" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet"
+    />
 </head>
 <body>
-<h2>Vehicle Detail</h2>
-<div th:if="${vehicle != null}">
-  <p><b>Car Name:</b> <span th:text="${vehicle.vehicleName}"></span></p>
-  <p><b>Brand:</b> <span th:text="${vehicle.brand}"></span></p>
-  <p><b>Model:</b> <span th:text="${vehicle.model}"></span></p>
-  <p><b>Year:</b> <span th:text="${vehicle.year}"></span></p>
-  <p><b>Color:</b> <span th:text="${vehicle.color}"></span></p>
-  <p><b>License Plate:</b> <span th:text="${vehicle.licensePlate}"></span></p>
-  <p><b>Number of Seats:</b> <span th:text="${vehicle.vehicleSeat}"></span></p>
-  <p><b>Transmission:</b> <span th:text="${vehicle.transmission}"></span></p>
-  <p><b>Fuel Type:</b> <span th:text="${vehicle.fuelType}"></span></p>
-  <p><b>Price:</b> <span th:text="${vehicle.dailyPrice}"></span></p>
-  <p><b>Category:</b> <span th:text="${vehicle.category}"></span></p>
-  <p><b>Status:</b> <span th:text="${vehicle.status}"></span></p>
-  <p><b>Is Rented:</b>
-    <span th:text="${vehicle.isRented != null and vehicle.isRented ? 'Yes' : 'No'}"></span>
-    <!-- Hoặc nếu muốn Unknown khi null:
-    <span th:text="${vehicle.isRented == null ? 'Unknown' : (vehicle.isRented ? 'Yes' : 'No')}"></span>
-    -->
-  </p>
-  <p><b>Description:</b> <span th:text="${vehicle.description}"></span></p>
-  <p><b>Owner:</b> <span th:text="${vehicle.user != null ? vehicle.user.name : 'N/A'}"></span></p>
-  <p><b>Address:</b> <span th:text="${vehicle.address}"></span></p>
-  <p><b>Latitude:</b> <span th:text="${vehicle.latitude}"></span></p>
-  <p><b>Longitude:</b> <span th:text="${vehicle.longitude}"></span></p>
-  <p><b>Rating:</b> <span th:text="${vehicle.rating}"></span></p>
-  <div>
-    <b>Images:</b>
-    <div th:each="img : ${vehicle.imageList}">
-      <img th:src="${img}" style="max-width:200px;max-height:150px;margin:2px;" alt="Vehicle image"/>
-    </div>
-  </div>
-  <div>
-    <b>Features:</b>
-    <ul>
-      <li th:each="feature : ${vehicle.features}" th:text="${feature}"></li>
-    </ul>
-  </div>
-  <a th:href="@{/admin/vehicles}">Back to List</a>
+<div class="admin-container">
+    <!-- Sidebar -->
+    <div
+            th:replace="fragments/sidebar :: admin-sidebar(activeMenu='vehicles')"
+    ></div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Navbar -->
+        <div th:replace="fragments/navbar :: admin-navbar"></div>
+        <!-- Vehicle Details Content -->
+        <div class="vehicle-detail-content" th:if="${vehicle != null}">
+            <!-- Breadcrumb -->
+            <div class="breadcrumb">
+                <a th:href="@{/admin/vehicles}" class="breadcrumb-item">
+                    <i class="fas fa-car"></i>
+                    Vehicles
+                </a>
+                <span class="breadcrumb-separator">/</span>
+                <span
+                        class="breadcrumb-item active"
+                        th:text="${vehicle.vehicleName}"
+                ></span>
+            </div>
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="header-content">
+                    <div class="back-button">
+                        <a class="btn btn-outline" th:href="@{/admin/vehicles}">
+                            <i class="fas fa-arrow-left"></i>
+                            Back to Vehicles
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Profile Header -->
+            <div class="vehicle-profile-header">
+                <!-- Status Badge -->
+                <div
+                        class="status-badge-large"
+                        th:class="'status-badge-large ' + (${vehicle.status != null ? vehicle.status.toLowerCase() : 'available'})"
+                >
+                    <i class="fas fa-check-circle"></i>
+                    <span th:text="${vehicle.status}">Available</span>
+                </div>
+
+                <div class="vehicle-image-section">
+                    <!-- Image Gallery with Slider -->
+                    <div class="image-gallery">
+                        <!-- Main Image Display -->
+                        <div class="main-image-container">
+                            <div class="image-slider">
+                                <div
+                                        class="slide"
+                                        th:each="img, iterStat : ${vehicle.imageList}"
+                                        th:classappend="${iterStat.index == 0} ? 'active'"
+                                >
+                                    <img
+                                            th:src="${img}"
+                                            th:alt="${vehicle.vehicleName + ' - Image ' + (iterStat.index + 1)}"
+                                            loading="lazy"
+                                    />
+                                </div>
+                            </div>
+                            <!-- Navigation Arrows -->
+                            <button class="slider-nav prev" onclick="changeSlide(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="slider-nav next" onclick="changeSlide(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <!-- Image Counter -->
+                            <div class="image-counter">
+                                <span class="current-image">1</span>
+                                <span class="separator">/</span>
+                                <span
+                                        class="total-images"
+                                        th:text="${vehicle.imageList != null ? vehicle.imageList.size() : 0}"
+                                ></span>
+                            </div>
+                            <!-- Fullscreen Button -->
+                            <button
+                                    class="fullscreen-btn"
+                                    onclick="openFullscreen()"
+                                    title="View Fullscreen"
+                            >
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                        <!-- Thumbnail Gallery -->
+                        <div class="thumbnail-gallery">
+                            <div class="thumbnail-container">
+                                <div
+                                        class="thumbnail"
+                                        th:each="img, iterStat : ${vehicle.imageList}"
+                                        th:classappend="${iterStat.index == 0} ? 'active'"
+                                        th:onclick="'goToSlide(' + ${iterStat.index} + ')'"
+                                >
+                                    <img
+                                            th:src="${img}"
+                                            th:alt="'Thumbnail ' + ${iterStat.index + 1}"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="vehicle-main-info">
+                    <div class="vehicle-title-section">
+                        <h1 class="vehicle-title" th:text="${vehicle.vehicleName}">
+                            Vehicle Name
+                        </h1>
+                        <div
+                                class="vehicle-subtitle"
+                                th:text="|${vehicle.vehicleSeat} seats • ${vehicle.transmission} • ${vehicle.fuelType}|"
+                        >
+                            Specs
+                        </div>
+                        <div class="vehicle-license" th:text="${vehicle.licensePlate}">
+                            License Plate
+                        </div>
+                    </div>
+                    <div class="vehicle-pricing">
+                        <div class="price-main">
+                  <span
+                          class="price-amount"
+                          th:text="'$' + ${vehicle.dailyPrice}"
+                  >Price</span
+                  >
+                            <span class="price-period">/day</span>
+                        </div>
+                        <div class="price-details">
+                            <span class="price-label">Base daily rate</span>
+                        </div>
+                    </div>
+                    <div class="vehicle-quick-stats">
+                        <div class="quick-stat">
+                            <i class="fas fa-calendar-check"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">12</span>
+                                <span class="stat-label">Total Bookings</span>
+                            </div>
+                        </div>
+                        <div class="quick-stat">
+                            <i class="fas fa-dollar-sign"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">$980</span>
+                                <span class="stat-label">Total Revenue</span>
+                            </div>
+                        </div>
+                        <div class="quick-stat">
+                            <i class="fas fa-star"></i>
+                            <div class="stat-info">
+                                <span class="stat-value">4.5</span>
+                                <span class="stat-label">Rating</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions-bar">
+                <button
+                        class="quick-action"
+                        onclick="createBooking()"
+                        title="Create Booking"
+                >
+                    <i class="fas fa-plus"></i>
+                    <span>New Booking</span>
+                </button>
+                <button
+                        class="quick-action"
+                        onclick="viewBookings()"
+                        title="View Bookings"
+                >
+                    <i class="fas fa-calendar"></i>
+                    <span>Bookings</span>
+                </button>
+                <button
+                        class="quick-action"
+                        onclick="scheduleService()"
+                        title="Schedule Service"
+                >
+                    <i class="fas fa-tools"></i>
+                    <span>Service</span>
+                </button>
+                <button
+                        class="quick-action"
+                        onclick="generateReport()"
+                        title="Generate Report"
+                >
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Report</span>
+                </button>
+                <div class="status-selector-container">
+                    <select
+                            class="status-selector"
+                            onchange="updateVehicleStatus(this.value)"
+                    >
+                        <option
+                                value="available"
+                                th:selected="${vehicle.status == 'Available'}"
+                        >
+                            Available
+                        </option>
+                        <option
+                                value="rented"
+                                th:selected="${vehicle.status == 'Rented'}"
+                        >
+                            Rented
+                        </option>
+                        <option
+                                value="maintenance"
+                                th:selected="${vehicle.status == 'Maintenance'}"
+                        >
+                            Maintenance
+                        </option>
+                        <option
+                                value="unavailable"
+                                th:selected="${vehicle.status == 'Unavailable'}"
+                        >
+                            Unavailable
+                        </option>
+                    </select>
+                    <i class="fas fa-chevron-down status-dropdown-icon"></i>
+                </div>
+            </div>
+
+            <!-- Vehicle Details Grid -->
+            <div class="vehicle-details-grid">
+                <!-- Technical Specifications -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-cog"></i> Technical Specifications</h3>
+                        <button
+                                class="btn btn-sm btn-outline"
+                                onclick="editSpecs()"
+                                title="Edit Specs"
+                        >
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-list">
+                            <div class="info-item">
+                    <span class="info-label">Brand</span
+                    ><span class="info-value" th:text="${vehicle.brand}"></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Model</span
+                    ><span class="info-value" th:text="${vehicle.model}"></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Year</span
+                    ><span class="info-value" th:text="${vehicle.year}"></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Color</span
+                    ><span class="info-value" th:text="${vehicle.color}"></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Seats</span
+                    ><span
+                                    class="info-value"
+                                    th:text="${vehicle.vehicleSeat} + ' passengers'"
+                            ></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Fuel Type</span
+                    ><span
+                                    class="info-value"
+                                    th:text="${vehicle.fuelType}"
+                            ></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Transmission</span
+                    ><span
+                                    class="info-value"
+                                    th:text="${vehicle.transmission}"
+                            ></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">License Plate</span
+                    ><span
+                                    class="info-value"
+                                    th:text="${vehicle.licensePlate}"
+                            ></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features & Equipment -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list"></i> Features & Equipment</h3>
+                        <button
+                                class="btn btn-sm btn-outline"
+                                onclick="editFeatures()"
+                                title="Edit Features"
+                        >
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div
+                                class="features-vertical-scroll"
+                                th:if="${vehicle.features != null and #lists.size(vehicle.features) > 0}"
+                        >
+                            <div class="features-scroll-container-vertical">
+                                <div
+                                        class="feature-tag"
+                                        th:each="feature : ${vehicle.features}"
+                                >
+                                    <i class="fas fa-check-circle"></i>
+                                    <span th:text="${feature}"></span>
+                                </div>
+                            </div>
+                            <div class="scroll-fade-bottom"></div>
+                        </div>
+                        <!-- Fallback for no features -->
+                        <div
+                                class="no-features"
+                                th:if="${vehicle.features == null or #lists.size(vehicle.features) == 0}"
+                        >
+                            <i class="fas fa-info-circle"></i>
+                            <span>No features listed for this vehicle</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Statistics -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3>
+                            <i class="fas fa-chart-line"></i> Performance Statistics
+                        </h3>
+                        <button
+                                class="btn btn-sm btn-outline"
+                                onclick="viewDetailedStats()"
+                                title="Detailed Stats"
+                        >
+                            <i class="fas fa-external-link-alt"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-box">
+                                <span class="stat-number">12</span>
+                                <span class="stat-label">Total Bookings</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">28</span>
+                                <span class="stat-label">Days Rented</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">$980</span>
+                                <span class="stat-label">Total Revenue</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-number">62%</span>
+                                <span class="stat-label">Utilization Rate</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Owner Information -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-user"></i> Owner Information</h3>
+                        <button
+                                class="btn btn-sm btn-outline"
+                                onclick="contactOwner()"
+                                title="Contact Owner"
+                        >
+                            <i class="fas fa-phone"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="info-list">
+                            <div class="info-item">
+                    <span class="info-label">Owner Name</span
+                    ><span
+                                    class="info-value"
+                                    th:text="${vehicle.user != null ? vehicle.user.name : 'N/A'}"
+                            ></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Address</span
+                    ><span
+                                    class="info-value"
+                                    th:text="${vehicle.address}"
+                            ></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Status</span
+                    ><span
+                                    class="info-value status-available"
+                                    th:text="${vehicle.status}"
+                            ></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Is Rented</span>
+                                <span
+                                        class="info-value"
+                                        th:text="${vehicle.isRented != null and vehicle.isRented ? 'Yes' : 'No'}"
+                                ></span>
+                            </div>
+                            <div class="info-item">
+                    <span class="info-label">Description</span
+                    ><span
+                                    class="info-value"
+                                    th:text="${vehicle.description}"
+                            ></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicle Location -->
+                <div class="detail-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-map-marker-alt"></i> Vehicle Location</h3>
+                        <button
+                                class="btn btn-sm btn-outline"
+                                onclick="openFullMap()"
+                                title="Open Full Map"
+                        >
+                            <i class="fas fa-external-link-alt"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="location-info">
+                            <div class="coordinates">
+                                <span class="coord-label">Latitude:</span>
+                                <span
+                                        class="coord-value"
+                                        th:text="${vehicle.latitude}"
+                                ></span>
+                            </div>
+                            <div class="coordinates">
+                                <span class="coord-label">Longitude:</span>
+                                <span
+                                        class="coord-value"
+                                        th:text="${vehicle.longitude}"
+                                ></span>
+                            </div>
+                        </div>
+                        <div class="map-container">
+                            <div id="vehicle-map" class="map-display">
+                                <iframe
+                                        width="100%"
+                                        height="300"
+                                        frameborder="0"
+                                        style="border: 0"
+                                        referrerpolicy="no-referrer-when-downgrade"
+                                        th:src="'https://www.google.com/maps/embed/v1/place?key=AIzaSyDWTx7bREpM5B6JKdbzOvMW-RRlhkukmVE&q=' + ${vehicle.latitude} + ',' + ${vehicle.longitude} + '&zoom=15'"
+                                        allowfullscreen
+                                >
+                                </iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="detail-card full-width">
+                    <div class="card-header">
+                        <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                        <button class="btn btn-sm btn-outline">
+                            <i class="fas fa-external-link-alt"></i>
+                            View All
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <div class="activity-icon booking">
+                                    <i class="fas fa-calendar-plus"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Booking Completed</div>
+                                    <div class="activity-description">
+                                        3-day rental by John Smith - $255 total
+                                    </div>
+                                    <div class="activity-time">2 days ago</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon maintenance">
+                                    <i class="fas fa-tools"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Maintenance Check</div>
+                                    <div class="activity-description">
+                                        Routine inspection completed - All systems OK
+                                    </div>
+                                    <div class="activity-time">1 week ago</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon update">
+                                    <i class="fas fa-edit"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Vehicle Updated</div>
+                                    <div class="activity-description">
+                                        Daily rate updated from $80 to $85
+                                    </div>
+                                    <div class="activity-time">2 weeks ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Nếu không có vehicle -->
+        <div class="vehicle-detail-content" th:if="${vehicle == null}">
+            <div class="not-found">
+                <h2>Vehicle not found.</h2>
+                <a th:href="@{/admin/vehicles}" class="btn btn-outline"
+                >Back to List</a
+                >
+            </div>
+        </div>
+    </main>
 </div>
-<div th:if="${vehicle == null}">
-  <p>Vehicle not found.</p>
-</div>
+
+<!-- Toast notification container -->
+<div id="toast-container"></div>
+
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/vehicle-detail.js}"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<!-- Import file JS WebSocket riêng -->
+<script th:src="@{/js/websocket-notify.js}"></script>
 </body>
 </html>
