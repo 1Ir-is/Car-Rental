@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Admin - Vehicle Detail</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}" />
+</head>
+<body>
+<h2>Vehicle Detail</h2>
+<div th:if="${vehicle != null}">
+  <p><b>Car Name:</b> <span th:text="${vehicle.vehicleName}"></span></p>
+  <p><b>Brand:</b> <span th:text="${vehicle.brand}"></span></p>
+  <p><b>Model:</b> <span th:text="${vehicle.model}"></span></p>
+  <p><b>Year:</b> <span th:text="${vehicle.year}"></span></p>
+  <p><b>Color:</b> <span th:text="${vehicle.color}"></span></p>
+  <p><b>License Plate:</b> <span th:text="${vehicle.licensePlate}"></span></p>
+  <p><b>Number of Seats:</b> <span th:text="${vehicle.vehicleSeat}"></span></p>
+  <p><b>Transmission:</b> <span th:text="${vehicle.transmission}"></span></p>
+  <p><b>Fuel Type:</b> <span th:text="${vehicle.fuelType}"></span></p>
+  <p><b>Price:</b> <span th:text="${vehicle.dailyPrice}"></span></p>
+  <p><b>Category:</b> <span th:text="${vehicle.category}"></span></p>
+  <p><b>Status:</b> <span th:text="${vehicle.status}"></span></p>
+  <p><b>Is Rented:</b>
+    <span th:text="${vehicle.isRented != null and vehicle.isRented ? 'Yes' : 'No'}"></span>
+    <!-- Hoặc nếu muốn Unknown khi null:
+    <span th:text="${vehicle.isRented == null ? 'Unknown' : (vehicle.isRented ? 'Yes' : 'No')}"></span>
+    -->
+  </p>
+  <p><b>Description:</b> <span th:text="${vehicle.description}"></span></p>
+  <p><b>Owner:</b> <span th:text="${vehicle.user != null ? vehicle.user.name : 'N/A'}"></span></p>
+  <p><b>Address:</b> <span th:text="${vehicle.address}"></span></p>
+  <p><b>Latitude:</b> <span th:text="${vehicle.latitude}"></span></p>
+  <p><b>Longitude:</b> <span th:text="${vehicle.longitude}"></span></p>
+  <p><b>Rating:</b> <span th:text="${vehicle.rating}"></span></p>
+  <div>
+    <b>Images:</b>
+    <div th:each="img : ${vehicle.imageList}">
+      <img th:src="${img}" style="max-width:200px;max-height:150px;margin:2px;" alt="Vehicle image"/>
+    </div>
+  </div>
+  <div>
+    <b>Features:</b>
+    <ul>
+      <li th:each="feature : ${vehicle.features}" th:text="${feature}"></li>
+    </ul>
+  </div>
+  <a th:href="@{/admin/vehicles}">Back to List</a>
+</div>
+<div th:if="${vehicle == null}">
+  <p>Vehicle not found.</p>
+</div>
+</body>
+</html>

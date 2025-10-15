@@ -88,10 +88,12 @@
                                         th:value="${role}"></option>
                             </select>
                             <select id="status-filter" name="status" onchange="this.form.submit()">
-                                <option value="">All Status</option>
-                                <option th:each="status : ${statuses}" th:selected="${selectedStatus} == ${status}"
+                                <option value="" th:selected="${selectedStatus == null or selectedStatus == ''}">All Status</option>
+                                <option th:each="status : ${statuses}"
+                                        th:value="${status}"
                                         th:text="${status.name()}"
-                                        th:value="${status}"></option>
+                                        th:selected="${selectedStatus} == ${status}">
+                                </option>
                             </select>
                         </form>
                     </div>

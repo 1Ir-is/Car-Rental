@@ -39,22 +39,44 @@ public class CustomerService implements ICustomerService {
     public Page<User> searchUsers(String search, String role, String status, Pageable pageable) {
         String excludeRole = "ADMIN";
         Boolean statusValue = null;
-        if (status != null && !status.isEmpty()) {
+        boolean statusFiltered = false;
+        boolean roleFiltered = false;
+
+        // Nếu status là ACTIVE hoặc INACTIVE thì filter, ngược lại thì không
+        if (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status)) {
             statusValue = "ACTIVE".equalsIgnoreCase(status);
+            statusFiltered = true;
         }
-        if ((search != null && !search.isBlank()) && (role != null && !role.isEmpty()) && statusValue != null) {
+
+        // Nếu role là "ALL" hoặc rỗng thì không filter role
+        if (role != null && !role.isEmpty() && !"ALL".equalsIgnoreCase(role)) {
+            roleFiltered = true;
+        }
+
+        // search + role + status
+        if ((search != null && !search.isBlank()) && roleFiltered && statusFiltered) {
             return userRepository.findByNameContainingIgnoreCaseAndRole_NameAndStatusAndRole_NameNot(
                     search, role, statusValue, excludeRole, pageable);
-        } else if ((role != null && !role.isEmpty()) && statusValue != null) {
+        }
+        // role + status
+        else if (roleFiltered && statusFiltered) {
             return userRepository.findByRole_NameAndStatusAndRole_NameNot(
                     role, statusValue, excludeRole, pageable);
-        } else if (role != null && !role.isEmpty()) {
+        }
+        // chỉ role
+        else if (roleFiltered) {
             return userRepository.findByRole_NameAndRole_NameNot(role, excludeRole, pageable);
-        } else if (statusValue != null) {
+        }
+        // chỉ status
+        else if (statusFiltered) {
             return userRepository.findByStatusAndRole_NameNot(statusValue, excludeRole, pageable);
-        } else if (search != null && !search.isBlank()) {
+        }
+        // chỉ search
+        else if (search != null && !search.isBlank()) {
             return userRepository.findByNameContainingIgnoreCaseAndRole_NameNot(search, excludeRole, pageable);
-        } else {
+        }
+        // tất cả user (trừ ADMIN)
+        else {
             return userRepository.findByRole_NameNot(excludeRole, pageable);
         }
     }
