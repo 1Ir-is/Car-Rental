@@ -3,9 +3,13 @@ import apiClient from "../context/apiClient";
 // Vehicle API operations (public: khách/người thuê)
 export const vehicleAPI = {
   // Lấy toàn bộ xe trên hệ thống
-  getAllVehicles: async () => {
+  getAllVehicles: async (status = null) => {
     try {
-      const response = await apiClient.get("/vehicles");
+      let url = "/vehicles";
+      if (status) {
+        url += `?status=${status}`;
+      }
+      const response = await apiClient.get(url);
       return {
         success: true,
         data: response.data,
@@ -19,6 +23,40 @@ export const vehicleAPI = {
           error.response?.data?.message ||
           error.response?.data ||
           "Failed to get vehicles",
+      };
+    }
+  },
+
+  // Lấy chỉ xe available cho khách hàng
+  getAvailableVehicles: async () => {
+    try {
+      const response = await apiClient.get("/vehicles?status=available");
+      return {
+        success: true,
+        data: response.data,
+        message: "Available vehicles retrieved successfully",
+      };
+    } catch (error) {
+      console.error("❌ Get available vehicles error:", error);
+      // Fallback: nếu backend chưa hỗ trợ filter, thì filter ở frontend
+      const allVehicles = await vehicleAPI.getAllVehicles();
+      if (allVehicles.success) {
+        const availableVehicles = allVehicles.data.filter(
+          (vehicle) =>
+            vehicle.status && vehicle.status.toLowerCase() === "available"
+        );
+        return {
+          success: true,
+          data: availableVehicles,
+          message: "Available vehicles retrieved successfully (filtered)",
+        };
+      }
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          "Failed to get available vehicles",
       };
     }
   },

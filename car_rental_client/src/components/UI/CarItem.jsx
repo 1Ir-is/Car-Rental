@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Col } from "reactstrap";
 import { Link } from "react-router-dom";
-import CarImageGallery from "./CarImageGallery";
 import "../../styles/car-item.css";
 
 const CarItem = (props) => {
@@ -29,19 +28,18 @@ const CarItem = (props) => {
       <div className="car__item">
         <div className="car__img">
           <div className="car__img-container">
-            {carImages.length > 0 ? (
-              <CarImageGallery images={carImages} carName={carName} />
-            ) : (
-              <img
-                src="https://via.placeholder.com/400x300?text=No+Image"
-                alt={carName}
-                className="w-100"
-                onError={(e) => {
-                  e.target.src =
-                    "https://via.placeholder.com/400x300?text=Image+Not+Found";
-                }}
-              />
-            )}
+            <img
+              src={
+                carImages[0] ||
+                "https://via.placeholder.com/400x300?text=No+Image"
+              }
+              alt={carName}
+              className="w-100"
+              onError={(e) => {
+                e.target.src =
+                  "https://via.placeholder.com/400x300?text=Image+Not+Found";
+              }}
+            />
 
             {/* Favorite Heart Button */}
             <button

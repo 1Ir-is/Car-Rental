@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import HeroSlider from "../components/UI/HeroSlider";
 import Helmet from "../components/Helmet/Helmet";
@@ -7,14 +7,32 @@ import { Container, Row, Col } from "reactstrap";
 import FindCarForm from "../components/UI/FindCarForm";
 import AboutSection from "../components/UI/AboutSection";
 import ServicesList from "../components/UI/ServicesList";
-import carData from "../assets/data/carData";
 import CarItem from "../components/UI/CarItem";
 import BecomeDriverSection from "../components/UI/BecomeDriverSection";
 import Testimonial from "../components/UI/Testimonial";
-
 import BlogList from "../components/UI/BlogList";
+import { vehicleService } from "../services/vehicleService";
 
 const Home = () => {
+  const [featuredCars, setFeaturedCars] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedCars = async () => {
+      setLoading(true);
+      // Use the new getAvailableVehicles method to fetch only available vehicles
+      const res = await vehicleService.getAvailableVehicles();
+      if (res.success && Array.isArray(res.data)) {
+        // Get first 6 available vehicles for featured section
+        setFeaturedCars(res.data.slice(0, 6));
+      } else {
+        setFeaturedCars([]);
+      }
+      setLoading(false);
+    };
+
+    fetchFeaturedCars();
+  }, []);
   return (
     <Helmet title="Home">
       {/* ============= hero section =========== */}
@@ -61,9 +79,29 @@ const Home = () => {
               <h2 className="section__title">Hot Offers</h2>
             </Col>
 
-            {carData.slice(0, 6).map((item) => (
-              <CarItem item={item} key={item.id} />
-            ))}
+            {loading ? (
+              <div className="w-100 text-center">Loading featured cars...</div>
+            ) : featuredCars.length === 0 ? (
+              <div className="w-100 text-center">
+                No cars available at the moment.
+              </div>
+            ) : (
+              featuredCars.map((car) => (
+                <CarItem
+                  key={car.id}
+                  item={{
+                    id: car.id,
+                    imgUrl: car.imageList?.[0] || "/default_car_image.png",
+                    imageList: car.imageList,
+                    model: car.model,
+                    carName: car.vehicleName,
+                    automatic: car.transmission,
+                    fuelType: car.fuelType,
+                    price: car.dailyPrice,
+                  }}
+                />
+              ))
+            )}
           </Row>
         </Container>
       </section>

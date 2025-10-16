@@ -225,7 +225,6 @@ const AddNewCar = ({ setActiveSection }) => {
     price: "",
     description: "",
     features: [],
-    status: "available",
     address: "",
     placeId: "",
   });
@@ -388,7 +387,6 @@ const AddNewCar = ({ setActiveSection }) => {
       description: formData.description,
       title: formData.name,
       dailyPrice: formData.price,
-      status: formData.status,
       features: formData.features,
       address: formData.address,
       latitude: location.latitude,
@@ -435,7 +433,6 @@ const AddNewCar = ({ setActiveSection }) => {
           price: "",
           description: "",
           features: [],
-          status: "available",
           address: "",
           placeId: "",
         });

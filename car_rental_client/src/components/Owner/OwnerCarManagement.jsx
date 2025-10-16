@@ -25,6 +25,26 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import Swal from "sweetalert2";
 
+const statusLabels = {
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+  available: "Available",
+  rented: "Rented",
+  maintenance: "Maintenance",
+  unavailable: "Unavailable",
+};
+
+const statusColors = {
+  pending: "info",
+  approved: "success",
+  rejected: "danger",
+  available: "success",
+  rented: "warning",
+  maintenance: "danger",
+  unavailable: "secondary",
+};
+
 const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCar, setSelectedCar] = useState(null);
@@ -36,7 +56,6 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
 
   const { user } = useContext(AuthContext);
 
-  // Fetch cars from API
   useEffect(() => {
     const fetchMyCars = async () => {
       try {
@@ -51,6 +70,7 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
         const response = await ownerService.getMyVehicles(user.id);
 
         if (response.success) {
+          console.log("🚗 Vehicles data:", response.data); // Debug log
           setCars(response.data || []);
         } else {
           setError(response.message || "Failed to fetch vehicles");
@@ -68,9 +88,7 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
     fetchMyCars();
   }, [user?.id]);
 
-  // Hàm delete
   const handleDeleteCar = async (car) => {
-    // SweetAlert xác nhận xóa
     const result = await Swal.fire({
       title: `Bạn có chắc muốn xóa xe "${car.vehicleName || car.name}"?`,
       text: "Thao tác này không thể hoàn tác!",
@@ -94,7 +112,6 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
             timer: 2000,
             showConfirmButton: false,
           });
-          // Xóa xong thì reload lại danh sách xe
           setCars((prev) => prev.filter((c) => c.id !== car.id));
         } else {
           Swal.fire({
@@ -115,29 +132,18 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
 
   // Helper functions
   const getStatusColor = (status) => {
-    switch (status) {
-      case "available":
-        return "success";
-      case "rented":
-        return "warning";
-      case "maintenance":
-        return "danger";
-      default:
-        return "secondary";
-    }
+    const value = (status || "").toLowerCase();
+    return statusColors[value] || "secondary";
   };
 
   const getStatusText = (status) => {
-    switch (status) {
-      case "available":
-        return "Available";
-      case "rented":
-        return "Rented";
-      case "maintenance":
-        return "Maintenance";
-      default:
-        return "Unknown";
-    }
+    const value = (status || "").toLowerCase();
+    console.log("🔍 Status debug:", {
+      original: status,
+      lowercased: value,
+      mapped: statusLabels[value],
+    }); // Debug log
+    return statusLabels[value] || "Unknown";
   };
 
   // Pagination logic
@@ -165,7 +171,6 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
     setShowDetailModal(false);
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="owner-car-management">
@@ -183,7 +188,6 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="owner-car-management">
@@ -209,7 +213,6 @@ const OwnerCarManagement = ({ setActiveSection, setEditingCar }) => {
     );
   }
 
-  // Empty state
   if (cars.length === 0) {
     return (
       <div className="owner-car-management">
@@ -469,13 +472,22 @@ const CarDetailModal = ({ car, isOpen, toggle }) => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    const value = (status || "").toLowerCase();
+    switch (value) {
+      case "pending":
+        return "info";
+      case "approved":
+        return "success";
+      case "rejected":
+        return "danger";
       case "available":
         return "success";
       case "rented":
         return "warning";
       case "maintenance":
         return "danger";
+      case "unavailable":
+        return "secondary";
       default:
         return "secondary";
     }

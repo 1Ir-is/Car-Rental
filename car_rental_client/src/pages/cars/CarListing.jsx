@@ -15,7 +15,12 @@ const CarListing = () => {
       setLoading(true);
       const res = await vehicleService.getAllVehicles();
       if (res.success && Array.isArray(res.data)) {
-        setCarData(res.data);
+        // Filter only available vehicles for customers
+        const availableVehicles = res.data.filter(
+          (vehicle) =>
+            vehicle.status && vehicle.status.toLowerCase() === "available"
+        );
+        setCarData(availableVehicles);
       } else {
         setCarData([]);
       }
@@ -71,6 +76,7 @@ const CarListing = () => {
                   item={{
                     id: car.id, 
                     imgUrl: car.imageList?.[0] || "/default_car_image.png",
+                    imageList: car.imageList,
                     model: car.model,
                     carName: car.vehicleName,
                     automatic: car.transmission,
