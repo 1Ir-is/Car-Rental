@@ -47,11 +47,12 @@
                     </div>
                     <!-- Admin Approval Actions -->
                     <div class="header-actions" th:if="${vehicle.status.name() == 'PENDING'}">
-                        <form th:action="@{/admin/vehicles/{id}/approve(id=${vehicle.id})}" method="post" style="display:inline;">
-                            <button type="submit" class="btn btn-success" title="Approve Vehicle">
-                                <i class="fas fa-check"></i> Approve Vehicle
-                            </button>
+                        <form id="approveForm" th:action="@{/admin/vehicles/{id}/approve(id=${vehicle.id})}" method="post" style="display:none;">
+                            <input type="hidden" name="approveNote" id="approveNoteInput" value="" />
                         </form>
+                        <button type="button" class="btn btn-success" onclick="approveVehicle()" title="Approve Vehicle">
+                            <i class="fas fa-check"></i> Approve Vehicle
+                        </button>
                         <form id="rejectForm" th:action="@{/admin/vehicles/{id}/reject(id=${vehicle.id})}" method="post" style="display:none;">
                             <input type="hidden" name="reason" id="rejectReasonInput" />
                         </form>
@@ -217,7 +218,6 @@
             </div>
 
             <!-- Quick Actions -->
-            <!-- Quick Actions -->
             <div class="quick-actions-bar">
                 <!-- Approval Notice for Pending Vehicles -->
                 <div
@@ -229,7 +229,7 @@
                         <div class="notice-text">
                             <span class="notice-title">Pending Approval</span>
                             <span class="notice-description"
-                            >This vehicle is waiting for admin approval before becoming
+                            >This vehicle is waiting for approval before becoming
                     available for rent.</span
                             >
                         </div>
@@ -609,9 +609,6 @@
         </div>
     </main>
 </div>
-
-<!-- Toast notification container -->
-<div id="toast-container"></div>
 
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/vehicle-detail.js}"></script>

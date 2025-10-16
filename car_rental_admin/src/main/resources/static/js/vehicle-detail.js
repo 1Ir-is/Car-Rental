@@ -591,56 +591,65 @@ window.rejectVehicle = rejectVehicle;
 window.requestMoreInfo = requestMoreInfo;
 window.editVehicle = editVehicle;
 window.deleteVehicle = deleteVehicle;
+window.approveVehicle = approveVehicle;
 
-// Admin Approval Functions
+// Add or replace this function in your existing vehicle-detail.js
 function approveVehicle() {
-    // Show confirmation dialog with SweetAlert2
     Swal.fire({
         title: "Approve Vehicle?",
-        text: "Are you sure you want to approve this vehicle for rental?",
+        html: `
+      <div style="text-align: left; margin: 10px 0;">
+        <p style="color: #6b7280; margin-bottom: 8px;">
+          Are you sure you want to approve this vehicle? It will become AVAILABLE and the owner will be notified.
+        </p>
+      </div>
+    `,
         icon: "question",
         showCancelButton: true,
         confirmButtonColor: "#10b981",
         cancelButtonColor: "#6b7280",
-        confirmButtonText: "Yes, Approve",
-        cancelButtonText: "Cancel",
-        customClass: {
-            container: "approval-modal",
-        },
+        confirmButtonText: '<i class="fas fa-check"></i> Yes, Approve',
+        cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancel',
+        width: "480px",
+        padding: "1.8rem",
+        backdrop: "rgba(0,0,0,0.6)"
     }).then((result) => {
         if (result.isConfirmed) {
-            // Show loading state
+            // Processing modal: DO NOT call Swal.showLoading() -> we keep only the custom spinner below
             Swal.fire({
                 title: "Processing...",
-                text: "Approving vehicle...",
-                icon: "info",
+                html: `
+          <div style="text-align:center;">
+            <p style="color:#6b7280; margin:0 0 12px 0;">Approving vehicle and notifying owner...</p>
+            <!-- Custom spinner kept: using FontAwesome spin icon -->
+            <div style="display:flex; align-items:center; justify-content:center; gap:12px;">
+              <i class="fas fa-circle-notch" style="font-size:28px; color:#10b981; animation: fa-spin 1s linear infinite;"></i>
+            </div>
+          </div>
+        `,
                 allowOutsideClick: false,
                 showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                },
+                // didOpen left empty on purpose to avoid Swal built-in spinner
+                width: "480px",
+                padding: "1.4rem"
             });
 
-            // Simulate API call
+            // Submit hidden form after short delay so user sees processing modal
             setTimeout(() => {
-                // Update UI to show approved status
-                updateVehicleToApproved();
-
-                // Show success message
-                Swal.fire({
-                    title: "Vehicle Approved!",
-                    text: "The vehicle has been successfully approved and is now available for rental.",
-                    icon: "success",
-                    confirmButtonColor: "#10b981",
-                    confirmButtonText: "Great!",
-                }).then(() => {
-                    // Refresh page to show updated UI
-                    window.location.reload();
-                });
-            }, 2000);
+                const approveForm = document.getElementById("approveForm");
+                if (approveForm) {
+                    approveForm.submit();
+                } else {
+                    Swal.close();
+                    console.warn("approveForm not found.");
+                }
+            }, 1200);
         }
     });
 }
+
+// Ensure function is accessible globally (if you export functions at the end of file)
+
 
 function rejectVehicle() {
     // Step 1: Nhập lý do reject
