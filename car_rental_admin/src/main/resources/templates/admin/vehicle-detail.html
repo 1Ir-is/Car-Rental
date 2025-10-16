@@ -45,6 +45,49 @@
                             Back to Vehicles
                         </a>
                     </div>
+                    <!-- Admin Approval Actions -->
+                    <div class="header-actions" th:if="${vehicle.status.name() == 'PENDING'}">
+                        <form th:action="@{/admin/vehicles/{id}/approve(id=${vehicle.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-success" title="Approve Vehicle">
+                                <i class="fas fa-check"></i> Approve Vehicle
+                            </button>
+                        </form>
+                        <form id="rejectForm" th:action="@{/admin/vehicles/{id}/reject(id=${vehicle.id})}" method="post" style="display:none;">
+                            <input type="hidden" name="reason" id="rejectReasonInput" />
+                        </form>
+                        <button type="button" class="btn btn-danger" onclick="rejectVehicle()" title="Reject Vehicle" style="margin-left:8px;">
+                            <i class="fas fa-times"></i> Reject Vehicle
+                        </button>
+                        <button class="btn btn-warning" onclick="requestMoreInfo()" title="Request More Information">
+                            <i class="fas fa-exclamation-triangle"></i> Request Info
+                        </button>
+                    </div>
+                    <!-- Mark unavailable khi đang available -->
+                    <div
+                            class="header-actions"
+                            th:if="${vehicle.status.name() == 'AVAILABLE'}"
+                    >
+                        <form
+                                th:action="@{/admin/vehicles/{id}/unavailable(id=${vehicle.id})}"
+                                method="post"
+                                style="display: inline; margin-left: 8px"
+                        >
+                            <input
+                                    type="text"
+                                    name="reason"
+                                    placeholder="Reason unavailable"
+                                    required
+                                    style="width: 180px"
+                            />
+                            <button
+                                    type="submit"
+                                    class="btn btn-warning"
+                                    title="Mark Unavailable"
+                            >
+                                <i class="fas fa-ban"></i> Mark Unavailable
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
@@ -53,12 +96,11 @@
                 <!-- Status Badge -->
                 <div
                         class="status-badge-large"
-                        th:class="'status-badge-large ' + (${vehicle.status != null ? vehicle.status.toLowerCase() : 'available'})"
+                        th:class="${'status-badge-large ' + #strings.toLowerCase(vehicle.status.name())}"
                 >
                     <i class="fas fa-check-circle"></i>
-                    <span th:text="${vehicle.status}">Available</span>
+                    <span th:text="${vehicle.status.name()}">Available</span>
                 </div>
-
                 <div class="vehicle-image-section">
                     <!-- Image Gallery with Slider -->
                     <div class="image-gallery">
@@ -175,70 +217,94 @@
             </div>
 
             <!-- Quick Actions -->
+            <!-- Quick Actions -->
             <div class="quick-actions-bar">
-                <button
-                        class="quick-action"
-                        onclick="createBooking()"
-                        title="Create Booking"
+                <!-- Approval Notice for Pending Vehicles -->
+                <div
+                        class="approval-notice"
+                        th:if="${vehicle.status.name() == 'PENDING'}"
                 >
-                    <i class="fas fa-plus"></i>
-                    <span>New Booking</span>
-                </button>
-                <button
-                        class="quick-action"
-                        onclick="viewBookings()"
-                        title="View Bookings"
+                    <div class="notice-content">
+                        <i class="fas fa-clock"></i>
+                        <div class="notice-text">
+                            <span class="notice-title">Pending Approval</span>
+                            <span class="notice-description"
+                            >This vehicle is waiting for admin approval before becoming
+                    available for rent.</span
+                            >
+                        </div>
+                    </div>
+                </div>
+                <!-- Unavailable Reason Notice -->
+                <div
+                        class="approval-notice unavailable-reason"
+                        th:if="${vehicle.status.name() == 'UNAVAILABLE' and vehicle.unavailableReason != null}"
                 >
-                    <i class="fas fa-calendar"></i>
-                    <span>Bookings</span>
-                </button>
-                <button
-                        class="quick-action"
-                        onclick="scheduleService()"
-                        title="Schedule Service"
+                    <div class="notice-content">
+                        <i class="fas fa-ban"></i>
+                        <div class="notice-text">
+                            <span class="notice-title">Unavailable</span>
+                            <span
+                                    class="notice-description"
+                                    th:text="${vehicle.unavailableReason}"
+                            ></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Rejection Reason Notice -->
+                <div
+                        class="rejection-notice"
+                        th:if="${vehicle.status.name() == 'REJECTED' and vehicle.rejectionReason != null}"
                 >
-                    <i class="fas fa-tools"></i>
-                    <span>Service</span>
-                </button>
-                <button
-                        class="quick-action"
-                        onclick="generateReport()"
-                        title="Generate Report"
+                    <div class="notice-content">
+                        <i class="fas fa-times-circle"></i>
+                        <div class="notice-text">
+                            <span class="notice-title">Vehicle Rejected</span>
+                            <span
+                                    class="notice-description"
+                                    th:text="'Reason: ' + ${vehicle.rejectionReason}"
+                            ></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Regular Actions for Approved Vehicles -->
+                <div
+                        class="action-buttons"
+                        th:if="${vehicle.status.name() == 'AVAILABLE'}"
                 >
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Report</span>
-                </button>
-                <div class="status-selector-container">
-                    <select
-                            class="status-selector"
-                            onchange="updateVehicleStatus(this.value)"
+                    <button
+                            class="quick-action"
+                            onclick="createBooking()"
+                            title="Create Booking"
                     >
-                        <option
-                                value="available"
-                                th:selected="${vehicle.status == 'Available'}"
-                        >
-                            Available
-                        </option>
-                        <option
-                                value="rented"
-                                th:selected="${vehicle.status == 'Rented'}"
-                        >
-                            Rented
-                        </option>
-                        <option
-                                value="maintenance"
-                                th:selected="${vehicle.status == 'Maintenance'}"
-                        >
-                            Maintenance
-                        </option>
-                        <option
-                                value="unavailable"
-                                th:selected="${vehicle.status == 'Unavailable'}"
-                        >
-                            Unavailable
-                        </option>
-                    </select>
-                    <i class="fas fa-chevron-down status-dropdown-icon"></i>
+                        <i class="fas fa-plus"></i>
+                        <span>New Booking</span>
+                    </button>
+                    <button
+                            class="quick-action"
+                            onclick="viewBookings()"
+                            title="View Bookings"
+                    >
+                        <i class="fas fa-calendar"></i>
+                        <span>Bookings</span>
+                    </button>
+                    <button
+                            class="quick-action"
+                            onclick="scheduleService()"
+                            title="Schedule Service"
+                    >
+                        <i class="fas fa-tools"></i>
+                        <span>Service</span>
+                    </button>
+                    <button
+                            class="quick-action"
+                            onclick="generateReport()"
+                            title="Generate Report"
+                    >
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Report</span>
+                    </button>
                 </div>
             </div>
 

@@ -1,5 +1,6 @@
 package com.example.car_rental_admin.service.vehicle;
 
+import com.example.car_rental_admin.enums.VehicleStatus;
 import com.example.car_rental_admin.model.PostVehicle;
 import org.springframework.data.domain.Page;
 
@@ -11,4 +12,8 @@ public interface IPostVehicleAdminService {
     Optional<PostVehicle> findVehicleById(UUID id);
     long countTotalVehicles();
     long countVehiclesByStatus(String status);
+    boolean approveVehicle(UUID id);
+    boolean rejectVehicle(UUID id, String reason);
+    boolean makeUnavailable(UUID id, String reason);
+    boolean updateVehicleStatus(UUID id, VehicleStatus status, String reason);
 }

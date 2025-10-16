@@ -214,10 +214,9 @@
               <span class="price-period">/day</span>
             </td>
             <td>
-                    <span
-                            th:class="'status-badge ' + ${vehicle.status != null ? vehicle.status.toLowerCase() : ''}"
-                            th:text="${vehicle.status}"
-                    ></span>
+    <span class="status-badge"
+          th:class="'status-badge ' + ${#strings.toLowerCase(vehicle.status.name())}"
+          th:text="${vehicle.status.name()}"></span>
             </td>
             <td>
                     <span

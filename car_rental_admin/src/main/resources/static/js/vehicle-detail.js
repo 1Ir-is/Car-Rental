@@ -584,3 +584,371 @@ window.viewDetailedStats = viewDetailedStats;
 window.contactOwner = contactOwner;
 window.openFullMap = openFullMap;
 window.toggleFeatures = toggleFeatures;
+
+// Admin Approval Functions
+window.approveVehicle = approveVehicle;
+window.rejectVehicle = rejectVehicle;
+window.requestMoreInfo = requestMoreInfo;
+window.editVehicle = editVehicle;
+window.deleteVehicle = deleteVehicle;
+
+// Admin Approval Functions
+function approveVehicle() {
+    // Show confirmation dialog with SweetAlert2
+    Swal.fire({
+        title: "Approve Vehicle?",
+        text: "Are you sure you want to approve this vehicle for rental?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#10b981",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Yes, Approve",
+        cancelButtonText: "Cancel",
+        customClass: {
+            container: "approval-modal",
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading state
+            Swal.fire({
+                title: "Processing...",
+                text: "Approving vehicle...",
+                icon: "info",
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
+            // Simulate API call
+            setTimeout(() => {
+                // Update UI to show approved status
+                updateVehicleToApproved();
+
+                // Show success message
+                Swal.fire({
+                    title: "Vehicle Approved!",
+                    text: "The vehicle has been successfully approved and is now available for rental.",
+                    icon: "success",
+                    confirmButtonColor: "#10b981",
+                    confirmButtonText: "Great!",
+                }).then(() => {
+                    // Refresh page to show updated UI
+                    window.location.reload();
+                });
+            }, 2000);
+        }
+    });
+}
+
+function rejectVehicle() {
+    // Step 1: Nhập lý do reject
+    Swal.fire({
+        title: "🚫 Reject Vehicle",
+        html: `
+      <div style="text-align: left; margin: 20px 0;">
+        <p style="color: #6b7280; margin-bottom: 15px; font-size: 14px;">
+          Please provide a detailed reason for rejecting this vehicle. This information will be sent to the vehicle owner.
+        </p>
+        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 8px;">
+          Rejection Reason *
+        </label>
+      </div>
+    `,
+        input: "textarea",
+        inputPlaceholder:
+            "Please specify the reason for rejection...\n\nExample:\n• Vehicle documents are incomplete\n• Photos are unclear or insufficient\n• Vehicle condition does not meet standards\n• Additional information required",
+        inputAttributes: {
+            "aria-label": "Rejection reason",
+            style: "min-height: 150px; font-family: inherit; font-size: 14px; line-height: 1.5;",
+        },
+        showCancelButton: true,
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: '<i class="fas fa-times-circle"></i> Reject Vehicle',
+        cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancel',
+        customClass: {
+            container: "rejection-modal",
+            popup: "rejection-popup",
+            title: "rejection-title",
+            confirmButton: "rejection-confirm-btn",
+            cancelButton: "rejection-cancel-btn",
+        },
+        width: "500px",
+        padding: "2rem",
+        backdrop: "rgba(0,0,0,0.8)",
+        inputValidator: (value) => {
+            if (!value || value.trim().length < 15) {
+                return "Please provide a detailed reason (at least 15 characters)";
+            }
+            if (value.trim().length > 500) {
+                return "Reason is too long (maximum 500 characters)";
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Step 2: Modal xác nhận lại lý do
+            Swal.fire({
+                title: "Confirm Rejection",
+                html: `
+          <div style="text-align: left;">
+            <p style="color: #6b7280; margin-bottom: 15px;">
+              Are you sure you want to reject this vehicle with the following reason?
+            </p>
+            <div style="background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px; margin: 15px 0;">
+              <strong style="color: #dc2626;">Rejection Reason:</strong>
+              <p style="color: #991b1b; margin: 8px 0 0 0; font-style: italic; line-height: 1.4;">
+                "${result.value}"
+              </p>
+            </div>
+            <p style="color: #ef4444; font-size: 13px; margin-top: 15px;">
+              <i class="fas fa-exclamation-triangle"></i> This action cannot be undone and the vehicle owner will be notified.
+            </p>
+          </div>
+        `,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#dc2626",
+                cancelButtonColor: "#6b7280",
+                confirmButtonText: '<i class="fas fa-check"></i> Yes, Reject Vehicle',
+                cancelButtonText: '<i class="fas fa-edit"></i> Edit Reason',
+                customClass: {
+                    container: "rejection-confirm-modal",
+                },
+            }).then((confirmResult) => {
+                if (confirmResult.isConfirmed) {
+                    // Step 3: Modal "Processing Rejection", sau 2.5s thì submit form
+                    Swal.fire({
+                        title: "Processing Rejection...",
+                        html: `
+              <div style="text-align: center;">
+                <div style="margin: 20px 0;">
+                  <i class="fas fa-envelope" style="font-size: 24px; color: #dc2626; margin-bottom: 10px;"></i>
+                  <p style="color: #6b7280; margin: 0;">Notifying vehicle owner...</p>
+                </div>
+              </div>
+            `,
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                    });
+                    setTimeout(() => {
+                        // Gán lý do vào input ẩn rồi submit form truyền thống
+                        document.getElementById("rejectReasonInput").value = result.value;
+                        document.getElementById("rejectForm").submit();
+                    }, 2500);
+                } else if (confirmResult.dismiss === Swal.DismissReason.cancel) {
+                    // Quay lại sửa lý do
+                    setTimeout(() => {
+                        rejectVehicle();
+                    }, 100);
+                }
+            });
+        }
+    });
+}
+
+function requestMoreInfo() {
+    // Show info request dialog
+    Swal.fire({
+        title: "Request More Information",
+        text: "What additional information do you need from the vehicle owner?",
+        input: "textarea",
+        inputPlaceholder: "Specify the information needed...",
+        inputAttributes: {
+            "aria-label": "Information request",
+        },
+        showCancelButton: true,
+        confirmButtonColor: "#f59e0b",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Send Request",
+        cancelButtonText: "Cancel",
+        inputValidator: (value) => {
+            if (!value || value.trim().length < 5) {
+                return "Please specify what information is needed";
+            }
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading state
+            Swal.fire({
+                title: "Sending Request...",
+                text: "Notifying vehicle owner...",
+                icon: "info",
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
+            // Simulate API call
+            setTimeout(() => {
+                // Show success message
+                Swal.fire({
+                    title: "Request Sent!",
+                    text: "The vehicle owner has been notified and will provide the requested information.",
+                    icon: "success",
+                    confirmButtonColor: "#f59e0b",
+                    confirmButtonText: "OK",
+                });
+
+                // Add a notification to the activity feed
+                addActivityNotification(
+                    "Information requested from vehicle owner",
+                    result.value
+                );
+            }, 1500);
+        }
+    });
+}
+
+function editVehicle() {
+    showToast("Redirecting to vehicle edit page...", "info");
+    setTimeout(() => {
+        window.location.href = `/admin/vehicles/edit/${currentVehicle.id}`;
+    }, 1000);
+}
+
+function deleteVehicle() {
+    // Show confirmation dialog with more serious warning
+    Swal.fire({
+        title: "Delete Vehicle?",
+        text: "This action cannot be undone. All related bookings and data will be permanently deleted.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "Yes, Delete",
+        cancelButtonText: "Cancel",
+        customClass: {
+            container: "delete-modal",
+        },
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading state
+            Swal.fire({
+                title: "Deleting...",
+                text: "Removing vehicle from system...",
+                icon: "info",
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+
+            // Simulate API call
+            setTimeout(() => {
+                // Show success message
+                Swal.fire({
+                    title: "Vehicle Deleted",
+                    text: "The vehicle has been permanently removed from the system.",
+                    icon: "success",
+                    confirmButtonColor: "#ef4444",
+                    confirmButtonText: "OK",
+                }).then(() => {
+                    // Redirect back to vehicles list
+                    window.location.href = "/admin/vehicles";
+                });
+            }, 2000);
+        }
+    });
+}
+
+// Helper function to update UI when vehicle is approved
+function updateVehicleToApproved() {
+    // Update status badge
+    const statusBadge = document.querySelector(".status-badge-large");
+    if (statusBadge) {
+        statusBadge.className = "status-badge-large available";
+        statusBadge.innerHTML = `
+      <i class="fas fa-check-circle"></i>
+      <span>Available</span>
+    `;
+    }
+
+    // Update the quick actions bar to show regular actions
+    const quickActionsBar = document.querySelector(".quick-actions-bar");
+    if (quickActionsBar) {
+        quickActionsBar.innerHTML = `
+      <div class="action-buttons">
+        <button class="quick-action" onclick="createBooking()" title="Create Booking">
+          <i class="fas fa-plus"></i>
+          <span>New Booking</span>
+        </button>
+        <button class="quick-action" onclick="viewBookings()" title="View Bookings">
+          <i class="fas fa-calendar"></i>
+          <span>Bookings</span>
+        </button>
+        <button class="quick-action" onclick="scheduleService()" title="Schedule Service">
+          <i class="fas fa-tools"></i>
+          <span>Service</span>
+        </button>
+        <button class="quick-action" onclick="generateReport()" title="Generate Report">
+          <i class="fas fa-chart-bar"></i>
+          <span>Report</span>
+        </button>
+        <div class="status-selector-container">
+          <select class="status-selector" onchange="updateVehicleStatus(this.value)">
+            <option value="available" selected>Available</option>
+            <option value="rented">Rented</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="unavailable">Unavailable</option>
+          </select>
+          <i class="fas fa-chevron-down status-dropdown-icon"></i>
+        </div>
+      </div>
+    `;
+    }
+
+    // Update header actions
+    const headerActions = document.querySelector(".header-actions");
+    if (headerActions) {
+        headerActions.innerHTML = `
+      <button class="btn btn-outline" onclick="editVehicle()" title="Edit Vehicle">
+        <i class="fas fa-edit"></i>
+        Edit Vehicle
+      </button>
+      <button class="btn btn-danger" onclick="deleteVehicle()" title="Delete Vehicle">
+        <i class="fas fa-trash"></i>
+        Delete
+      </button>
+    `;
+    }
+}
+
+// Helper function to add activity notification
+function addActivityNotification(title, description) {
+    const activityList = document.querySelector(".activity-list");
+    if (activityList) {
+        const newActivity = document.createElement("div");
+        newActivity.className = "activity-item";
+        newActivity.innerHTML = `
+      <div class="activity-icon update">
+        <i class="fas fa-info-circle"></i>
+      </div>
+      <div class="activity-content">
+        <div class="activity-title">${title}</div>
+        <div class="activity-description">${description}</div>
+        <div class="activity-time">Just now</div>
+      </div>
+    `;
+
+        // Insert at the beginning of the list
+        activityList.insertBefore(newActivity, activityList.firstChild);
+
+        // Animate the new item
+        newActivity.style.opacity = "0";
+        newActivity.style.transform = "translateY(-20px)";
+
+        setTimeout(() => {
+            newActivity.style.transition = "all 0.3s ease";
+            newActivity.style.opacity = "1";
+            newActivity.style.transform = "translateY(0)";
+        }, 100);
+    }
+}

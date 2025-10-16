@@ -1,6 +1,7 @@
 package com.example.car_rental_admin.controller;
 
 
+import com.example.car_rental_admin.enums.VehicleStatus;
 import com.example.car_rental_admin.model.PostVehicle;
 import com.example.car_rental_admin.service.vehicle.IPostVehicleAdminService;
 import lombok.RequiredArgsConstructor;
@@ -70,5 +71,78 @@ public class AdminVehicleController {
             // Hoặc có thể redirect về list với thông báo lỗi
             // return "redirect:/admin/vehicles?error=format";
         }
+    }
+
+    @PostMapping("/{id}/approve")
+    public String approveVehicle(@PathVariable("id") String id, Model model) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            boolean result = vehicleAdminService.approveVehicle(uuid);
+            if (result) {
+                model.addAttribute("success", "Vehicle approved!");
+            } else {
+                model.addAttribute("error", "Vehicle can only be approved if status is PENDING.");
+            }
+        } catch (Exception ex) {
+            model.addAttribute("error", "Invalid vehicle ID.");
+        }
+        // Quay lại trang chi tiết xe
+        return "redirect:/admin/vehicles/" + id;
+    }
+
+    @PostMapping("/{id}/reject")
+    public String rejectVehicle(@PathVariable("id") String id,
+                                @RequestParam("reason") String reason,
+                                Model model) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            boolean result = vehicleAdminService.rejectVehicle(uuid, reason);
+            if (result) {
+                model.addAttribute("success", "Vehicle rejected!");
+            } else {
+                model.addAttribute("error", "Vehicle can only be rejected if status is PENDING.");
+            }
+        } catch (Exception ex) {
+            model.addAttribute("error", "Invalid vehicle ID.");
+        }
+        return "redirect:/admin/vehicles/" + id;
+    }
+
+    @PostMapping("/{id}/unavailable")
+    public String makeUnavailable(@PathVariable("id") String id,
+                                  @RequestParam("reason") String reason,
+                                  Model model) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            boolean result = vehicleAdminService.makeUnavailable(uuid, reason);
+            if (result) {
+                model.addAttribute("success", "Vehicle unavailable!");
+            } else {
+                model.addAttribute("error", "Vehicle can only be unavailable if status is PENDING.");
+            }
+        } catch (Exception ex) {
+            model.addAttribute("error", "Invalid vehicle ID.");
+        }
+        return "redirect:/admin/vehicles/" + id;
+    }
+
+    @PostMapping("/{id}/status")
+    public String updateVehicleStatus(@PathVariable("id") String id,
+                                      @RequestParam("status") String status,
+                                      @RequestParam(value = "reason", required = false) String reason,
+                                      Model model) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            VehicleStatus enumStatus = VehicleStatus.valueOf(status.toUpperCase());
+            boolean result = vehicleAdminService.updateVehicleStatus(uuid, enumStatus, reason);
+            if (result) {
+                model.addAttribute("success", "Vehicle status updated!");
+            } else {
+                model.addAttribute("error", "Vehicle status update failed.");
+            }
+        } catch (Exception ex) {
+            model.addAttribute("error", "Invalid vehicle ID.");
+        }
+        return "redirect:/admin/vehicles/" + id;
     }
 }

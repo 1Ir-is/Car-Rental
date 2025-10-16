@@ -1,5 +1,7 @@
 package com.example.car_rental_admin.model;
 
+
+import com.example.car_rental_admin.enums.VehicleStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -48,7 +50,10 @@ public class PostVehicle {
     private Double longitude;
 
     // Status & Rental Info
-    private String status;          // Car Status ("Available", etc.)
+    @Enumerated(EnumType.STRING)
+    private VehicleStatus status;
+    private String rejectionReason;
+    private String unavailableReason;
     private Boolean isRented;       // Is rented
     private Double rating;          // User rating
 
