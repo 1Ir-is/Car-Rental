@@ -4,9 +4,10 @@ import com.example.car_rental_admin.enums.ApplicationType;
 import com.example.car_rental_admin.enums.RequestStatus;
 import com.example.car_rental_admin.model.ApprovalApplication;
 import com.example.car_rental_admin.model.User;
-import com.example.car_rental_admin.service.MailService;
+
 import com.example.car_rental_admin.service.approval.IApprovalApplicationService;
 import com.example.car_rental_admin.service.notification.INotificationService;
+import com.example.car_rental_admin.utils.MailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.flogger.Flogger;
 import org.slf4j.Logger;

@@ -621,19 +621,18 @@ function approveVehicle() {
             Swal.fire({
                 title: "Processing...",
                 html: `
-          <div style="text-align:center;">
-            <p style="color:#6b7280; margin:0 0 12px 0;">Approving vehicle and notifying owner...</p>
-            <!-- Custom spinner kept: using FontAwesome spin icon -->
-            <div style="display:flex; align-items:center; justify-content:center; gap:12px;">
-              <i class="fas fa-circle-notch" style="font-size:28px; color:#10b981; animation: fa-spin 1s linear infinite;"></i>
-            </div>
-          </div>
-        `,
+    <div style="text-align:center;">
+      <p style="color:#6b7280; margin:0 0 12px 0;">Approving vehicle and notifying owner...</p>
+      <div style="display:flex; align-items:center; justify-content:center;">
+        <i class="fas fa-circle-notch processing-spinner" style="font-size:28px; color:#10b981;"></i>
+      </div>
+    </div>
+  `,
                 allowOutsideClick: false,
                 showConfirmButton: false,
-                // didOpen left empty on purpose to avoid Swal built-in spinner
                 width: "480px",
-                padding: "1.4rem"
+                padding: "1.4rem",
+                customClass: { popup: "swal2-processing-popup" }
             });
 
             // Submit hidden form after short delay so user sees processing modal
@@ -840,17 +839,18 @@ function markUnavailable() {
             Swal.fire({
                 title: "Processing...",
                 html: `
-          <div style="text-align:center;">
-            <p style="color:#6b7280; margin:0 0 12px 0;">Marking vehicle as unavailable and notifying owner...</p>
-            <div style="display:flex; align-items:center; justify-content:center;">
-              <i class="fas fa-circle-notch" style="font-size:28px; color:#f59e0b; animation: fa-spin 1s linear infinite;"></i>
-            </div>
-          </div>
-        `,
+    <div style="text-align:center;">
+      <p style="color:#6b7280; margin:0 0 12px 0;">Marking vehicle as unavailable and notifying owner...</p>
+      <div style="display:flex; align-items:center; justify-content:center;">
+        <i class="fas fa-circle-notch processing-spinner" style="font-size:28px; color:#f59e0b;"></i>
+      </div>
+    </div>
+  `,
                 allowOutsideClick: false,
                 showConfirmButton: false,
                 width: "520px",
-                padding: "1.4rem"
+                padding: "1.4rem",
+                customClass: { popup: "swal2-processing-popup" }
             });
 
             // Set sessionStorage flag so after backend redirect we can show success SweetAlert and redirect to list
@@ -905,17 +905,18 @@ function markAvailable() {
         Swal.fire({
             title: "Processing...",
             html: `
-        <div style="text-align:center;">
-          <p style="color:#6b7280; margin:0 0 12px 0;">Marking vehicle as available and notifying owner...</p>
-          <div style="display:flex; align-items:center; justify-content:center;">
-            <i class="fas fa-circle-notch" style="font-size:28px; color:#10b981; animation: fa-spin 1s linear infinite;"></i>
-          </div>
-        </div>
-      `,
+    <div style="text-align:center;">
+      <p style="color:#6b7280; margin:0 0 12px 0;">Marking vehicle as available and notifying owner...</p>
+      <div style="display:flex; align-items:center; justify-content:center;">
+        <i class="fas fa-circle-notch processing-spinner" style="font-size:28px; color:#10b981;"></i>
+      </div>
+    </div>
+  `,
             allowOutsideClick: false,
             showConfirmButton: false,
             width: "480px",
-            padding: "1.4rem"
+            padding: "1.4rem",
+            customClass: { popup: "swal2-processing-popup" }
         });
 
         // Set sessionStorage flag for showing success SweetAlert after backend redirect

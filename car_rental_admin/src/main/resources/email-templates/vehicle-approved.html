@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vehicle Approved - AutoRent Da Nang</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        .email-container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .header {
+            text-align: center;
+            padding: 40px 30px 20px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 16px;
+            color: #374151;
+            margin-bottom: 20px;
+        }
+        .news-box {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .news-title {
+            color: #10b981;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .approval-text {
+            text-align: center;
+            color: #374151;
+            line-height: 1.7;
+        }
+        .vehicle-name {
+            color: #10b981;
+            font-weight: 700;
+        }
+        .approved-status {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .what-next {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .what-next h3 {
+            color: #10b981;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            color: #4b5563;
+            position: relative;
+            padding-left: 20px;
+        }
+        .feature-list li:before {
+            content: "•";
+            color: #10b981;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        .cta-box {
+            background: #ecfdf5;
+            text-align: center;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            border: 1px solid #d1fae5;
+        }
+        .cta-title {
+            color: #065f46;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .cta-button {
+            display: inline-block !important;
+            background: #10b981 !important;
+            color: white !important;
+            padding: 12px 30px;
+            text-decoration: none !important;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .cta-button:hover {
+            background: #059669 !important;
+            color: white !important;
+        }
+        .footer {
+            text-align: center;
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .footer-brand {
+            font-weight: 600;
+            color: #10b981;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="content">
+        <div class="greeting">Dear <strong>${userName}</strong>,</div>
+
+        <div class="news-box">
+            <div class="news-title">Fantastic News!</div>
+            <div class="approval-text">
+                Your vehicle
+                <span class="vehicle-name">"${vehicleName}"</span> has been<br />
+                <span class="approved-status">APPROVED!</span>
+            </div>
+            <div style="margin-top: 15px; text-align: center; color: #374151">
+                Your vehicle is now live on <strong>AutoRent Da Nang</strong> and
+                visible to customers who can book it immediately.
+            </div>
+        </div>
+
+        <div class="what-next">
+            <h3>What You Can Do Now</h3>
+            <ul class="feature-list">
+                <li>
+                    <strong>Monitor Bookings:</strong> Keep track of rental requests
+                    and manage your bookings
+                </li>
+                <li>
+                    <strong>Update Availability:</strong> Set when your vehicle is
+                    available for rent
+                </li>
+                <li>
+                    <strong>Adjust Pricing:</strong> Modify your rental rates based on
+                    demand and season
+                </li>
+                <li>
+                    <strong>Respond to Customers:</strong> Reply promptly to booking
+                    inquiries and messages
+                </li>
+                <li>
+                    <strong>Maintain Your Vehicle:</strong> Keep your vehicle clean
+                    and well-maintained
+                </li>
+                <li>
+                    <strong>Track Earnings:</strong> Monitor your rental income and
+                    performance statistics
+                </li>
+            </ul>
+        </div>
+
+        <div
+                style="
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            color: #92400e;
+            font-size: 14px;
+          "
+        >
+            Your vehicle is now ready to generate income! Make sure to keep it
+            available and well-maintained.
+        </div>
+
+        <div class="cta-box">
+            <div class="cta-title">Manage Your Vehicle</div>
+            <a href="${appUrl}/cars" class="cta-button" target="_blank"   style="
+              color: white !important;
+              text-decoration: none !important;
+              background: #10b981 !important;
+            ">
+                View Your Vehicle
+            </a>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-brand">AutoRent Da Nang</div>
+        <div>© ${year} AutoRent Da Nang. All rights reserved.</div>
+        <div style="margin-top: 10px; font-size: 13px">
+            This is an automated message. Need help? Contact us at
+            support@autorent-danang.com
+        </div>
+    </div>
+</div>
+</body>
+</html>

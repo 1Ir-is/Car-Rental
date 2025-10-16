@@ -1,4 +1,4 @@
-package com.example.car_rental_admin.service;
+package com.example.car_rental_admin.utils;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -21,6 +21,7 @@ public class MailService {
     private String fromEmail = "autorentdanang@gmail.com";
     private String fromName = "AutoRent Da Nang";
 
+    // Existing owner application mails (kept)
     public void sendApprovedMail(String to, String userName, String appUrl)
             throws MessagingException, UnsupportedEncodingException {
         sendMailTemplate(to, "Your Owner Application Approved",
@@ -39,6 +40,37 @@ public class MailService {
                 "email-templates/owner-application-revoked.html", userName, appUrl);
     }
 
+    // --- New: Vehicle status emails ---
+
+    public void sendVehicleApprovedMail(String to, String userName, String vehicleName, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        String subject = "Your vehicle has been approved: " + vehicleName;
+        sendMailTemplateWithVehicle(to, subject, "email-templates/vehicle-approved.html",
+                userName, vehicleName, null, appUrl);
+    }
+
+    public void sendVehicleRejectedMail(String to, String userName, String vehicleName, String reason, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        String subject = "Your vehicle has been rejected: " + vehicleName;
+        sendMailTemplateWithVehicle(to, subject, "email-templates/vehicle-rejected.html",
+                userName, vehicleName, reason, appUrl);
+    }
+
+    public void sendVehicleUnavailableMail(String to, String userName, String vehicleName, String reason, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        String subject = "Your vehicle has been marked unavailable: " + vehicleName;
+        sendMailTemplateWithVehicle(to, subject, "email-templates/vehicle-unavailable.html",
+                userName, vehicleName, reason, appUrl);
+    }
+
+    public void sendVehicleAvailableMail(String to, String userName, String vehicleName, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        String subject = "Your vehicle is now available: " + vehicleName;
+        sendMailTemplateWithVehicle(to, subject, "email-templates/vehicle-available.html",
+                userName, vehicleName, null, appUrl);
+    }
+
+    // Generic mail template loader (existing)
     private void sendMailTemplate(String to, String subject, String templatePath,
                                   String userName, String appUrl)
             throws MessagingException, UnsupportedEncodingException {
@@ -49,8 +81,29 @@ public class MailService {
         helper.setSubject(subject);
 
         String html = loadTemplate(templatePath)
-                .replace("${userName}", userName)
-                .replace("${appUrl}", appUrl)
+                .replace("${userName}", safe(userName))
+                .replace("${appUrl}", safe(appUrl))
+                .replace("${year}", String.valueOf(LocalDate.now().getYear()));
+
+        helper.setText(html, true);
+        mailSender.send(message);
+    }
+
+    // New helper for vehicle templates (adds vehicleName + reason)
+    private void sendMailTemplateWithVehicle(String to, String subject, String templatePath,
+                                             String userName, String vehicleName, String reason, String appUrl)
+            throws MessagingException, UnsupportedEncodingException {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+        helper.setFrom(fromEmail, fromName);
+        helper.setTo(to);
+        helper.setSubject(subject);
+
+        String html = loadTemplate(templatePath)
+                .replace("${userName}", safe(userName))
+                .replace("${vehicleName}", safe(vehicleName))
+                .replace("${reason}", safe(reason == null ? "" : reason))
+                .replace("${appUrl}", safe(appUrl))
                 .replace("${year}", String.valueOf(LocalDate.now().getYear()));
 
         helper.setText(html, true);
@@ -63,5 +116,9 @@ public class MailService {
         } catch (Exception e) {
             throw new RuntimeException("Cannot load mail template: " + path, e);
         }
+    }
+
+    private String safe(String v) {
+        return v == null ? "" : v;
     }
 }

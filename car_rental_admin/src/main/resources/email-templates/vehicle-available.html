@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vehicle Available Again - AutoRent Da Nang</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        .email-container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .header {
+            text-align: center;
+            padding: 40px 30px 20px;
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 16px;
+            color: #374151;
+            margin-bottom: 20px;
+        }
+        .celebration {
+            text-align: center;
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .news-box {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .news-title {
+            color: #10b981;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .approval-text {
+            text-align: center;
+            color: #374151;
+            line-height: 1.7;
+        }
+        .vehicle-name {
+            color: #10b981;
+            font-weight: 700;
+        }
+        .available-status {
+            color: #10b981;
+            font-weight: 600;
+        }
+        .benefits-box {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .benefits-title {
+            color: #1d4ed8;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .benefits-text {
+            color: #1d4ed8;
+            line-height: 1.6;
+        }
+        .what-next {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .what-next h3 {
+            color: #10b981;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 15px 0;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            color: #4b5563;
+            position: relative;
+            padding-left: 20px;
+        }
+        .feature-list li:before {
+            content: "•";
+            color: #10b981;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        .cta-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .cta-button {
+            display: inline-block !important;
+            background: #10b981 !important;
+            color: white !important;
+            padding: 12px 30px;
+            text-decoration: none !important;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 10px;
+            transition: background-color 0.2s;
+        }
+        .cta-button:hover {
+            background: #059669 !important;
+            color: white !important;
+        }
+        .cta-button.secondary {
+            background: #06b6d4 !important;
+            color: white !important;
+        }
+        .cta-button.secondary:hover {
+            background: #0891b2 !important;
+            color: white !important;
+        }
+        .cta-box {
+            background: #ecfdf5;
+            text-align: center;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            border: 1px solid #d1fae5;
+        }
+        .cta-title {
+            color: #065f46;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .footer {
+            text-align: center;
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .footer-brand {
+            font-weight: 600;
+            color: #10b981;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="content">
+        <div class="greeting">Dear <strong>${userName}</strong>,</div>
+
+        <div class="celebration">🎉 Great News! 🎉</div>
+
+        <div class="news-box">
+            <div class="news-title">Fantastic News!</div>
+            <div class="approval-text">
+                Your vehicle
+                <span class="vehicle-name">"${vehicleName}"</span> is now<br />
+                <span class="available-status">AVAILABLE AGAIN!</span>
+            </div>
+            <div style="margin-top: 15px; text-align: center; color: #374151">
+                Your vehicle is now visible to potential renters on
+                <strong>AutoRent Da Nang</strong> and ready to generate income!
+            </div>
+        </div>
+
+        <div class="benefits-box">
+            <div class="benefits-title">🎯 What This Means For You:</div>
+            <div class="benefits-text">
+                • Your vehicle is now visible in search results<br />
+                • Customers can book your vehicle again<br />
+                • You can start earning rental income<br />
+                • All booking features are fully restored<br />
+                • Your listing is actively promoted to users
+            </div>
+        </div>
+
+        <div class="what-next">
+            <h3>Ready to Maximize Your Earnings?</h3>
+            <ul class="feature-list">
+                <li>
+                    <strong>Keep It Clean:</strong> Ensure your vehicle is clean and
+                    ready for rentals
+                </li>
+                <li>
+                    <strong>Update Calendar:</strong> Set your availability schedule
+                    and pricing
+                </li>
+                <li>
+                    <strong>Competitive Pricing:</strong> Research and set competitive
+                    rates for your area
+                </li>
+                <li>
+                    <strong>Quick Response:</strong> Respond promptly to booking
+                    requests and messages
+                </li>
+                <li>
+                    <strong>Maintain Quality:</strong> Keep your vehicle
+                    well-maintained and service records updated
+                </li>
+                <li>
+                    <strong>Excellent Service:</strong> Provide great customer service
+                    to earn high ratings
+                </li>
+            </ul>
+        </div>
+
+        <div
+                style="
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+            color: #92400e;
+            font-size: 14px;
+          "
+        >
+            Your vehicle is ready to start earning! Make sure to keep it available
+            and well-maintained for the best results.
+        </div>
+
+        <div class="cta-box">
+            <div class="cta-title">Get Started Today!</div>
+            <div class="cta-container">
+                <a
+                        href="${appUrl}/owner/dashboard"
+                        class="cta-button secondary"
+                        target="_blank"
+                        style="
+                color: white !important;
+                text-decoration: none !important;
+                background: #06b6d4 !important;
+              "
+                >
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-brand">AutoRent Da Nang</div>
+        <div>© ${year} AutoRent Da Nang. All rights reserved.</div>
+        <div style="margin-top: 10px; font-size: 13px">
+            This is an automated message. Need help? Contact us at
+            support@autorent-danang.com
+        </div>
+    </div>
+</div>
+</body>
+</html>
