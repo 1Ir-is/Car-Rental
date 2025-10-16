@@ -1,6 +1,7 @@
 package com.example.car_rental_server.service.owner;
 
 import com.example.car_rental_server.dto.PostVehicleDTO;
+import com.example.car_rental_server.enums.VehicleStatus;
 import com.example.car_rental_server.model.PostVehicle;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IPostVehicleRepository;
@@ -10,11 +11,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class PostVehicleServiceImpl implements IPostVehicleService {
+public class PostVehicleService implements IPostVehicleService {
     private final IPostVehicleRepository postVehicleRepo;
     private final IUserRepository userRepository;
 
@@ -89,7 +91,7 @@ public class PostVehicleServiceImpl implements IPostVehicleService {
     }
 
     @Override
-    public Optional<PostVehicleDTO> getVehicleById(Long id) {
+    public Optional<PostVehicleDTO> getVehicleById(UUID id) {
         return postVehicleRepo.findById(id).map(this::toDTO);
     }
 
@@ -97,12 +99,13 @@ public class PostVehicleServiceImpl implements IPostVehicleService {
     public PostVehicleDTO createVehicle(PostVehicleDTO dto) {
         PostVehicle vehicle = toEntity(dto);
         vehicle.setId(null);
+        vehicle.setStatus(VehicleStatus.PENDING); // Đặt luôn PENDING khi tạo mới
         vehicle = postVehicleRepo.save(vehicle);
         return toDTO(vehicle);
     }
 
     @Override
-    public PostVehicleDTO updateVehicle(Long id, PostVehicleDTO dto) {
+    public PostVehicleDTO updateVehicle(UUID id, PostVehicleDTO dto) {
         PostVehicle vehicle = postVehicleRepo.findById(id).orElseThrow(() -> new RuntimeException("Vehicle not found"));
         vehicle.setVehicleName(dto.getVehicleName());
         vehicle.setBrand(dto.getBrand());
@@ -130,7 +133,7 @@ public class PostVehicleServiceImpl implements IPostVehicleService {
     }
 
     @Override
-    public void deleteVehicle(Long id) {
+    public void deleteVehicle(UUID id) {
         postVehicleRepo.deleteById(id);
     }
 }

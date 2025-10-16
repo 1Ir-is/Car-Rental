@@ -46,8 +46,9 @@ public class SecurityConfig {
                         // Cho phép truy cập WebSocket cho mọi client
                         .requestMatchers("/ws-notify/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/vehicles/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api/owner/**").authenticated()
+                        .requestMatchers("/api/owner/**").hasAuthority("OWNER")
                         .requestMatchers("/api/user/**").hasAnyAuthority("USER", "OWNER", "ADMIN")
                         .anyRequest().authenticated()
                 )

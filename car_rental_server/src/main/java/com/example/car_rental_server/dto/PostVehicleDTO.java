@@ -1,15 +1,17 @@
 package com.example.car_rental_server.dto;
 
+import com.example.car_rental_server.enums.VehicleStatus;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PostVehicleDTO {
-    private Long id;
+    private UUID id;
     private String vehicleName;
     private String brand;
     private String model;
@@ -28,8 +30,9 @@ public class PostVehicleDTO {
     private String placeId;
     private Double latitude;
     private Double longitude;
-    private String status;
+    private VehicleStatus status;
     private Boolean isRented;
     private Double rating;
     private Long userId;
+    private List<String> keepExistingImages;
 }

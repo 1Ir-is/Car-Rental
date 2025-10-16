@@ -1,7 +1,7 @@
 package com.example.car_rental_server.controller;
 
 import com.example.car_rental_server.dto.PostVehicleDTO;
-import com.example.car_rental_server.service.vehicle.IPostVehicleService;
+import com.example.car_rental_server.service.owner.IPostVehicleService;
 import com.example.car_rental_server.utils.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/owner/vehicles")
@@ -28,7 +29,7 @@ public class OwnerVehicleController {
 
     // Lấy chi tiết 1 xe
     @GetMapping("/{id}")
-    public ResponseEntity<?> getVehicle(@PathVariable Long id) {
+    public ResponseEntity<?> getVehicle(@PathVariable UUID id) {
         return vehicleService.getVehicleById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -53,14 +54,19 @@ public class OwnerVehicleController {
             }
         }
         dto.setImageList(imageUrls);
+
+        // Đảm bảo userId được set!
+        if (dto.getUserId() == null) {
+            return ResponseEntity.badRequest().body("Missing owner (userId)");
+        }
+
         PostVehicleDTO created = vehicleService.createVehicle(dto);
         return ResponseEntity.ok(created);
     }
 
-    // Sửa thông tin xe (có thể cho phép cập nhật lại ảnh)
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<?> updateVehicle(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestPart("info") PostVehicleDTO dto,
             @RequestPart(value = "images", required = false) MultipartFile[] images
     ) {
@@ -74,7 +80,13 @@ public class OwnerVehicleController {
                     return ResponseEntity.badRequest().body("Failed to upload: " + file.getOriginalFilename());
                 }
             }
+            // Nếu có ảnh mới thì dùng ảnh mới
             dto.setImageList(imageUrls);
+        } else {
+            // Nếu không có ảnh mới thì giữ lại ảnh cũ
+            if (dto.getKeepExistingImages() != null && !dto.getKeepExistingImages().isEmpty()) {
+                dto.setImageList(dto.getKeepExistingImages());
+            }
         }
         PostVehicleDTO updated = vehicleService.updateVehicle(id, dto);
         return ResponseEntity.ok(updated);
@@ -82,7 +94,7 @@ public class OwnerVehicleController {
 
     // Xóa xe
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteVehicle(@PathVariable Long id) {
+    public ResponseEntity<?> deleteVehicle(@PathVariable UUID id) {
         vehicleService.deleteVehicle(id);
         return ResponseEntity.ok().build();
     }

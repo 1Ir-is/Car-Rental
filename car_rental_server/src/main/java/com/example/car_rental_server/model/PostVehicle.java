@@ -1,9 +1,12 @@
 package com.example.car_rental_server.model;
 
+
+import com.example.car_rental_server.enums.VehicleStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "post_vehicles")
@@ -13,8 +16,8 @@ import java.util.List;
 @Builder
 public class PostVehicle {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     // Basic Information
     private String vehicleName;     // Car Name
@@ -47,7 +50,10 @@ public class PostVehicle {
     private Double longitude;
 
     // Status & Rental Info
-    private String status;          // Car Status ("Available", etc.)
+    @Enumerated(EnumType.STRING)
+    private VehicleStatus status;
+    private String rejectionReason;
+    private String unavailableReason;
     private Boolean isRented;       // Is rented
     private Double rating;          // User rating
 
