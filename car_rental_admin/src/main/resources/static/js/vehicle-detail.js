@@ -592,6 +592,8 @@ window.requestMoreInfo = requestMoreInfo;
 window.editVehicle = editVehicle;
 window.deleteVehicle = deleteVehicle;
 window.approveVehicle = approveVehicle;
+window.markUnavailable = markUnavailable;
+window.markAvailable = markAvailable;
 
 // Add or replace this function in your existing vehicle-detail.js
 function approveVehicle() {
@@ -760,111 +762,182 @@ function rejectVehicle() {
     });
 }
 
-function requestMoreInfo() {
-    // Show info request dialog
+function markUnavailable() {
+    // Use any existing quick preview input as default value
+    const preview = document.getElementById("unavailableReasonPreview");
+    const defaultValue = preview ? preview.value.trim() : "";
+
+    // Step 1: input modal for reason (pre-fill with preview if present)
     Swal.fire({
-        title: "Request More Information",
-        text: "What additional information do you need from the vehicle owner?",
+        title: "Mark Vehicle Unavailable",
+        html: `
+      <div style="text-align:left; margin:10px 0;">
+        <p style="color:#6b7280; margin-bottom:12px; font-size:14px;">
+          Please provide the reason why this vehicle should be marked as unavailable.
+          This reason will be visible to admins/owners.
+        </p>
+      </div>
+    `,
         input: "textarea",
-        inputPlaceholder: "Specify the information needed...",
+        inputLabel: "Unavailable Reason",
+        inputValue: defaultValue,
+        inputPlaceholder: "Enter detailed reason... (e.g. maintenance, damage, owner request)",
         inputAttributes: {
-            "aria-label": "Information request",
+            "aria-label": "Unavailable reason",
+            style: "min-height:120px; font-family: inherit; font-size: 14px; line-height:1.4;"
         },
         showCancelButton: true,
         confirmButtonColor: "#f59e0b",
         cancelButtonColor: "#6b7280",
-        confirmButtonText: "Send Request",
-        cancelButtonText: "Cancel",
+        confirmButtonText: '<i class="fas fa-check"></i> Continue',
+        cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancel',
+        width: "520px",
+        padding: "1.6rem",
         inputValidator: (value) => {
             if (!value || value.trim().length < 5) {
-                return "Please specify what information is needed";
+                return "Please provide a reason (at least 5 characters)";
             }
-        },
+            if (value.trim().length > 500) {
+                return "Reason is too long (max 500 characters)";
+            }
+        }
     }).then((result) => {
-        if (result.isConfirmed) {
-            // Show loading state
+        if (!result.isConfirmed) return;
+
+        const reason = result.value.trim();
+
+        // Step 2: confirm modal
+        Swal.fire({
+            title: "Confirm mark as Unavailable",
+            html: `
+        <div style="text-align:left;">
+          <p style="color:#6b7280; margin-bottom:12px;">Are you sure you want to mark this vehicle as <strong>Unavailable</strong> with the reason below?</p>
+          <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:12px; margin-bottom:10px;">
+            <strong style="color:#b45309;">Reason:</strong>
+            <p style="color:#92400e; margin:8px 0 0 0; font-style:italic; line-height:1.4;">${reason}</p>
+          </div>
+          <p style="color:#ef4444; font-size:13px;"><i class="fas fa-exclamation-triangle"></i> This action can be reverted later by admin.</p>
+        </div>
+      `,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#f59e0b",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: '<i class="fas fa-check"></i> Yes, Mark Unavailable',
+            cancelButtonText: '<i class="fas fa-edit"></i> Edit Reason',
+            width: "520px",
+            padding: "1.4rem"
+        }).then((confirmRes) => {
+            if (!confirmRes.isConfirmed) {
+                if (confirmRes.dismiss === Swal.DismissReason.cancel) {
+                    // reopen the input modal for editing
+                    setTimeout(() => markUnavailable(), 120);
+                }
+                return;
+            }
+
+            // Step 3: processing modal (custom spinner, no Swal.showLoading())
             Swal.fire({
-                title: "Sending Request...",
-                text: "Notifying vehicle owner...",
-                icon: "info",
+                title: "Processing...",
+                html: `
+          <div style="text-align:center;">
+            <p style="color:#6b7280; margin:0 0 12px 0;">Marking vehicle as unavailable and notifying owner...</p>
+            <div style="display:flex; align-items:center; justify-content:center;">
+              <i class="fas fa-circle-notch" style="font-size:28px; color:#f59e0b; animation: fa-spin 1s linear infinite;"></i>
+            </div>
+          </div>
+        `,
                 allowOutsideClick: false,
                 showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                },
+                width: "520px",
+                padding: "1.4rem"
             });
 
-            // Simulate API call
-            setTimeout(() => {
-                // Show success message
-                Swal.fire({
-                    title: "Request Sent!",
-                    text: "The vehicle owner has been notified and will provide the requested information.",
-                    icon: "success",
-                    confirmButtonColor: "#f59e0b",
-                    confirmButtonText: "OK",
-                });
+            // Set sessionStorage flag so after backend redirect we can show success SweetAlert and redirect to list
+            try {
+                sessionStorage.setItem("vehicleActionSuccess", JSON.stringify({
+                    type: "unavailable",
+                    message: "Vehicle marked as unavailable."
+                }));
+            } catch (e) {
+                console.warn("Could not set vehicleActionSuccess flag:", e);
+            }
 
-                // Add a notification to the activity feed
-                addActivityNotification(
-                    "Information requested from vehicle owner",
-                    result.value
-                );
-            }, 1500);
-        }
+            // Submit the hidden form (traditional POST) with the reason
+            setTimeout(() => {
+                const inputEl = document.getElementById("unavailableReasonInput");
+                if (inputEl) inputEl.value = reason;
+                const form = document.getElementById("unavailableForm");
+                if (form) {
+                    form.submit();
+                } else {
+                    Swal.close();
+                    console.warn("unavailableForm not found.");
+                }
+            }, 1200);
+        });
     });
 }
 
-function editVehicle() {
-    showToast("Redirecting to vehicle edit page...", "info");
-    setTimeout(() => {
-        window.location.href = `/admin/vehicles/edit/${currentVehicle.id}`;
-    }, 1000);
-}
-
-function deleteVehicle() {
-    // Show confirmation dialog with more serious warning
+function markAvailable() {
     Swal.fire({
-        title: "Delete Vehicle?",
-        text: "This action cannot be undone. All related bookings and data will be permanently deleted.",
-        icon: "warning",
+        title: "Mark Vehicle Available?",
+        html: `
+      <div style="text-align:left; margin:10px 0;">
+        <p style="color:#6b7280; margin-bottom:8px;">
+          Are you sure you want to make this vehicle AVAILABLE again? It will become visible for booking.
+        </p>
+      </div>
+    `,
+        icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#ef4444",
+        confirmButtonColor: "#10b981",
         cancelButtonColor: "#6b7280",
-        confirmButtonText: "Yes, Delete",
-        cancelButtonText: "Cancel",
-        customClass: {
-            container: "delete-modal",
-        },
+        confirmButtonText: '<i class="fas fa-check"></i> Yes, Make Available',
+        cancelButtonText: '<i class="fas fa-arrow-left"></i> Cancel',
+        width: "480px",
+        padding: "1.6rem",
+        backdrop: "rgba(0,0,0,0.6)"
     }).then((result) => {
-        if (result.isConfirmed) {
-            // Show loading state
-            Swal.fire({
-                title: "Deleting...",
-                text: "Removing vehicle from system...",
-                icon: "info",
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                },
-            });
+        if (!result.isConfirmed) return;
 
-            // Simulate API call
-            setTimeout(() => {
-                // Show success message
-                Swal.fire({
-                    title: "Vehicle Deleted",
-                    text: "The vehicle has been permanently removed from the system.",
-                    icon: "success",
-                    confirmButtonColor: "#ef4444",
-                    confirmButtonText: "OK",
-                }).then(() => {
-                    // Redirect back to vehicles list
-                    window.location.href = "/admin/vehicles";
-                });
-            }, 2000);
+        // Processing modal - keep custom spinner only
+        Swal.fire({
+            title: "Processing...",
+            html: `
+        <div style="text-align:center;">
+          <p style="color:#6b7280; margin:0 0 12px 0;">Marking vehicle as available and notifying owner...</p>
+          <div style="display:flex; align-items:center; justify-content:center;">
+            <i class="fas fa-circle-notch" style="font-size:28px; color:#10b981; animation: fa-spin 1s linear infinite;"></i>
+          </div>
+        </div>
+      `,
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            width: "480px",
+            padding: "1.4rem"
+        });
+
+        // Set sessionStorage flag for showing success SweetAlert after backend redirect
+        try {
+            sessionStorage.setItem("vehicleActionSuccess", JSON.stringify({
+                type: "available",
+                message: "Vehicle marked as available."
+            }));
+        } catch (e) {
+            console.warn("Could not set vehicleActionSuccess flag:", e);
         }
+
+        // Submit the hidden form after short delay (traditional POST)
+        setTimeout(() => {
+            const form = document.getElementById("availableForm");
+            if (form) {
+                form.submit();
+            } else {
+                Swal.close();
+                console.warn("availableForm not found.");
+            }
+        }, 900);
     });
 }
 

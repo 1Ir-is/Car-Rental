@@ -68,26 +68,24 @@
                             class="header-actions"
                             th:if="${vehicle.status.name() == 'AVAILABLE'}"
                     >
-                        <form
-                                th:action="@{/admin/vehicles/{id}/unavailable(id=${vehicle.id})}"
-                                method="post"
-                                style="display: inline; margin-left: 8px"
-                        >
-                            <input
-                                    type="text"
-                                    name="reason"
-                                    placeholder="Reason unavailable"
-                                    required
-                                    style="width: 180px"
-                            />
-                            <button
-                                    type="submit"
-                                    class="btn btn-warning"
-                                    title="Mark Unavailable"
-                            >
+                        <form id="unavailableForm" th:action="@{/admin/vehicles/{id}/unavailable(id=${vehicle.id})}" method="post" style="display:none;">
+                            <input type="hidden" name="reason" id="unavailableReasonInput" />
+                        </form>
+
+                        <!-- Visible UI: text input (optional) + button triggers JS modal -->
+                        <div class="header-actions" th:if="${vehicle.status.name() == 'AVAILABLE'}">
+                            <button type="button" class="btn btn-warning" onclick="markUnavailable()" title="Mark Unavailable">
                                 <i class="fas fa-ban"></i> Mark Unavailable
                             </button>
+                        </div>
+                    </div>
+                    <div class="header-actions" th:if="${vehicle.status.name() == 'UNAVAILABLE'}">
+                        <form id="availableForm" th:action="@{/admin/vehicles/{id}/available(id=${vehicle.id})}" method="post" style="display:none;">
+                            <!-- no body needed -->
                         </form>
+                        <button type="button" class="btn btn-success" onclick="markAvailable()" title="Mark Available">
+                            <i class="fas fa-check-circle"></i> Make Available
+                        </button>
                     </div>
                 </div>
             </div>

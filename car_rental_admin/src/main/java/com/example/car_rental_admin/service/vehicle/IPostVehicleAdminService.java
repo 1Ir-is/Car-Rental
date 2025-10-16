@@ -16,4 +16,5 @@ public interface IPostVehicleAdminService {
     boolean rejectVehicle(UUID id, String reason);
     boolean makeUnavailable(UUID id, String reason);
     boolean updateVehicleStatus(UUID id, VehicleStatus status, String reason);
+    boolean makeAvailable(UUID id);
 }

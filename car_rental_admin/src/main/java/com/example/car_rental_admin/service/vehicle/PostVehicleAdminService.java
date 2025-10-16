@@ -106,6 +106,24 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
     }
 
     @Override
+    public boolean makeAvailable(UUID id) {
+        Optional<PostVehicle> optionalVehicle = postVehicleRepository.findById(id);
+        if (optionalVehicle.isPresent()) {
+            PostVehicle vehicle = optionalVehicle.get();
+            // Allow make available if currently UNAVAILABLE or other non-AVAILABLE states as needed
+            if (vehicle.getStatus() == VehicleStatus.UNAVAILABLE || vehicle.getStatus() == VehicleStatus.REJECTED) {
+                vehicle.setStatus(VehicleStatus.AVAILABLE);
+                vehicle.setUnavailableReason(null);
+                vehicle.setRejectionReason(null);
+                postVehicleRepository.save(vehicle);
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    @Override
     public boolean updateVehicleStatus(UUID id, VehicleStatus status, String reason) {
         Optional<PostVehicle> optionalVehicle = postVehicleRepository.findById(id);
         if (optionalVehicle.isPresent()) {

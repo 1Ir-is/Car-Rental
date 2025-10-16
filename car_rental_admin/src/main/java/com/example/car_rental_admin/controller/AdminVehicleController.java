@@ -126,6 +126,22 @@ public class AdminVehicleController {
         return "redirect:/admin/vehicles/" + id;
     }
 
+    @PostMapping("/{id}/available")
+    public String makeAvailable(@PathVariable("id") String id, Model model) {
+        try {
+            UUID uuid = UUID.fromString(id);
+            boolean result = vehicleAdminService.makeAvailable(uuid);
+            if (result) {
+                model.addAttribute("success", "Vehicle marked available!");
+            } else {
+                model.addAttribute("error", "Vehicle can only be made available from UNAVAILABLE state.");
+            }
+        } catch (Exception ex) {
+            model.addAttribute("error", "Invalid vehicle ID.");
+        }
+        return "redirect:/admin/vehicles/" + id;
+    }
+
     @PostMapping("/{id}/status")
     public String updateVehicleStatus(@PathVariable("id") String id,
                                       @RequestParam("status") String status,
