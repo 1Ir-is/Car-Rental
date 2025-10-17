@@ -54,6 +54,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/vehicles/{vehicleId}/reviews/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/vehicles/{vehicleId}/reviews").hasAnyAuthority("USER", "OWNER", "ADMIN")
 
+
+                        // Replies: allow anyone to GET replies for a review, but only authenticated users can POST replies
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/{reviewId}/replies").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/{reviewId}/replies/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/{reviewId}/replies").hasAnyAuthority("USER", "OWNER", "ADMIN")
+
                         // Notifications (keep current policy)
                         .requestMatchers("/api/notifications/**").permitAll()
 
