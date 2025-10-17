@@ -18,21 +18,36 @@ import java.util.List;
 public class NotificationService implements INotificationService {
     private final INotificationRepository notificationRepository;
 
-    public List<Notification> getLatestNotifications(int limit) {
-        return notificationRepository.findTop5ByOrderByCreatedAtDesc();
-    }
-
-    public long countUnreadNotifications() {
-        return notificationRepository.countByIsReadFalse();
-    }
-
+    /**
+     * Return latest global notifications that are intended for admins (recipientId IS NULL).
+     */
     @Override
+    public List<Notification> getLatestNotifications(int limit) {
+        // repository currently fixed to return top5; if you want to pass limit dynamically, add custom query.
+        return notificationRepository.findTop5ByRecipientIdIsNullOrderByCreatedAtDesc();
+    }
+
+    /**
+     * Count unread global notifications (recipientId IS NULL).
+     */
+    @Override
+    public long countUnreadNotifications() {
+        return notificationRepository.countByRecipientIdIsNullAndIsReadFalse();
+    }
+
+    /**
+     * Mark all global notifications as read.
+     */
+    @Override
+    @Transactional
     public int markAllAsRead() {
-        return notificationRepository.markAllAsRead();
+        return notificationRepository.markAllGlobalRead();
     }
 
     @Override
     public Page<Notification> findAllNotifications(int page, int size) {
+        // For admin "All notifications" view, you may want to show only global notifications or allow filtering.
+        // Current behavior: show all notifications (both global and user-specific) — change if desired.
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         return notificationRepository.findAll(pageable);
     }

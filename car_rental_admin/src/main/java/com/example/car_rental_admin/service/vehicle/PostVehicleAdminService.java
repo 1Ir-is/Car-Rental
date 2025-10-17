@@ -6,12 +6,18 @@ import com.example.car_rental_admin.model.User;
 import com.example.car_rental_admin.repository.IPostVehicleRepository;
 import com.example.car_rental_admin.utils.MailService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
+import org.springframework.web.client.RestTemplate;
+
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,6 +26,11 @@ import java.util.UUID;
 public class PostVehicleAdminService implements IPostVehicleAdminService {
     private final IPostVehicleRepository postVehicleRepository;
     private final MailService mailService;
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${owner.service.url:http://localhost:8080}")
+    private String ownerServiceBaseUrl;
 
     @Override
     public Page<PostVehicle> searchVehicles(String query, String brand, String status, int page, int size) {
@@ -80,6 +91,11 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
                 // send notification mail to owner (best-effort)
                 sendVehicleApprovedMailIfPossible(vehicle);
 
+                // ---- send realtime notification to owner via owner service ----
+                String message = "Your vehicle \"" + vehicle.getVehicleName() + "\" has been approved and is now available.";
+                String url = getAppUrl() + "/cars/" + vehicle.getId();
+                sendOwnerRealtimeNotification(vehicle, message, url, "VEHICLE_APPROVED");
+
                 return true;
             }
         }
@@ -98,6 +114,10 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
                 postVehicleRepository.save(vehicle);
 
                 sendVehicleRejectedMailIfPossible(vehicle, reason);
+
+                String message = "Your vehicle \"" + vehicle.getVehicleName() + "\" was rejected: " + reason + ". Please edit and resubmit.";
+                String url = getAppUrl() + "/owner/vehicles/" + vehicle.getId(); // or a suitable owner edit URL
+                sendOwnerRealtimeNotification(vehicle, message, url, "VEHICLE_REJECTED");
 
                 return true;
             }
@@ -118,6 +138,10 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
 
                 sendVehicleUnavailableMailIfPossible(vehicle, reason);
 
+                String message = "Your vehicle \"" + vehicle.getVehicleName() + "\" was marked unavailable: " + reason;
+                String url = getAppUrl() + "/owner/vehicles/" + vehicle.getId();
+                sendOwnerRealtimeNotification(vehicle, message, url, "VEHICLE_UNAVAILABLE");
+
                 return true;
             }
         }
@@ -136,6 +160,10 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
                 postVehicleRepository.save(vehicle);
 
                 sendVehicleAvailableMailIfPossible(vehicle);
+
+                String message = "Your vehicle \"" + vehicle.getVehicleName() + "\" is now available.";
+                String url = getAppUrl() + "/cars/" + vehicle.getId();
+                sendOwnerRealtimeNotification(vehicle, message, url, "VEHICLE_AVAILABLE");
 
                 return true;
             }
@@ -214,5 +242,26 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
     // Replace with your app URL config or pass it as parameter / @Value if you prefer
     private String getAppUrl() {
         return "http://localhost:3000";
+    }
+
+    private void sendOwnerRealtimeNotification(PostVehicle vehicle, String message, String url, String type) {
+        try {
+            if (vehicle.getUser() == null || vehicle.getUser().getId() == null) return;
+            Long ownerId = vehicle.getUser().getId();
+
+            // Build payload similar to owner Notification entity (simplest JSON)
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("content", message);
+            payload.put("type", type);
+            payload.put("url", url);
+            payload.put("isRead", false);
+
+            String endpoint = ownerServiceBaseUrl + "/api/notifications/users/" + ownerId + "/create";
+
+            // Server-to-server call (no credentials included here). For production add auth header.
+            restTemplate.postForEntity(endpoint, payload, Object.class);
+        } catch (Exception ex) {
+            System.err.println("Failed to send owner realtime notification: " + ex.getMessage());
+        }
     }
 }

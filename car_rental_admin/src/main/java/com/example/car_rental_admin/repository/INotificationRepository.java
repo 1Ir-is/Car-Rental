@@ -11,12 +11,19 @@ import java.util.List;
 
 @Repository
 public interface INotificationRepository extends JpaRepository<Notification, Long> {
-    List<Notification> findTop5ByOrderByCreatedAtDesc();
 
-    long countByIsReadFalse();
+    // Global admin notifications: recipientId IS NULL (or no recipient)
+    List<Notification> findTop5ByRecipientIdIsNullOrderByCreatedAtDesc();
 
+    // Count unread global notifications for admin
+    long countByRecipientIdIsNullAndIsReadFalse();
+
+    /**
+     * Mark all global notifications as read (recipientId IS NULL).
+     * Returns number of rows updated.
+     */
     @Transactional
     @Modifying
-    @Query("UPDATE Notification n SET n.isRead = true WHERE n.isRead = false")
-    int markAllAsRead();
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.recipientId IS NULL AND n.isRead = false")
+    int markAllGlobalRead();
 }
