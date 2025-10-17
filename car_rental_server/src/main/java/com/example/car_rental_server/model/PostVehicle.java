@@ -4,6 +4,7 @@ package com.example.car_rental_server.model;
 import com.example.car_rental_server.enums.VehicleStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 import java.util.UUID;
@@ -60,4 +61,9 @@ public class PostVehicle {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    // OneToMany - reviews của xe này
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore // tránh vòng lặp, tùy nhu cầu có thể bỏ
+    private List<Review> reviews;
 }

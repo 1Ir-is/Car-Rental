@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -34,23 +35,34 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CORS cho phép admin webapp và FE React kết nối
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // CSRF: Bỏ qua cho WebSocket endpoint
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/ws-notify/**") // Bỏ qua CSRF cho WebSocket
+                        .ignoringRequestMatchers("/ws-notify/**")
                         .disable()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép truy cập WebSocket cho mọi client
+                        // allow websocket and auth endpoints
                         .requestMatchers("/ws-notify/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/vehicles/**").permitAll()
+
+                        // Vehicles read endpoints (public)
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/*").permitAll()
+                        // Reviews: allow GET (list & summary) to public, require auth for POST
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/{vehicleId}/reviews").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/{vehicleId}/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/vehicles/{vehicleId}/reviews").hasAnyAuthority("USER", "OWNER", "ADMIN")
+
+                        // Notifications (keep current policy)
                         .requestMatchers("/api/notifications/**").permitAll()
+
+                        // Admin/owner/user specific endpoints
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/owner/**").hasAuthority("OWNER")
                         .requestMatchers("/api/user/**").hasAnyAuthority("USER", "OWNER", "ADMIN")
+
+                        // anything else requires authentication
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(e -> e.authenticationEntryPoint(jwtAuthEntryPoint))
@@ -75,7 +87,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 frontendUrl,
                 "http://localhost:3000",
-                "http://localhost:8081" // Cho phép cả admin webapp truy cập WebSocket
+                "http://localhost:8081"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
