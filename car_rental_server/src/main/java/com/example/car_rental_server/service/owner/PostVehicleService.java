@@ -6,12 +6,13 @@ import com.example.car_rental_server.model.PostVehicle;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IPostVehicleRepository;
 import com.example.car_rental_server.repository.IUserRepository;
+import com.example.car_rental_server.service.notification.INotificationService;
 import com.example.car_rental_server.utils.MailService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import jakarta.mail.MessagingException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ public class PostVehicleService implements IPostVehicleService {
     private final IPostVehicleRepository postVehicleRepo;
     private final IUserRepository userRepository;
     private final MailService mailService;
+    private final INotificationService notificationService;
 
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -117,28 +119,43 @@ public class PostVehicleService implements IPostVehicleService {
         vehicle = postVehicleRepo.save(vehicle);
         PostVehicleDTO createdDto = toDTO(vehicle);
 
-        // --- Send emails: best-effort (log errors, don't break creation) ---
+        // --- Create notification + Send emails: best-effort (log errors, don't break creation) ---
         try {
             User owner = vehicle.getUser();
 
-            // Mail to owner: your vehicle is pending review (owner frontend URL)
-            if (owner != null && owner.getEmail() != null) {
-                String ownerAppUrl = frontendUrl; // example: http://localhost:3000
-                mailService.sendVehiclePendingToOwner(owner.getEmail(), owner.getName(), vehicle.getVehicleName(), ownerAppUrl);
+            // Notify admin
+            if (owner != null) {
+                try {
+                    String vehicleIdStr = vehicle.getId() != null ? vehicle.getId().toString() : null;
+                    notificationService.notifyVehicleSubmission(owner.getId(), owner.getName(), vehicleIdStr, vehicle.getVehicleName());
+                } catch (Exception e) {
+                    System.err.println("Failed to create/broadcast notification for new vehicle: " + e.getMessage());
+                }
             }
 
-            // Mail to admin: notify new vehicle submission (admin panel URL)
+            // Mail to owner
+            if (owner != null && owner.getEmail() != null) {
+                String ownerAppUrl = frontendUrl;
+                try {
+                    mailService.sendVehiclePendingToOwner(owner.getEmail(), owner.getName(), vehicle.getVehicleName(), ownerAppUrl);
+                } catch (MessagingException | UnsupportedEncodingException me) {
+                    System.err.println("Failed to send pending mail to owner: " + me.getMessage());
+                }
+            }
+
+            // Mail to admin
             if (adminEmail != null && !adminEmail.isBlank()) {
                 String ownerName = owner != null ? owner.getName() : "Owner";
                 String ownerEmail = owner != null ? owner.getEmail() : "";
-                String adminPanelUrl = adminUrl; // example: http://localhost:8081
-                mailService.sendVehicleSubmissionNotificationToAdmin(adminEmail, ownerName, ownerEmail, vehicle.getVehicleName(), adminPanelUrl);
+                String adminPanelUrl = adminUrl;
+                try {
+                    mailService.sendVehicleSubmissionNotificationToAdmin(adminEmail, ownerName, ownerEmail, vehicle.getVehicleName(), adminPanelUrl);
+                } catch (MessagingException | UnsupportedEncodingException me) {
+                    System.err.println("Failed to send vehicle submission mail to admin: " + me.getMessage());
+                }
             }
-        } catch (MessagingException | UnsupportedEncodingException e) {
-            // log and continue - do not fail creation because mail failed
-            System.err.println("Failed to send new-vehicle emails: " + e.getMessage());
         } catch (Exception e) {
-            System.err.println("Unexpected error when sending vehicle emails: " + e.getMessage());
+            System.err.println("Unexpected error when sending vehicle emails/notifications: " + e.getMessage());
         }
 
         return createdDto;
@@ -146,7 +163,18 @@ public class PostVehicleService implements IPostVehicleService {
 
     @Override
     public PostVehicleDTO updateVehicle(UUID id, PostVehicleDTO dto) {
-        PostVehicle vehicle = postVehicleRepo.findById(id).orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        PostVehicle vehicle = postVehicleRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
+        // Ownership check: ensure the caller (dto.userId) matches the vehicle owner
+        if (dto.getUserId() == null || vehicle.getUser() == null || !vehicle.getUser().getId().equals(dto.getUserId())) {
+            throw new RuntimeException("Unauthorized: you can only update your own vehicle");
+        }
+
+        // Save old status to detect REJECTED -> resubmit transition
+        VehicleStatus oldStatus = vehicle.getStatus();
+
+        // Update fields (only the allowed ones)
         vehicle.setVehicleName(dto.getVehicleName());
         vehicle.setBrand(dto.getBrand());
         vehicle.setModel(dto.getModel());
@@ -165,11 +193,69 @@ public class PostVehicleService implements IPostVehicleService {
         vehicle.setPlaceId(dto.getPlaceId());
         vehicle.setLatitude(dto.getLatitude());
         vehicle.setLongitude(dto.getLongitude());
-        vehicle.setStatus(dto.getStatus());
         vehicle.setIsRented(dto.getIsRented());
         vehicle.setRating(dto.getRating());
+
+        // If vehicle was previously REJECTED and owner updates it, mark it as PENDING again and clear rejection reason
+        if (oldStatus == VehicleStatus.REJECTED) {
+            vehicle.setStatus(VehicleStatus.PENDING);
+            vehicle.setRejectionReason(null);
+            vehicle.setUnavailableReason(null);
+        } else {
+            // Otherwise, if DTO explicitly included a status, respect it (optional)
+            if (dto.getStatus() != null) {
+                vehicle.setStatus(dto.getStatus());
+                // clear reasons if appropriate
+                if (dto.getStatus() != VehicleStatus.REJECTED) {
+                    vehicle.setRejectionReason(null);
+                }
+                if (dto.getStatus() != VehicleStatus.UNAVAILABLE) {
+                    vehicle.setUnavailableReason(null);
+                }
+            }
+        }
+
         vehicle = postVehicleRepo.save(vehicle);
-        return toDTO(vehicle);
+        PostVehicleDTO updatedDto = toDTO(vehicle);
+
+        // If owner resubmitted a previously rejected vehicle, notify admin + send confirmation email (best-effort)
+        if (oldStatus == VehicleStatus.REJECTED) {
+            try {
+                User owner = vehicle.getUser();
+                String vehicleIdStr = vehicle.getId() != null ? vehicle.getId().toString() : null;
+
+                // Notification to admin
+                try {
+                    notificationService.notifyVehicleSubmission(owner.getId(), owner.getName(), vehicleIdStr, vehicle.getVehicleName());
+                } catch (Exception ex) {
+                    System.err.println("Failed to notify admin about vehicle resubmission: " + ex.getMessage());
+                }
+
+                // Email to owner confirming resubmission
+                try {
+                    if (owner != null && owner.getEmail() != null) {
+                        mailService.sendVehiclePendingToOwner(owner.getEmail(), owner.getName(), vehicle.getVehicleName(), frontendUrl);
+                    }
+                } catch (MessagingException | UnsupportedEncodingException me) {
+                    System.err.println("Failed to send resubmission mail to owner: " + me.getMessage());
+                }
+
+                // Email to admin
+                if (adminEmail != null && !adminEmail.isBlank()) {
+                    try {
+                        String ownerName = owner != null ? owner.getName() : "Owner";
+                        String ownerEmail = owner != null ? owner.getEmail() : "";
+                        mailService.sendVehicleSubmissionNotificationToAdmin(adminEmail, ownerName, ownerEmail, vehicle.getVehicleName(), adminUrl);
+                    } catch (MessagingException | UnsupportedEncodingException me) {
+                        System.err.println("Failed to send resubmission mail to admin: " + me.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Unexpected error when handling resubmission notifications/emails: " + e.getMessage());
+            }
+        }
+
+        return updatedDto;
     }
 
     @Override

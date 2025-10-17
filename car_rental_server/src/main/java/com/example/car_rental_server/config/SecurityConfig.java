@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws-notify/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/vehicles/**").permitAll()
+                        .requestMatchers("/api/notifications/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/owner/**").hasAuthority("OWNER")
                         .requestMatchers("/api/user/**").hasAnyAuthority("USER", "OWNER", "ADMIN")
