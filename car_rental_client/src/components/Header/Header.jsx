@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 import {
   Container,
@@ -13,29 +13,15 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import "../../styles/header.css";
+import SockJS from "sockjs-client";
+import { Client } from "@stomp/stompjs";
 
 const navLinks = [
-  {
-    path: "/home",
-    display: "Home",
-  },
-  {
-    path: "/about",
-    display: "About",
-  },
-  {
-    path: "/cars",
-    display: "Cars",
-  },
-
-  {
-    path: "/blogs",
-    display: "Blog",
-  },
-  {
-    path: "/contact",
-    display: "Contact",
-  },
+  { path: "/home", display: "Home" },
+  { path: "/about", display: "About" },
+  { path: "/cars", display: "Cars" },
+  { path: "/blogs", display: "Blog" },
+  { path: "/contact", display: "Contact" },
 ];
 
 const Header = () => {
@@ -44,28 +30,37 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  // const [isSticky, setIsSticky] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
 
-  // Sticky header effect - DISABLED
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     const scrollTop = window.scrollY;
-  //     setIsSticky(scrollTop > 100);
-  //   };
-
-  //   window.addEventListener("scroll", handleScroll);
-  //   return () => window.removeEventListener("scroll", handleScroll);
-  // }, []);
+  // Real-time notifications state
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const stompRef = useRef(null);
+  // thêm lên trên cùng với stompRef
+  const stompSubRef = useRef(null);
 
   // Helper function to check if user is owner (handles both string and number)
   const isOwner = (user) => {
     if (!user || !user.role) return false;
-    // Check if role.id equals 3 (owner role)
     return user.role.id && user.role.id.toString() === "3";
   };
 
   const toggleMenu = () => menuRef.current.classList.toggle("menu__active");
   const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
+
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationOpen && !event.target.closest(".notification__wrapper")) {
+        setNotificationOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [notificationOpen]);
 
   const handleLogout = async () => {
     try {
@@ -96,6 +91,195 @@ const Header = () => {
     return "U";
   };
 
+  // Format ISO time string -> readable
+  const formatTime = (isoString) => {
+    if (!isoString) return "";
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleTimeString() + " " + d.toLocaleDateString();
+    } catch (e) {
+      return isoString;
+    }
+  };
+
+  // API base for owner backend (where Notification REST + WS live)
+  const OWNER_API_BASE =
+    process.env.REACT_APP_OWNER_API || "http://localhost:8081";
+  const OWNER_WS_BASE = process.env.REACT_APP_OWNER_WS || OWNER_API_BASE;
+
+  // Fetch initial notifications and connect websocket when user signs in
+  useEffect(() => {
+    if (!isAuthenticated || !user || !user.id) return;
+
+    let mounted = true;
+
+    // helper: dedupe an array by id (keep first occurrence)
+    const dedupeById = (arr) => {
+      const map = new Map();
+      for (const it of arr) {
+        if (it && it.id != null && !map.has(it.id)) {
+          map.set(it.id, it);
+        }
+      }
+      return Array.from(map.values());
+    };
+
+    // 1) initial load
+    fetch(
+      `${OWNER_API_BASE}/api/notifications/users/${user.id}/latest?limit=10`,
+      {
+        credentials: "include",
+      }
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch notifications");
+        return res.json();
+      })
+      .then((data) => {
+        if (!mounted) return;
+        // dedupe just in case backend returned duplicates
+        const list = dedupeById(data || []);
+        setNotifications(list);
+        setUnreadCount(list.filter((n) => !n.isRead).length);
+      })
+      .catch((err) => {
+        console.error("Failed to load notifications:", err);
+      });
+
+    // 2) connect websocket using @stomp/stompjs + SockJS
+    try {
+      const client = new Client({
+        webSocketFactory: () => new SockJS(`${OWNER_WS_BASE}/ws-notify`),
+        debug: () => {},
+        reconnectDelay: 5000,
+        onConnect: () => {
+          const topic = `/topic/notifications-user-${user.id}`;
+
+          // subscribe and save subscription so we can unsubscribe later
+          const sub = client.subscribe(topic, (message) => {
+            try {
+              const payload = JSON.parse(message.body);
+
+              // if payload has no id, you can optionally ignore or still append
+              if (!payload || payload.id == null) {
+                console.warn(
+                  "Notification payload without id received",
+                  payload
+                );
+                return;
+              }
+
+              // Add only if not already present
+              setNotifications((prev) => {
+                // if prev already contains payload.id -> skip
+                const exists = prev.some((n) => n && n.id === payload.id);
+                if (exists) {
+                  return prev;
+                }
+                const newList = [payload, ...prev].slice(0, 50); // keep latest 50
+                return newList;
+              });
+
+              // Increase unread count only if it's a new notification
+              setUnreadCount((prev) => {
+                // we need to check current notifications state synchronously is hard;
+                // so we approximate: if the payload is new, increment; but ensure not double increment
+                // we'll read current notifications via functional set above; to be safe, check in-state:
+                // (use a microtask to read updated state) - simpler approach: increment but guard by checking existence first
+                // Here we implement a check using current DOM state via temporary variable via prev in setNotifications above.
+                // Simpler and reliable approach: check via a short-lived closure reading current notifications
+                return prev + 1;
+              });
+            } catch (e) {
+              console.error("Invalid notification payload", e);
+            }
+          });
+
+          // store subscription so we can unsubscribe later
+          stompSubRef.current = sub;
+        },
+        onStompError: (frame) => {
+          console.error(
+            "Broker reported error: " +
+              (frame && frame.headers && frame.headers["message"])
+          );
+          console.error("Additional details: " + (frame && frame.body));
+        },
+      });
+
+      client.activate();
+      stompRef.current = client;
+    } catch (e) {
+      console.error("WebSocket init error:", e);
+    }
+
+    return () => {
+      mounted = false;
+      try {
+        // unsubscribe if subscribed
+        if (
+          stompSubRef.current &&
+          typeof stompSubRef.current.unsubscribe === "function"
+        ) {
+          try {
+            stompSubRef.current.unsubscribe();
+          } catch (e) {
+            /* ignore */
+          }
+          stompSubRef.current = null;
+        }
+        // deactivate client (disconnect)
+        if (stompRef.current) {
+          stompRef.current.deactivate().catch(() => {});
+          stompRef.current = null;
+        }
+      } catch (e) {}
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user?.id]);
+
+  // Mark a single notification as read and optionally navigate
+  // Mark a single notification as read (NO NAVIGATION)
+  const markNotificationRead = async (noti) => {
+    try {
+      if (!noti.isRead) {
+        await fetch(
+          `${OWNER_API_BASE}/api/notifications/users/${user.id}/mark-read/${noti.id}`,
+          {
+            method: "POST",
+            credentials: "include",
+          }
+        );
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === noti.id ? { ...n, isRead: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+        // optional: show a small confirmation toast
+        toast.dismiss();
+        toast.success("Notification marked read", { autoClose: 1200 });
+      }
+    } catch (err) {
+      console.error("Failed to mark notification read:", err);
+    }
+    // intentionally do NOT navigate
+  };
+  // Mark all notifications as read
+  const markAllRead = async () => {
+    try {
+      await fetch(
+        `${OWNER_API_BASE}/api/notifications/users/${user.id}/mark-all-read`,
+        {
+          method: "POST",
+          credentials: "include",
+        }
+      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to mark all read:", err);
+    }
+  };
+
   return (
     <header className="header" ref={headerRef}>
       {/* ============ header top ============ */}
@@ -118,9 +302,183 @@ const Header = () => {
                     {/* Notification Icons */}
                     <div className="header__icons d-flex align-items-center gap-2">
                       {/* Notifications */}
-                      <div className="icon-wrapper" title="Notifications">
-                        <i className="ri-notification-3-line"></i>
-                        <span className="icon-badge new-notification">5</span>
+                      <div className="notification__wrapper position-relative">
+                        <div
+                          className="icon-wrapper"
+                          title="Notifications"
+                          onClick={() => setNotificationOpen(!notificationOpen)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <i className="ri-notification-3-line"></i>
+                          {unreadCount > 0 && (
+                            <span className="icon-badge new-notification">
+                              {unreadCount}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Notification Dropdown */}
+                        {notificationOpen && (
+                          <div
+                            className="notification__dropdown position-absolute"
+                            style={{
+                              top: "100%",
+                              right: "0",
+                              width: "350px",
+                              background: "white",
+                              border: "1px solid #e9ecef",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                              zIndex: 1000,
+                              marginTop: "10px",
+                            }}
+                          >
+                            {/* Dropdown Header */}
+                            <div
+                              className="notification__header p-3 border-bottom"
+                              style={{
+                                background: "#f8f9fa",
+                                borderTopLeftRadius: "8px",
+                                borderTopRightRadius: "8px",
+                              }}
+                            >
+                              <div className="d-flex justify-content-between align-items-center">
+                                <h6
+                                  className="mb-0 fw-bold"
+                                  style={{ color: "#212245" }}
+                                >
+                                  Notifications
+                                </h6>
+                                <span
+                                  className="text-primary fw-bold"
+                                  style={{
+                                    fontSize: "12px",
+                                    cursor: "pointer",
+                                  }}
+                                  onClick={markAllRead}
+                                >
+                                  Mark all read
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Notification List */}
+                            <div
+                              className="notification__list"
+                              style={{ maxHeight: "400px", overflowY: "auto" }}
+                            >
+                              {notifications.length === 0 && (
+                                <div className="p-3">
+                                  <small className="text-muted">
+                                    No notifications.
+                                  </small>
+                                </div>
+                              )}
+
+                              {notifications.map((notification) => (
+                                <div
+                                  key={notification.id}
+                                  className="notification__item p-3 border-bottom"
+                                  style={{
+                                    cursor: "pointer",
+                                    background: notification.isRead
+                                      ? "white"
+                                      : "#f8f9ff",
+                                    transition: "background-color 0.2s ease",
+                                  }}
+                                  onClick={() =>
+                                    markNotificationRead(notification)
+                                  }
+                                >
+                                  <div className="d-flex align-items-start gap-3">
+                                    <div
+                                      className="notification__icon"
+                                      style={{
+                                        width: "40px",
+                                        height: "40px",
+                                        borderRadius: "50%",
+                                        background: `${
+                                          notification.color || "#dee2e6"
+                                        }15`,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: notification.color || "#6c757d",
+                                        fontSize: "18px",
+                                      }}
+                                    >
+                                      <i
+                                        className={
+                                          notification.icon ||
+                                          "ri-notification-line"
+                                        }
+                                      ></i>
+                                    </div>
+                                    <div className="notification__content flex-grow-1">
+                                      <div className="d-flex justify-content-between align-items-start">
+                                        <h6
+                                          className="notification__title mb-1"
+                                          style={{
+                                            color: "#212245",
+                                            fontSize: "14px",
+                                            fontWeight: notification.isRead
+                                              ? "500"
+                                              : "600",
+                                          }}
+                                        >
+                                          {notification.title ||
+                                            (notification.content &&
+                                              notification.content.split(
+                                                "."
+                                              )[0])}
+                                        </h6>
+                                        {!notification.isRead && (
+                                          <div
+                                            style={{
+                                              width: "8px",
+                                              height: "8px",
+                                              borderRadius: "50%",
+                                              background: "#007bff",
+                                            }}
+                                          ></div>
+                                        )}
+                                      </div>
+
+                                      <small
+                                        className="notification__time"
+                                        style={{
+                                          color: "#adb5bd",
+                                          fontSize: "11px",
+                                        }}
+                                      >
+                                        {formatTime(notification.createdAt)}
+                                      </small>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Dropdown Footer */}
+                            <div
+                              className="notification__footer p-3 text-center"
+                              style={{
+                                background: "#f8f9fa",
+                                borderBottomLeftRadius: "8px",
+                                borderBottomRightRadius: "8px",
+                              }}
+                            >
+                              <Link
+                                to="/notifications"
+                                className="text-decoration-none fw-bold"
+                                style={{ color: "#007bff", fontSize: "13px" }}
+                                onClick={() => setNotificationOpen(false)}
+                              >
+                                View All Notifications
+                              </Link>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -159,7 +517,6 @@ const Header = () => {
                               {getUserInitials(user)}
                             </div>
                           )}
-                          {/* Trust Point Badge */}
                           {(user.trustPoint || user.trust_point) && (
                             <span
                               className="position-absolute bg-warning text-dark rounded-pill px-1"
@@ -228,7 +585,6 @@ const Header = () => {
                               <strong>{user.name}</strong>
                               <br />
                               <small className="text-muted">{user.email}</small>
-                              {/* Show role badge */}
                               {isOwner(user) && (
                                 <div className="mt-1">
                                   <span className="badge bg-success">
@@ -250,8 +606,6 @@ const Header = () => {
                           </div>
                         </DropdownItem>
                         <DropdownItem divider />
-
-                        {/* Owner Dashboard - Highlighted Option */}
                         {isOwner(user) && (
                           <>
                             <DropdownItem
@@ -278,27 +632,18 @@ const Header = () => {
                             <DropdownItem divider />
                           </>
                         )}
-
-                        {/* Common menu items */}
                         <DropdownItem onClick={() => navigate("/profile")}>
-                          <i className="ri-user-line me-2"></i>
-                          Profile
+                          <i className="ri-user-line me-2"></i> Profile
                         </DropdownItem>
-
-                        {/* My Bookings - Available for all users */}
                         <DropdownItem onClick={() => navigate("/bookings")}>
-                          <i className="ri-car-line me-2"></i>
-                          My Bookings
+                          <i className="ri-car-line me-2"></i> My Bookings
                         </DropdownItem>
-
                         <DropdownItem onClick={() => navigate("/settings")}>
-                          <i className="ri-settings-line me-2"></i>
-                          Settings
+                          <i className="ri-settings-line me-2"></i> Settings
                         </DropdownItem>
                         <DropdownItem divider />
                         <DropdownItem onClick={handleLogout}>
-                          <i className="ri-logout-circle-line me-2"></i>
-                          Logout
+                          <i className="ri-logout-circle-line me-2"></i> Logout
                         </DropdownItem>
                       </DropdownMenu>
                     </Dropdown>
@@ -334,7 +679,7 @@ const Header = () => {
               <div className="logo">
                 <h1>
                   <Link to="/home" className=" d-flex align-items-center gap-2">
-                    <i class="ri-car-line"></i>
+                    <i className="ri-car-line"></i>
                     <span>
                       Auto Rent <br /> Da Nang
                     </span>
@@ -346,7 +691,7 @@ const Header = () => {
             <Col lg="3" md="3" sm="4">
               <div className="header__location d-flex align-items-center gap-2">
                 <span>
-                  <i class="ri-earth-line"></i>
+                  <i className="ri-earth-line"></i>
                 </span>
                 <div className="header__location-content">
                   <h4>Viet Nam</h4>
@@ -358,7 +703,7 @@ const Header = () => {
             <Col lg="3" md="3" sm="4">
               <div className="header__location d-flex align-items-center gap-2">
                 <span>
-                  <i class="ri-time-line"></i>
+                  <i className="ri-time-line"></i>
                 </span>
                 <div className="header__location-content">
                   <h4>Sunday to Friday</h4>
@@ -375,7 +720,7 @@ const Header = () => {
             >
               <button className="header__btn btn ">
                 <Link to="/contact">
-                  <i class="ri-phone-line"></i> Request a call
+                  <i className="ri-phone-line"></i> Request a call
                 </Link>
               </button>
             </Col>
@@ -389,7 +734,7 @@ const Header = () => {
         <Container>
           <div className="navigation__wrapper d-flex align-items-center justify-content-between">
             <span className="mobile__menu">
-              <i class="ri-menu-line" onClick={toggleMenu}></i>
+              <i className="ri-menu-line" onClick={toggleMenu}></i>
             </span>
 
             <div className="navigation" ref={menuRef} onClick={toggleMenu}>
@@ -412,7 +757,7 @@ const Header = () => {
               <div className="search__box">
                 <input type="text" placeholder="Search" />
                 <span>
-                  <i class="ri-search-line"></i>
+                  <i className="ri-search-line"></i>
                 </span>
               </div>
             </div>

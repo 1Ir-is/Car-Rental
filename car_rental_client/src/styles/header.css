@@ -613,3 +613,98 @@
     min-height: 32px;
   }
 }
+
+/* ============ Notification Dropdown Styles ============ */
+.notification__wrapper {
+  position: relative;
+}
+
+.notification__dropdown {
+  animation: fadeInDown 0.3s ease;
+}
+
+.notification__dropdown::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #e9ecef;
+}
+
+.notification__dropdown::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 20px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid white;
+}
+
+.notification__item:hover {
+  background-color: #f1f3ff !important;
+}
+
+.notification__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.notification__list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.notification__list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.notification__list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Notification Badge Animation */
+.icon-badge {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .notification__dropdown {
+    width: 300px !important;
+    right: -50px !important;
+  }
+
+  .notification__dropdown::before,
+  .notification__dropdown::after {
+    right: 70px;
+  }
+}
