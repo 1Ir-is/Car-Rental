@@ -1,0 +1,237 @@
+/* Basic visuals for threaded replies */
+/* Reply node container - more compact */
+.reply-node {
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Highlight class for scrolling */
+.reply-highlight {
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
+  background-color: #f2f6fb !important;
+}
+
+/* Row layout - more compact */
+.reply-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* Avatar column fixed width - smaller */
+.reply-avatar-col {
+  flex: 0 0 40px;
+}
+
+/* Body column */
+.reply-body-col {
+  flex: 1;
+}
+
+/* Header with name and time - more compact */
+.reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+/* reply time small style */
+.reply-time {
+  font-size: 11px;
+  color: #7c8db0;
+  margin-left: 8px;
+}
+
+/* replying-to label - Facebook style */
+.replying-to {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  padding: 2px 6px;
+  background-color: rgba(11, 102, 255, 0.05);
+  border-radius: 12px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.replying-to:hover {
+  background-color: rgba(11, 102, 255, 0.08);
+}
+
+.replying-to-avatar {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.replying-to-text {
+  font-size: 11px;
+  color: #7c8db0;
+  font-weight: 500;
+}
+
+.replying-to-name {
+  color: #0b66ff;
+  font-weight: 600;
+}
+
+/* children indentation: add curved connecting lines like Facebook */
+.reply-children {
+  position: relative;
+  margin-left: 44px; /* align with replies indentation - more compact */
+  padding-left: 8px;
+}
+
+/* Vertical line for threading */
+.reply-children::before {
+  content: "";
+  position: absolute;
+  left: -22px; /* position at center of parent avatar */
+  top: 0;
+  bottom: 20px; /* don't go all the way down */
+  width: 3px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+}
+
+/* small spacing for child node with connecting curve */
+.reply-child {
+  position: relative;
+  margin-bottom: 4px;
+}
+
+/* Horizontal curved line connecting to each reply */
+.reply-child::before {
+  content: "";
+  position: absolute;
+  left: -30px; /* start from vertical line */
+  top: 18px; /* align with avatar center */
+  width: 22px;
+  height: 18px;
+  border-left: 3px solid rgba(0, 0, 0, 0.15);
+  border-bottom: 3px solid rgba(0, 0, 0, 0.15);
+  border-bottom-left-radius: 12px;
+  border-top: none;
+  border-right: none;
+}
+
+/* Last child - curve the vertical line to end nicely */
+.reply-child:last-child::after {
+  content: "";
+  position: absolute;
+  left: -30px;
+  top: 36px; /* start below the horizontal line */
+  bottom: -20px;
+  width: 2px;
+  background-color: transparent;
+  border-left: 2px solid transparent;
+}
+
+/* Override the vertical line for last child to curve nicely */
+.reply-children .reply-child:last-child ~ .reply-child::before,
+.reply-children::before {
+  bottom: 20px;
+}
+
+/* depth-specific tweaks with enhanced curves */
+.reply-depth-2 {
+  margin-left: 6px;
+}
+
+.reply-depth-2 .reply-children::before {
+  background-color: rgba(11, 102, 255, 0.2);
+}
+
+.reply-depth-2 .reply-child::before {
+  border-left-color: rgba(11, 102, 255, 0.2);
+  border-bottom-color: rgba(11, 102, 255, 0.2);
+}
+
+.reply-depth-3 {
+  margin-left: 12px;
+}
+
+.reply-depth-3 .reply-children::before {
+  background-color: rgba(255, 140, 0, 0.2);
+}
+
+.reply-depth-3 .reply-child::before {
+  border-left-color: rgba(255, 140, 0, 0.2);
+  border-bottom-color: rgba(255, 140, 0, 0.2);
+  border-bottom-left-radius: 8px; /* smaller radius for deeper levels */
+}
+
+/* collapse control style */
+.reply-collapse-control button {
+  color: #0b66ff;
+  padding: 0;
+  font-size: 13px;
+}
+
+/* smaller avatar inside reply-to */
+.replying-to .ant-avatar {
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  font-size: 10px;
+}
+
+/* Reply content more compact */
+.reply-content {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #212245;
+}
+
+/* Reply actions more compact */
+.reply-actions .ant-btn-link {
+  font-size: 13px;
+  height: auto;
+  padding: 2px 0;
+}
+
+/* Smooth animations for tree lines */
+.reply-children::before,
+.reply-child::before {
+  transition: all 0.3s ease;
+}
+
+/* Hover effects for better interactivity */
+.reply-node:hover .reply-children::before {
+  background-color: rgba(11, 102, 255, 0.25);
+}
+
+.reply-node:hover .reply-child::before {
+  border-left-color: rgba(11, 102, 255, 0.25);
+  border-bottom-color: rgba(11, 102, 255, 0.25);
+}
+
+/* Connection dot at junction points */
+.reply-child::after {
+  content: "";
+  position: absolute;
+  left: -31px;
+  top: 17px;
+  width: 5px;
+  height: 5px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* Enhanced connection dot for deeper levels */
+.reply-depth-2 .reply-child::after {
+  background-color: rgba(11, 102, 255, 0.35);
+}
+
+.reply-depth-3 .reply-child::after {
+  background-color: rgba(255, 140, 0, 0.35);
+}
