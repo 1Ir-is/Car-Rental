@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import BookingForm from "../../components/UI/BookingForm";
 import PaymentMethod from "../../components/UI/PaymentMethod";
 import CarImageGallery from "../../components/UI/CarImageGallery";
+import ReviewSection from "../../components/UI/ReviewSection";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { vehicleService } from "../../services/vehicleService";
@@ -300,6 +301,13 @@ const CarDetails = () => {
                 <h5 className="mb-4 fw-bold ">Payment Information</h5>
                 <PaymentMethod />
               </div>
+            </Col>
+          </Row>
+
+          {/* Reviews Section */}
+          <Row className="mt-5">
+            <Col lg="12">
+              <ReviewSection vehicleId={slug} />
             </Col>
           </Row>
         </Container>
