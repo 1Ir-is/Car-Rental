@@ -6,9 +6,13 @@ import com.example.car_rental_server.model.PostVehicle;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IPostVehicleRepository;
 import com.example.car_rental_server.repository.IUserRepository;
+import com.example.car_rental_server.utils.MailService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.MessagingException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,6 +23,16 @@ import java.util.stream.Collectors;
 public class PostVehicleService implements IPostVehicleService {
     private final IPostVehicleRepository postVehicleRepo;
     private final IUserRepository userRepository;
+    private final MailService mailService;
+
+    @Value("${app.frontend.url:http://localhost:3000}")
+    private String frontendUrl;
+
+    @Value("${app.admin.url:http://localhost:8081}")
+    private String adminUrl;
+
+    @Value("${app.admin.email:}")
+    private String adminEmail;
 
     private PostVehicleDTO toDTO(PostVehicle v) {
         return PostVehicleDTO.builder()
@@ -101,7 +115,33 @@ public class PostVehicleService implements IPostVehicleService {
         vehicle.setId(null);
         vehicle.setStatus(VehicleStatus.PENDING); // Đặt luôn PENDING khi tạo mới
         vehicle = postVehicleRepo.save(vehicle);
-        return toDTO(vehicle);
+        PostVehicleDTO createdDto = toDTO(vehicle);
+
+        // --- Send emails: best-effort (log errors, don't break creation) ---
+        try {
+            User owner = vehicle.getUser();
+
+            // Mail to owner: your vehicle is pending review (owner frontend URL)
+            if (owner != null && owner.getEmail() != null) {
+                String ownerAppUrl = frontendUrl; // example: http://localhost:3000
+                mailService.sendVehiclePendingToOwner(owner.getEmail(), owner.getName(), vehicle.getVehicleName(), ownerAppUrl);
+            }
+
+            // Mail to admin: notify new vehicle submission (admin panel URL)
+            if (adminEmail != null && !adminEmail.isBlank()) {
+                String ownerName = owner != null ? owner.getName() : "Owner";
+                String ownerEmail = owner != null ? owner.getEmail() : "";
+                String adminPanelUrl = adminUrl; // example: http://localhost:8081
+                mailService.sendVehicleSubmissionNotificationToAdmin(adminEmail, ownerName, ownerEmail, vehicle.getVehicleName(), adminPanelUrl);
+            }
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            // log and continue - do not fail creation because mail failed
+            System.err.println("Failed to send new-vehicle emails: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Unexpected error when sending vehicle emails: " + e.getMessage());
+        }
+
+        return createdDto;
     }
 
     @Override

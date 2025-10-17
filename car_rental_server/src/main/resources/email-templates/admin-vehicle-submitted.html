@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>New Vehicle Submission - AutoRent Da Nang Admin</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    .email-container {
+      max-width: 750px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+    .header {
+      text-align: center;
+      padding: 40px 30px 20px;
+      background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+      color: white;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .content {
+      padding: 30px;
+    }
+    .alert-box {
+      background: #ede9fe;
+      border-left: 4px solid #7c3aed;
+      padding: 20px;
+      margin: 25px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .alert-title {
+      color: #7c3aed;
+      font-weight: 600;
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 18px;
+    }
+    .alert-text {
+      text-align: center;
+      color: #374151;
+      line-height: 1.7;
+    }
+    .owner-info {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+    .owner-info h3 {
+      color: #374151;
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 15px 0;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-weight: 600; color: #6b7280; min-width: 100px; }
+    .info-value { color: #374151; font-weight: 500; }
+    .vehicle-name { color: #7c3aed; font-weight: 700; }
+    .urgent-box {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 25px 0;
+      text-align: center;
+    }
+    .urgent-title { color: #92400e; font-weight: 600; margin-bottom: 10px; font-size: 16px; }
+    .urgent-text { color: #92400e; line-height: 1.6; }
+    .action-needed { background: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; }
+    .action-needed h3 { color: #7c3aed; font-size: 16px; font-weight: 600; margin: 0 0 15px 0; }
+    .action-list { list-style: none; padding: 0; margin: 0; }
+    .action-list li { padding: 8px 0; color: #4b5563; position: relative; padding-left: 20px; }
+    .action-list li:before { content: "•"; color: #7c3aed; font-weight: bold; position: absolute; left: 0; }
+    .cta-box {
+      background: #ede9fe;
+      text-align: center;
+      padding: 25px;
+      margin: 25px 0;
+      border-radius: 8px;
+      border: 1px solid #c4b5fd;
+    }
+    .cta-title { color: #5b21b6; font-weight: 600; margin-bottom: 15px; font-size: 16px; }
+    .cta-button {
+      display: inline-block !important;
+      background: #7c3aed !important;
+      color: white !important;
+      padding: 15px 30px;
+      text-decoration: none !important;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 10px;
+      transition: background-color 0.2s;
+    }
+    .cta-button:hover { background: #6366f1 !important; color: white !important; }
+    .cta-button.secondary { background: #10b981 !important; color: white !important; }
+    .cta-button.secondary:hover { background: #059669 !important; color: white !important; }
+    .footer { text-align: center; padding: 25px 30px; background: #f8f9fa; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; }
+    .footer-brand { font-weight: 600; color: #7c3aed; margin-bottom: 5px; }
+    .timestamp { background: #f3f4f6; padding: 10px 15px; border-radius: 6px; font-size: 13px; color: #6b7280; text-align: center; margin: 15px 0; }
+    @media (max-width: 520px) {
+      .email-container { padding: 12px; }
+      .content { padding: 16px; }
+      .cta-button { display:block; width:100%; box-sizing:border-box; }
+    }
+  </style>
+</head>
+<body>
+<div class="email-container">
+  <div class="header">
+    <h1>New Vehicle Submission</h1>
+  </div>
+
+  <div class="content">
+    <div class="alert-box">
+      <div class="alert-title">Admin Action Required</div>
+      <div class="alert-text">
+        A new vehicle has been submitted by an owner and is
+        <strong>waiting for your review</strong>.<br />
+        Please take action to approve or reject this submission.
+      </div>
+    </div>
+
+    <div class="owner-info" role="region" aria-label="Submission Details">
+      <h3>Submission Details</h3>
+      <div class="info-row">
+        <span class="info-label">Owner:</span>
+        <span class="info-value"><strong>${userName}</strong></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Email:</span>
+        <span class="info-value">${userEmail}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Vehicle:</span>
+        <span class="info-value vehicle-name">"${vehicleName}"</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Status:</span>
+        <span class="info-value" style="color: #f59e0b; font-weight: 600">⏳ Pending Review</span>
+      </div>
+    </div>
+
+    <div class="urgent-box" role="status" aria-live="polite">
+      <div class="urgent-title">⏰ Time-Sensitive Action</div>
+      <div class="urgent-text">
+        The owner is waiting for approval. Please review this submission as
+        soon as possible to maintain good customer experience.
+      </div>
+    </div>
+
+    <div class="action-needed">
+      <h3>What You Need to Review</h3>
+      <ul class="action-list">
+        <li><strong>Vehicle Information:</strong> Check all details, specifications, and descriptions</li>
+        <li><strong>Photo Quality:</strong> Ensure images are clear and high-quality</li>
+        <li><strong>Required Documents:</strong> Verify uploaded documents are valid</li>
+        <li><strong>Owner Profile:</strong> Review owner information and verification status</li>
+        <li><strong>Platform Standards:</strong> Ensure the vehicle meets AutoRent quality standards</li>
+      </ul>
+    </div>
+
+    <div class="cta-box" role="navigation">
+      <div class="cta-title">Take Action Now</div>
+      <div>
+        <a href="${appUrl}/admin/vehicles" class="cta-button" target="_blank" rel="noopener">🔍 Review Vehicle</a>
+        <a href="${appUrl}/admin/dashboard" class="cta-button secondary" target="_blank" rel="noopener">Admin Dashboard</a>
+      </div>
+    </div>
+
+    <div class="timestamp">Submitted: ${year}</div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-brand">AutoRent Da Nang - Admin Panel</div>
+    <div>© ${year} AutoRent Da Nang. All rights reserved.</div>
+    <div style="margin-top: 10px; font-size: 13px">This is an automated admin notification. For support, contact tech@autorent-danang.com</div>
+  </div>
+</div>
+</body>
+</html>

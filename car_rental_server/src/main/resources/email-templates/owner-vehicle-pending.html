@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Vehicle Under Review - AutoRent Da Nang</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        .email-container {
+            max-width: 750px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        .header {
+            text-align: center;
+            padding: 40px 30px 20px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 30px; }
+        .greeting { font-size: 16px; color: #374151; margin-bottom: 20px; }
+        .news-box {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .news-title { color: #f59e0b; font-weight: 600; margin-bottom: 15px; text-align:center; font-size: 18px; }
+        .approval-text { text-align:center; color:#374151; line-height:1.7; }
+        .vehicle-name { color: #f59e0b; font-weight: 700; }
+        .pending-status { color: #f59e0b; font-weight: 600; }
+        .timeline-box { background: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; }
+        .timeline-box h3 { color: #f59e0b; font-size:16px; font-weight:600; margin: 0 0 15px 0; }
+        .timeline-steps { list-style:none; padding:0; margin:0; }
+        .timeline-steps li {
+            padding: 12px 0;
+            color: #4b5563;
+            position: relative;
+            padding-left: 30px;
+            border-left: 2px solid #e5e7eb;
+            margin-left: 10px;
+        }
+        .timeline-steps li:before {
+            content: "";
+            width: 12px;
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            position: absolute;
+            left: -7px;
+            top: 18px;
+        }
+        .timeline-steps li.active:before { background: #f59e0b; }
+        .timeline-steps li.active { color: #374151; font-weight: 500; }
+        .info-box { background: #dbeafe; border: 1px solid #93c5fd; border-radius: 8px; padding: 20px; margin: 25px 0; }
+        .info-title { color: #1d4ed8; font-weight: 600; margin-bottom: 10px; font-size: 16px; }
+        .info-text { color: #1d4ed8; line-height: 1.6; }
+        .what-next { background: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; }
+        .what-next h3 { color: #374151; font-size: 16px; font-weight: 600; margin: 0 0 15px 0; }
+        .feature-list { list-style: none; padding: 0; margin: 0; }
+        .feature-list li { padding: 8px 0; color: #4b5563; position: relative; padding-left: 20px; }
+        .feature-list li:before { content: "•"; color: #f59e0b; font-weight: bold; position: absolute; left: 0; }
+        .cta-box { background: #fffbeb; text-align: center; padding: 25px; margin: 25px 0; border-radius: 8px; border: 1px solid #fbbf24; }
+        .cta-title { color: #92400e; font-weight: 600; margin-bottom: 15px; font-size: 16px; }
+        .cta-button {
+            display: inline-block !important;
+            background: #f59e0b !important;
+            color: white !important;
+            padding: 12px 30px;
+            text-decoration: none !important;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        .cta-button:hover { background: #d97706 !important; color: white !important; }
+        .footer { text-align: center; padding: 25px 30px; background: #f8f9fa; border-top:1px solid #e5e7eb; color: #6b7280; font-size: 14px; }
+        .footer-brand { font-weight: 600; color: #10b981; margin-bottom: 5px; }
+        @media (max-width: 520px) {
+            .email-container { padding: 12px; }
+            .content { padding: 16px; }
+            .cta-button { display:block; width:100%; box-sizing:border-box; }
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <div class="header">
+        <h1>Submission Received!</h1>
+    </div>
+
+    <div class="content">
+        <div class="greeting">Hello <strong>${userName}</strong>,</div>
+
+        <div class="news-box" role="status" aria-live="polite">
+            <div class="news-title">Submission Received!</div>
+            <div class="approval-text">
+                Thank you for submitting your vehicle
+                <span class="vehicle-name">"${vehicleName}"</span> to
+                <strong>AutoRent Da Nang</strong>.<br />
+                Your listing is currently
+                <span class="pending-status">UNDER REVIEW</span>.
+            </div>
+            <div style="margin-top: 15px; text-align: center; color: #374151">
+                Our team is carefully reviewing your submission to ensure it meets our quality standards.
+            </div>
+        </div>
+
+        <div class="timeline-box" aria-hidden="false">
+            <h3>Review Process Timeline</h3>
+            <ul class="timeline-steps">
+                <li class="active"><strong>Submission Received</strong> - Your vehicle details have been submitted</li>
+                <li class="active"><strong>Initial Review</strong> - We're checking your vehicle information</li>
+                <li class="active"><strong>Quality Check</strong> - Verifying photos and documents</li>
+                <li class="active"><strong>Final Approval</strong> - Making the final decision</li>
+                <li class="active"><strong>Go Live</strong> - Your vehicle becomes available for booking</li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <div class="info-title">Expected Timeline</div>
+            <div class="info-text">
+                <strong>Review Duration:</strong> Usually completed within 2-3 business days<br />
+                <strong>Notification:</strong> You'll receive an email notification once the review is completed<br />
+                <strong>Status Updates:</strong> Check your dashboard for real-time status updates
+            </div>
+        </div>
+
+        <div class="what-next">
+            <h3>💡 What Happens Next?</h3>
+            <ul class="feature-list">
+                <li><strong>Review in Progress:</strong> Our team is examining your vehicle details and photos</li>
+                <li><strong>Email Notification:</strong> You'll receive an email when the review is complete</li>
+                <li><strong>Approval:</strong> If approved, your vehicle will go live immediately</li>
+                <li><strong>Feedback:</strong> If changes are needed, we'll provide specific guidance</li>
+                <li><strong>Dashboard Access:</strong> Monitor your submission status anytime</li>
+            </ul>
+        </div>
+
+        <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center; color: #92400e; font-size: 14px;">
+            💬 <strong>Need Help?</strong> If you have any questions about your submission, feel free to contact our support team.
+        </div>
+
+        <div class="cta-box">
+            <div class="cta-title">Check Your Status</div>
+            <a href="${appUrl}/owner/dashboard" class="cta-button" target="_blank" rel="noopener">Go to Dashboard</a>
+        </div>
+
+        <div class="timestamp">Submitted: ${year}</div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-brand">AutoRent Da Nang</div>
+        <div>© ${year} AutoRent Da Nang. All rights reserved.</div>
+        <div style="margin-top: 10px; font-size: 13px">This is an automated message. Need help? Contact us at support@autorent-danang.com</div>
+    </div>
+</div>
+</body>
+</html>

@@ -74,7 +74,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 frontendUrl,
                 "http://localhost:3000",
-                "http://localhost:8082" // Cho phép cả admin webapp truy cập WebSocket
+                "http://localhost:8081" // Cho phép cả admin webapp truy cập WebSocket
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
