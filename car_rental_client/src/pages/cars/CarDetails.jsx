@@ -9,12 +9,19 @@ import ReviewSection from "../../components/UI/ReviewSection";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { vehicleService } from "../../services/vehicleService";
+import { FaCommentDots } from "react-icons/fa";
+import ChatBox from "../../components/UI/ChatBox"; // Import ChatBox component
+import { useAuth } from "../../context/AuthContext";
 import "../../styles/car-info-grid.css";
 
 const CarDetails = () => {
   const { slug } = useParams(); // slug chính là UUID của xe
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isChatBoxOpen, setIsChatBoxOpen] = useState(false);
+
+  const { user: currentUser } = useAuth();
+  console.log("Current user from useAuth:", currentUser);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -69,6 +76,8 @@ const CarDetails = () => {
     );
   }
 
+  // Hàm đóng chatbox
+  const handleCloseChatBox = () => setIsChatBoxOpen(false);
   return (
     <Helmet title={car.vehicleName}>
       <section>
@@ -83,7 +92,31 @@ const CarDetails = () => {
 
             <Col lg="6">
               <div className="car__info">
-                <h2 className="section__title">{car.vehicleName}</h2>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <h2 className="section__title" style={{ marginBottom: 0 }}>
+                    {car.vehicleName}
+                  </h2>
+                  <button
+                    className="chat-owner-btn"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, #2196f3 0%, #0066ff 100%)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "24px",
+                      padding: "8px 20px 8px 16px",
+                      fontWeight: 500,
+                      fontSize: 15,
+                      boxShadow: "0 2px 8px rgba(0,102,255,0.10)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                    onClick={() => setIsChatBoxOpen(true)}
+                  >
+                    <FaCommentDots size={18} /> Chat với Owner
+                  </button>
+                </div>
 
                 <div className=" d-flex align-items-center gap-5 mb-4 mt-3">
                   <h6 className="rent__price fw-bold fs-4">
@@ -311,6 +344,54 @@ const CarDetails = () => {
             </Col>
           </Row>
         </Container>
+        {/* Hiện ChatBox khi mở */}
+        {isChatBoxOpen && currentUser && (
+          <div
+            style={{
+              position: "fixed",
+              bottom: 40,
+              right: 40,
+              zIndex: 1000,
+              background: "#fff",
+              borderRadius: 16,
+              boxShadow: "0 2px 16px rgba(0,0,0,0.10)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Nút đóng chatbox */}
+            <div style={{ textAlign: "right", padding: 8 }}>
+              <button
+                onClick={handleCloseChatBox}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: 22,
+                  cursor: "pointer",
+                  color: "#2196f3",
+                }}
+                title="Đóng chat"
+              >
+                ×
+              </button>
+            </div>
+            <ChatBox
+              user={{
+                id: currentUser.id,
+                name: currentUser.name,
+                email: currentUser.email,
+                avatar: currentUser.avatar,
+              }}
+              owner={{
+                id: car.ownerId,
+                name: car.ownerName,
+                email: car.ownerEmail
+                  ? car.ownerEmail
+                  : `${car.ownerId}@yourdomain.com`,
+                avatar: car.ownerAvatar,
+              }}
+            />
+          </div>
+        )}
       </section>
     </Helmet>
   );
