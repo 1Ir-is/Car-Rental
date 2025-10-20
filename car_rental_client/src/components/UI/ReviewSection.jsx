@@ -496,9 +496,9 @@ const ReviewSection = ({ vehicleId, isLoggedIn = true }) => {
                               autoShowForm={true}
                               onReply={async (content) => {
                                 await handleCreateReply(
-                                  review.id,
-                                  null,
-                                  content
+                                  review.id, // reviewId
+                                  null, // parentId
+                                  content // content
                                 );
                               }}
                             />
@@ -545,7 +545,7 @@ const InlineReplyBox = ({ reviewId, onReply, autoShowForm = false }) => {
     }
     try {
       setLoading(true);
-      const created = await onReply(reviewId, null, text.trim());
+      const created = await onReply(text.trim());
       setText("");
       setShowForm(false);
       message.success("Reply sent");
