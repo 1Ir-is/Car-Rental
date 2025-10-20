@@ -61,6 +61,8 @@ public class PostVehicleService implements IPostVehicleService {
                 .isRented(v.getIsRented())
                 .rating(v.getRating())
                 .userId(v.getUser() != null ? v.getUser().getId() : null)
+                .ownerName(v.getOwnerName())     // Đúng là ownerName
+                .ownerAvatar(v.getOwnerAvatar()) // Đúng là ownerAvatar
                 .build();
     }
 
@@ -69,31 +71,33 @@ public class PostVehicleService implements IPostVehicleService {
         if (dto.getUserId() != null) {
             user = userRepository.findById(dto.getUserId()).orElse(null);
         }
-        return PostVehicle.builder()
-                .id(dto.getId())
-                .vehicleName(dto.getVehicleName())
-                .brand(dto.getBrand())
-                .model(dto.getModel())
-                .year(dto.getYear())
-                .color(dto.getColor())
-                .licensePlate(dto.getLicensePlate())
-                .vehicleSeat(dto.getVehicleSeat())
-                .transmission(dto.getTransmission())
-                .fuelType(dto.getFuelType())
-                .dailyPrice(dto.getDailyPrice())
-                .description(dto.getDescription())
-                .category(dto.getCategory())
-                .imageList(dto.getImageList())
-                .features(dto.getFeatures())
-                .address(dto.getAddress())
-                .placeId(dto.getPlaceId())
-                .latitude(dto.getLatitude())
-                .longitude(dto.getLongitude())
-                .status(dto.getStatus())
-                .isRented(dto.getIsRented())
-                .rating(dto.getRating())
-                .user(user)
-                .build();
+        PostVehicle entity = new PostVehicle();
+        entity.setId(dto.getId());
+        entity.setVehicleName(dto.getVehicleName());
+        entity.setBrand(dto.getBrand());
+        entity.setModel(dto.getModel());
+        entity.setYear(dto.getYear());
+        entity.setColor(dto.getColor());
+        entity.setLicensePlate(dto.getLicensePlate());
+        entity.setVehicleSeat(dto.getVehicleSeat());
+        entity.setTransmission(dto.getTransmission());
+        entity.setFuelType(dto.getFuelType());
+        entity.setDailyPrice(dto.getDailyPrice());
+        entity.setDescription(dto.getDescription());
+        entity.setCategory(dto.getCategory());
+        entity.setImageList(dto.getImageList());
+        entity.setFeatures(dto.getFeatures());
+        entity.setAddress(dto.getAddress());
+        entity.setPlaceId(dto.getPlaceId());
+        entity.setLatitude(dto.getLatitude());
+        entity.setLongitude(dto.getLongitude());
+        entity.setStatus(dto.getStatus());
+        entity.setIsRented(dto.getIsRented());
+        entity.setRating(dto.getRating());
+        entity.setUser(user);
+        entity.setOwnerName(user != null ? user.getName() : null);
+        entity.setOwnerAvatar(user != null ? user.getAvatar() : null);
+        return entity;
     }
 
     @Override
@@ -108,7 +112,9 @@ public class PostVehicleService implements IPostVehicleService {
 
     @Override
     public Optional<PostVehicleDTO> getVehicleById(UUID id) {
-        return postVehicleRepo.findById(id).map(this::toDTO);
+        Optional<PostVehicle> vOpt = postVehicleRepo.findByIdWithUser(id);
+        vOpt.ifPresent(v -> System.out.println("Vehicle user: " + v.getUser()));
+        return vOpt.map(this::toDTO);
     }
 
     @Override

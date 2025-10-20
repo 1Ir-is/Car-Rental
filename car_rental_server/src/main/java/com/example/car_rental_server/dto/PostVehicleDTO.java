@@ -34,5 +34,7 @@ public class PostVehicleDTO {
     private Boolean isRented;
     private Double rating;
     private Long userId;
+    private String ownerName;
+    private String ownerAvatar;
     private List<String> keepExistingImages;
 }

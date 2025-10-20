@@ -14,7 +14,6 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class PostVehicle {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -58,10 +57,15 @@ public class PostVehicle {
     private Boolean isRented;       // Is rented
     private Double rating;          // User rating
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(name = "owner_name")
+    private String ownerName;
+
+    @Column(name = "owner_avatar")
+    private String ownerAvatar;
     // OneToMany - reviews của xe này
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore // tránh vòng lặp, tùy nhu cầu có thể bỏ

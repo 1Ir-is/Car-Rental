@@ -41,6 +41,8 @@ public class VehicleService implements IVehicleService {
                 .isRented(v.getIsRented())
                 .rating(v.getRating())
                 .userId(v.getUser() != null ? v.getUser().getId() : null)
+                .ownerName(v.getOwnerName())     // Đúng là ownerName
+                .ownerAvatar(v.getOwnerAvatar()) // Đúng là ownerAvatar
                 .build();
     }
 
