@@ -38,6 +38,7 @@ export const ReplyNode = ({ node, reviewId, onReply, depth = 1 }) => {
   };
 
   const submit = async () => {
+    console.log("Reply content to submit:", text);
     if (!text || text.trim().length < 1) {
       message.error("Please enter reply");
       return;
@@ -82,10 +83,13 @@ export const ReplyNode = ({ node, reviewId, onReply, depth = 1 }) => {
           ) : (
             <Avatar
               size={36}
+              src={node.avatar}
               icon={<UserOutlined />}
               style={{ background: "#000d6b" }}
             >
-              {node.userName ? node.userName.charAt(0) : "U"}
+              {/^[A-Za-z]/.test(node.userName || "")
+                ? node.userName.charAt(0).toUpperCase()
+                : "U"}
             </Avatar>
           )}
         </div>

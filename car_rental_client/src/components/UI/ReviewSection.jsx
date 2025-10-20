@@ -23,7 +23,7 @@ const { Title, Text } = Typography;
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
 
-const ReviewSection = ({ vehicleId }) => {
+const ReviewSection = ({ vehicleId, isLoggedIn = true }) => {
   const [reviews, setReviews] = useState([]);
   const [summary, setSummary] = useState({
     average: 0,
@@ -63,9 +63,14 @@ const ReviewSection = ({ vehicleId }) => {
         : Array.isArray(json)
         ? json
         : [];
-      setReviews(list);
-      // keep only replies for present reviews
-      const ids = list.map((r) => r.id);
+      const normalized = list.map((r) => ({
+        ...r,
+        helpfulCount: r.helpfulCount ?? r.helpful ?? 0,
+        notHelpfulCount: r.notHelpfulCount ?? r.notHelpful ?? 0,
+        userVote: r.userVote ?? r.userVote ?? 0,
+      }));
+      setReviews(normalized);
+      const ids = normalized.map((r) => r.id);
       setRepliesByReview((prev) => {
         const next = {};
         ids.forEach((id) => {
@@ -165,10 +170,6 @@ const ReviewSection = ({ vehicleId }) => {
     }
   };
 
-  /**
-   * Create reply and return created reply DTO (so caller can scroll to it).
-   * Returns created DTO object from server (or throws on error)
-   */
   const handleCreateReply = async (reviewId, parentId, content) => {
     const payload = { parentId: parentId || null, content };
     const res = await fetch(`${API_BASE}/reviews/${reviewId}/replies`, {
@@ -182,10 +183,58 @@ const ReviewSection = ({ vehicleId }) => {
       throw new Error(txt || "Failed to post reply");
     }
     const created = await res.json().catch(() => null);
-    // refresh replies for that review
     await loadRepliesForReview(reviewId);
-    // return created DTO so caller (ReplyNode) can scroll to it
     return created;
+  };
+
+  // Helpful / Not Helpful vote handler
+  const handleReviewVote = async (reviewId, helpful) => {
+    try {
+      const res = await fetch(`${API_BASE}/reviews/${reviewId}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ helpful }),
+      });
+      if (!res.ok) {
+        if (res.status === 401) {
+          message.error("Please login to vote.");
+          return;
+        }
+        const txt = await res.text().catch(() => "");
+        message.error("Vote failed: " + (txt || res.statusText));
+        return;
+      }
+      const json = await res.json();
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewId
+            ? {
+                ...r,
+                helpfulCount:
+                  json.helpfulCount ??
+                  json.helpful ??
+                  r.helpfulCount ??
+                  r.helpful ??
+                  0,
+                notHelpfulCount:
+                  json.notHelpfulCount ??
+                  json.notHelpful ??
+                  r.notHelpfulCount ??
+                  r.notHelpful ??
+                  0,
+                userVote:
+                  typeof json.userVote === "number"
+                    ? json.userVote
+                    : r.userVote ?? 0,
+              }
+            : r
+        )
+      );
+    } catch (e) {
+      console.error("vote error", e);
+      message.error("Vote failed");
+    }
   };
 
   // UI helpers ...
@@ -213,7 +262,7 @@ const ReviewSection = ({ vehicleId }) => {
         Reviews & Ratings
       </Title>
 
-      {/* Summary & form omitted here for brevity - keep same as before */}
+      {/* Summary Section */}
       <Row gutter={[24, 24]} className="mb-4">
         <Col lg={8} md={12} sm={24}>
           <div style={{ textAlign: "center" }}>
@@ -269,6 +318,60 @@ const ReviewSection = ({ vehicleId }) => {
         </Col>
       </Row>
 
+      {/* Review Form - Add back this section */}
+      {isLoggedIn && (
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleReviewSubmit}
+          style={{
+            marginBottom: 32,
+            marginTop: 16,
+            padding: "24px 0",
+            background: "#fff",
+          }}
+        >
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                name="rating"
+                label="Your Rating"
+                rules={[
+                  { required: true, message: "Please select your rating!" },
+                ]}
+              >
+                <Rate style={{ fontSize: 24 }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={16}>
+              <Form.Item
+                name="comment"
+                label="Your Review"
+                rules={[
+                  { required: true, message: "Please write your review!" },
+                  {
+                    min: 5,
+                    message: "Review should be at least 5 characters.",
+                  },
+                ]}
+              >
+                <TextArea rows={3} placeholder="Write your review..." />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submittingReview}
+              style={{ marginTop: 8 }}
+            >
+              Submit Review
+            </Button>
+          </Form.Item>
+        </Form>
+      )}
+
       <Divider />
 
       {/* Reviews list & replies */}
@@ -283,104 +386,141 @@ const ReviewSection = ({ vehicleId }) => {
               <Spin />
             </div>
           ) : reviews.length > 0 ? (
-            reviews.map((review) => (
-              <Card
-                key={review.id}
-                style={{
-                  background: "#fafafa",
-                  border: "none",
-                  borderRadius: "8px",
-                }}
-              >
-                <div style={{ display: "flex", gap: 12 }}>
-                  <Avatar
-                    size={48}
-                    src={review.avatar}
-                    icon={<UserOutlined />}
-                    style={{ background: "#000d6b" }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <Text strong style={{ fontSize: 16, color: "#212245" }}>
-                        {review.userName || "User"}
-                      </Text>
-                      <Text style={{ fontSize: 12, color: "#7c8db0" }}>
-                        {review.createdAt
-                          ? new Date(review.createdAt).toLocaleDateString(
-                              "vi-VN"
-                            )
-                          : ""}
-                      </Text>
-                    </div>
-                    <Rate
-                      disabled
-                      value={review.rating}
-                      style={{ fontSize: 14, marginBottom: 8 }}
-                    />
-                    <div
-                      style={{
-                        marginBottom: 12,
-                        color: "#212245",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {review.content || review.comment}
-                    </div>
+            reviews.map((review) => {
+              const helpfulCount = review.helpfulCount ?? review.helpful ?? 0;
+              const notHelpfulCount =
+                review.notHelpfulCount ?? review.notHelpful ?? 0;
+              const userVote = review.userVote ?? 0;
 
-                    <div
-                      style={{ display: "flex", gap: 16, alignItems: "center" }}
+              return (
+                <Card
+                  key={review.id}
+                  style={{
+                    background: "#fafafa",
+                    border: "none",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <Avatar
+                      size={48}
+                      src={review.avatar}
+                      icon={<UserOutlined />}
+                      style={{ background: "#000d6b" }}
                     >
-                      <Button type="link" icon={<LikeOutlined />}>
-                        Helpful ({review.helpful ?? 0})
-                      </Button>
-                      <Button type="link" icon={<DislikeOutlined />}>
-                        Not Helpful ({review.notHelpful ?? 0})
-                      </Button>
-                      <Button
-                        type="link"
-                        onClick={() => toggleReplies(review.id)}
+                      {/* Fallback: show first letter of userName */}
+                      {typeof review.userName === "string" &&
+                      review.userName.length > 0
+                        ? review.userName.charAt(0).toUpperCase()
+                        : "U"}
+                    </Avatar>
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: 8,
+                        }}
                       >
-                        {expandedReplies[review.id]
-                          ? "Hide replies"
-                          : "Show replies"}
-                      </Button>
-                    </div>
-
-                    {expandedReplies[review.id] && (
-                      <div style={{ marginTop: 12 }}>
-                        <div style={{ marginTop: 8, marginLeft: 56 }}>
-                          <InlineReplyBox
-                            reviewId={review.id}
-                            autoShowForm={true}
-                            onReply={async (content) => {
-                              await handleCreateReply(review.id, null, content);
-                            }}
-                          />
-                        </div>
-
-                        {repliesByReview[review.id] &&
-                          repliesByReview[review.id].length > 0 && (
-                            <div style={{ marginTop: 12 }}>
-                              <ReplyList
-                                reviewId={review.id}
-                                replies={repliesByReview[review.id]}
-                                onReply={handleCreateReply}
-                              />
-                            </div>
-                          )}
+                        <Text strong style={{ fontSize: 16, color: "#212245" }}>
+                          {review.userName || "User"}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: "#7c8db0" }}>
+                          {review.createdAt
+                            ? new Date(review.createdAt).toLocaleDateString(
+                                "vi-VN"
+                              )
+                            : ""}
+                        </Text>
                       </div>
-                    )}
+                      <Rate
+                        disabled
+                        value={review.rating}
+                        style={{ fontSize: 14, marginBottom: 8 }}
+                      />
+                      <div
+                        style={{
+                          marginBottom: 12,
+                          color: "#212245",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {review.content || review.comment}
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 16,
+                          alignItems: "center",
+                        }}
+                      >
+                        <Button
+                          type="text"
+                          icon={<LikeOutlined />}
+                          size="small"
+                          style={{
+                            color: userVote === 1 ? "#0b66ff" : "#7c8db0",
+                          }}
+                          onClick={() => handleReviewVote(review.id, true)}
+                        >
+                          Helpful ({helpfulCount})
+                        </Button>
+                        <Button
+                          type="text"
+                          icon={<DislikeOutlined />}
+                          size="small"
+                          style={{
+                            color: userVote === -1 ? "#ff4d4f" : "#7c8db0",
+                          }}
+                          onClick={() => handleReviewVote(review.id, false)}
+                        >
+                          Not Helpful ({notHelpfulCount})
+                        </Button>
+                        <Button
+                          type="link"
+                          onClick={() => toggleReplies(review.id)}
+                        >
+                          {expandedReplies[review.id]
+                            ? "Hide replies"
+                            : "Show replies"}
+                        </Button>
+                      </div>
+
+                      {expandedReplies[review.id] && (
+                        <div style={{ marginTop: 12 }}>
+                          <div style={{ marginTop: 8, marginLeft: 56 }}>
+                            <InlineReplyBox
+                              reviewId={review.id}
+                              autoShowForm={true}
+                              onReply={async (content) => {
+                                await handleCreateReply(
+                                  review.id,
+                                  null,
+                                  content
+                                );
+                              }}
+                            />
+                          </div>
+
+                          {repliesByReview[review.id] &&
+                            repliesByReview[review.id].length > 0 && (
+                              <div style={{ marginTop: 12 }}>
+                                <ReplyList
+                                  reviewId={review.id}
+                                  replies={repliesByReview[review.id]}
+                                  onReply={handleCreateReply}
+                                />
+                              </div>
+                            )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))
+                </Card>
+              );
+            })
           ) : (
             <div style={{ textAlign: "center", padding: 40, color: "#7c8db0" }}>
               No reviews yet. Be the first to review this car!
@@ -410,7 +550,6 @@ const InlineReplyBox = ({ reviewId, onReply, autoShowForm = false }) => {
       setShowForm(false);
       message.success("Reply sent");
       if (created && created.id) {
-        // scroll to created reply after a small delay
         setTimeout(() => {
           const el = document.getElementById(`reply-${created.id}`);
           if (el) {

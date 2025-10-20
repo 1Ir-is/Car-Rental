@@ -36,10 +36,10 @@ public class ReplyService implements IReplyService {
                 .createdAt(r.getCreatedAt())
                 .parentId(r.getParent() != null ? r.getParent().getId() : null)
                 .build();
-        // children default initialized by DTO builder
         if (r.getUser() != null) {
-            dto.setUserId(r.getUser().getId());
-            dto.setUserName(r.getUser().getName());
+            // Sửa tại đây: ép kiểu về chuỗi, không để số/nil
+            String username = r.getUser().getName();
+            dto.setUserName(username != null ? username : "");
             dto.setAvatar(r.getUser().getAvatar());
         }
         return dto;

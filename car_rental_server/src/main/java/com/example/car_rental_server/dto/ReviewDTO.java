@@ -19,4 +19,10 @@ public class ReviewDTO {
     // new: avatar URL
     private String avatar;
     private UUID vehicleId;
+
+    // Helpful / not helpful counts
+    private long helpfulCount;
+    private long notHelpfulCount;
+    // current user's vote: 1 helpful, -1 not helpful, 0 none
+    private int userVote;
 }

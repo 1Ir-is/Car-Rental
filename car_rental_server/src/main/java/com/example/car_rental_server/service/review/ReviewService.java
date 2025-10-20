@@ -3,9 +3,11 @@ package com.example.car_rental_server.service.review;
 import com.example.car_rental_server.dto.ReviewDTO;
 import com.example.car_rental_server.model.PostVehicle;
 import com.example.car_rental_server.model.Review;
+import com.example.car_rental_server.model.ReviewVote;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IReviewRepository;
 import com.example.car_rental_server.repository.IPostVehicleRepository;
+import com.example.car_rental_server.repository.IReviewVoteRepository;
 import com.example.car_rental_server.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -28,6 +30,7 @@ public class ReviewService implements IReviewService {
     private final IReviewRepository reviewRepository;
     private final IPostVehicleRepository postVehicleRepository;
     private final IUserRepository userRepository; // used to resolve current user by email
+    private final IReviewVoteRepository reviewVoteRepository;
 
     // (only showing the toDTO method replacement; keep rest of the file as you have it)
     private ReviewDTO toDTO(Review r) {
@@ -44,6 +47,26 @@ public class ReviewService implements IReviewService {
             dto.setUserName(r.getUser().getName());
             dto.setAvatar(r.getUser().getAvatar());
         }
+
+        // counts
+        long helpful = reviewVoteRepository.countByReview_IdAndHelpfulTrue(r.getId());
+        long notHelpful = reviewVoteRepository.countByReview_IdAndHelpfulFalse(r.getId());
+        dto.setHelpfulCount(helpful);
+        dto.setNotHelpfulCount(notHelpful);
+
+        // user vote
+        int userVote = 0;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+            String principal = auth.getName();
+            Optional<User> u = userRepository.findByEmail(principal);
+            if (u.isEmpty()) u = userRepository.findByName(principal);
+            if (u.isPresent()) {
+                Optional<ReviewVote> rv = reviewVoteRepository.findByReview_IdAndUser_Id(r.getId(), u.get().getId());
+                if (rv.isPresent()) userVote = rv.get().getHelpful() ? 1 : -1;
+            }
+        }
+        dto.setUserVote(userVote);
         return dto;
     }
 
