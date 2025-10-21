@@ -10,18 +10,42 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { vehicleService } from "../../services/vehicleService";
 import { FaCommentDots } from "react-icons/fa";
-import ChatBox from "../../components/UI/ChatBox"; // Import ChatBox component
+import ChatBox from "../../components/UI/ChatBox";
 import { useAuth } from "../../context/AuthContext";
+import { useChatBox } from "../../context/ChatBoxContext";
 import "../../styles/car-info-grid.css";
 
 const CarDetails = () => {
-  const { slug } = useParams(); // slug chính là UUID của xe
+  const { slug } = useParams();
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isChatBoxOpen, setIsChatBoxOpen] = useState(false);
 
   const { user: currentUser } = useAuth();
-  console.log("Current user from useAuth:", currentUser);
+  const { openChatBox } = useChatBox();
+
+  const isCurrentUserOwner =
+    currentUser &&
+    (currentUser.role?.name === "OWNER" || currentUser.role_id === 3);
+
+  const ownerInfo =
+    isCurrentUserOwner && currentUser
+      ? {
+          id: String(currentUser.id),
+          name: currentUser.name,
+          email: currentUser.email,
+          avatar: currentUser.avatar,
+          role: currentUser.role?.name?.toLowerCase() || "owner",
+        }
+      : car
+      ? {
+          id: String(car.ownerId),
+          name: car.ownerName,
+          email: car.ownerEmail,
+          avatar: car.ownerAvatar,
+          role: car.ownerRole?.name?.toLowerCase() || "owner",
+        }
+      : null;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -35,7 +59,6 @@ const CarDetails = () => {
         setCar(res.data);
       } else {
         setCar(null);
-        // Optionally show error toast
       }
       setLoading(false);
     };
@@ -76,8 +99,6 @@ const CarDetails = () => {
     );
   }
 
-  // Hàm đóng chatbox
-  const handleCloseChatBox = () => setIsChatBoxOpen(false);
   return (
     <Helmet title={car.vehicleName}>
       <section>
@@ -112,7 +133,7 @@ const CarDetails = () => {
                       alignItems: "center",
                       gap: "8px",
                     }}
-                    onClick={() => setIsChatBoxOpen(true)}
+                    onClick={() => openChatBox(ownerInfo)}
                   >
                     <FaCommentDots size={18} /> Chat với Owner
                   </button>
@@ -122,7 +143,6 @@ const CarDetails = () => {
                   <h6 className="rent__price fw-bold fs-4">
                     ${car.dailyPrice}.00 / Day
                   </h6>
-
                   <span className=" d-flex align-items-center gap-2">
                     <span style={{ color: "#f9a826" }}>
                       <i className="ri-star-s-fill"></i>
@@ -151,7 +171,6 @@ const CarDetails = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="col-md-6 mb-3">
                       <div className="car-info-item d-flex align-items-center gap-2">
                         <i
@@ -164,7 +183,6 @@ const CarDetails = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="col-md-6 mb-3">
                       <div className="car-info-item d-flex align-items-center gap-2">
                         <i
@@ -177,7 +195,6 @@ const CarDetails = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="col-md-6 mb-3">
                       <div className="car-info-item d-flex align-items-center gap-2">
                         <i
@@ -190,7 +207,6 @@ const CarDetails = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="col-md-6 mb-3">
                       <div className="car-info-item d-flex align-items-center gap-2">
                         <i
@@ -203,7 +219,6 @@ const CarDetails = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="col-md-6 mb-3">
                       <div className="car-info-item d-flex align-items-center gap-2">
                         <i
@@ -216,7 +231,6 @@ const CarDetails = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="col-md-6 mb-3">
                       <div className="car-info-item d-flex align-items-center gap-2">
                         <i
@@ -231,7 +245,6 @@ const CarDetails = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="col-md-6 mb-3">
                       <div className="car-info-item d-flex align-items-center gap-2">
                         <i
@@ -247,7 +260,6 @@ const CarDetails = () => {
                   </div>
                 </div>
 
-                {/* Features Section */}
                 {car.features && car.features.length > 0 && (
                   <div className="car-features mt-4">
                     <h5 className="mb-3 fw-bold text-dark">
@@ -268,7 +280,6 @@ const CarDetails = () => {
                   </div>
                 )}
 
-                {/* Location Section */}
                 {car.latitude && car.longitude && (
                   <div className="location-info mt-4">
                     <h5 className="mb-3 fw-bold">
@@ -278,7 +289,6 @@ const CarDetails = () => {
                       ></i>
                       Location
                     </h5>
-
                     <div
                       className="map-container mb-3"
                       style={{
@@ -300,7 +310,6 @@ const CarDetails = () => {
                         />
                       </MapContainer>
                     </div>
-
                     <div
                       className="location-details p-3"
                       style={{
@@ -324,74 +333,25 @@ const CarDetails = () => {
 
             <Col lg="7" className="mt-5">
               <div className="booking-info mt-5">
-                <h5 className="mb-4 fw-bold ">Booking Information</h5>
+                <h5 className="mb-4 fw-bold">Booking Information</h5>
                 <BookingForm />
               </div>
             </Col>
 
             <Col lg="5" className="mt-5">
               <div className="payment__info mt-5">
-                <h5 className="mb-4 fw-bold ">Payment Information</h5>
+                <h5 className="mb-4 fw-bold">Payment Information</h5>
                 <PaymentMethod />
               </div>
             </Col>
           </Row>
 
-          {/* Reviews Section */}
           <Row className="mt-5">
             <Col lg="12">
               <ReviewSection vehicleId={slug} />
             </Col>
           </Row>
         </Container>
-        {/* Hiện ChatBox khi mở */}
-        {isChatBoxOpen && currentUser && (
-          <div
-            style={{
-              position: "fixed",
-              bottom: 40,
-              right: 40,
-              zIndex: 1000,
-              background: "#fff",
-              borderRadius: 16,
-              boxShadow: "0 2px 16px rgba(0,0,0,0.10)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Nút đóng chatbox */}
-            <div style={{ textAlign: "right", padding: 8 }}>
-              <button
-                onClick={handleCloseChatBox}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  fontSize: 22,
-                  cursor: "pointer",
-                  color: "#2196f3",
-                }}
-                title="Đóng chat"
-              >
-                ×
-              </button>
-            </div>
-            <ChatBox
-              user={{
-                id: currentUser.id,
-                name: currentUser.name,
-                email: currentUser.email,
-                avatar: currentUser.avatar,
-              }}
-              owner={{
-                id: car.ownerId,
-                name: car.ownerName,
-                email: car.ownerEmail
-                  ? car.ownerEmail
-                  : `${car.ownerId}@yourdomain.com`,
-                avatar: car.ownerAvatar,
-              }}
-            />
-          </div>
-        )}
       </section>
     </Helmet>
   );

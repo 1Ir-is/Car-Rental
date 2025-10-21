@@ -7,7 +7,7 @@ const MessageBubble = () => {
 
   return (
     <div
-      onClick={openChatBox}
+      onClick={() => openChatBox(null)}
       style={{
         position: "fixed",
         bottom: 32,
