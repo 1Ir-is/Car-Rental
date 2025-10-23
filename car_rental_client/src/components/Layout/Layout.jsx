@@ -5,6 +5,7 @@ import ScrollToTop from "../UI/ScrollToTop";
 import ScrollToTopButton from "../UI/ScrollToTopButton";
 import Routers from "../../routers/Routers";
 import { useAuth } from "../../context/AuthContext";
+import FloatingChatBubble from "../Chat/FloatingChatBubble";
 
 const Layout = () => {
   return (
@@ -17,6 +18,7 @@ const Layout = () => {
         <Routers />
       </main>
       <Footer />
+      <FloatingChatBubble /> {/* ✅ Luôn xuất hiện các trang */}
       <ScrollToTopButton />
     </div>
   );

@@ -16,16 +16,33 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   const [typingUsers, setTypingUsers] = useState({});
   const messagesEndRef = useRef(null);
 
+  const myRole =
+    typeof currentUser?.role === "string"
+      ? currentUser.role.toLowerCase()
+      : (currentUser?.role?.name || "").toLowerCase();
+
   const headers = {
     "x-user-id": currentUser?.id,
-    "x-user-name": currentUser?.name,
+    "x-user-name": encodeURIComponent(currentUser?.name || ""),
     "x-user-avatar": currentUser?.avatar,
+    "x-user-role": myRole || "user",
   };
 
-  const getOtherUser = (conv) =>
-    conv?.participants?.find(
+  console.log("ROLE:", currentUser?.role);
+  console.log("HEADERS SENT:", headers);
+  console.log("CURRENT USER:", currentUser);
+  console.log("Conversations:", conversations);
+
+  const getOtherUser = (conv) => {
+    // Nếu là OWNER, show user là người không phải OWNER
+    if (currentUser?.role === "OWNER") {
+      return conv?.participants?.find((p) => p.role !== "OWNER");
+    }
+    // Nếu là USER thì show người không phải mình
+    return conv?.participants?.find(
       (p) => String(p.userId) !== String(currentUser?.id)
     );
+  };
 
   useEffect(() => {
     socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
@@ -33,11 +50,11 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     if (currentUser?.id) socket.emit("user:online", currentUser.id);
 
     socket.on("message:receive", (msg) => {
+      fetchConversations();
+
       if (activeConv && String(msg.conversationId) === String(activeConv._id)) {
         setMessages((prev) => [...prev, msg]);
         scrollToBottom();
-      } else {
-        fetchConversations();
       }
     });
 
@@ -75,19 +92,31 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
 
   async function fetchConversations() {
     try {
-      const res = await axios.get(`${API}/conversations`, { headers });
-      if (res.data.success) setConversations(res.data.data);
+      let url = `${API}/conversations`;
+
+      // ✅ Nếu owner → gọi API lấy tất cả conversation
+      if (currentUser?.role === "OWNER") {
+        url = `${API}/conversations/all`;
+      }
+
+      const res = await axios.get(url, { headers });
+
+      if (res.data.success) {
+        setConversations(res.data.data);
+      }
     } catch (err) {
       console.error(err);
     }
   }
 
-  async function createOrGetConversation(owner) {
+  async function createOrGetConversation(ownerInfo) {
+    if (currentUser?.role === "OWNER") return;
+
     try {
       let found = conversations.find(
         (c) =>
-          String(c.vehicleId) === String(owner.vehicleId) &&
-          c.participants.some((p) => String(p.userId) === String(owner.id))
+          String(c.vehicleId) === String(ownerInfo.vehicleId) &&
+          c.participants.some((p) => String(p.userId) === String(ownerInfo.id))
       );
 
       if (found) {
@@ -97,7 +126,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
 
       const res = await axios.post(
         `${API}/conversations`,
-        { owner, vehicleId: owner.vehicleId },
+        { owner: ownerInfo, vehicleId: ownerInfo.vehicleId },
         { headers }
       );
 
@@ -112,15 +141,27 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
 
   async function fetchConversationDetail(convId) {
     try {
+      // ✅ Lấy dữ liệu tin nhắn + thông tin conversation
       const res = await axios.get(`${API}/conversations/${convId}`, {
         headers,
       });
+
       if (res.data.success) {
         setMessages(res.data.data.messages || []);
         scrollToBottom();
+
+        // ✅ Mark all messages as read
+        await axios.post(
+          `${API}/messages/read`,
+          { conversationId: convId },
+          { headers }
+        );
+
+        // ✅ Update lại danh sách cuộc trò chuyện để lastMessage cập nhật
+        fetchConversations();
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error in fetchConversationDetail:", err);
     }
   }
 
