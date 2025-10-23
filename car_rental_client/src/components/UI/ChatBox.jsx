@@ -15,6 +15,8 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   const [text, setText] = useState("");
   const [typingUsers, setTypingUsers] = useState({});
   const messagesEndRef = useRef(null);
+  // Track if we have joined the conversation to re-join on open
+  const joinedConvRef = useRef(null);
 
   const myRole =
     typeof currentUser?.role === "string"
@@ -39,18 +41,24 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     );
   };
 
+  // Ensure socket is always connected and listeners are set up once
   useEffect(() => {
-    socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
+    if (!socket) {
+      socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
+    }
     if (currentUser?.id) socket.emit("user:online", currentUser.id);
 
-    socket.on("message:receive", (msg) => {
+    const onMessageReceive = (msg) => {
       fetchConversations();
       if (activeConv && String(msg.conversationId) === String(activeConv._id)) {
-        fetchConversationDetail(msg.conversationId); // <-- SỬA Ở ĐÂY
+        fetchConversationDetail(msg.conversationId);
         scrollToBottom();
       }
-    });
-    return () => socket.off("message:receive");
+    };
+    socket.on("message:receive", onMessageReceive);
+    return () => {
+      socket.off("message:receive", onMessageReceive);
+    };
   }, [currentUser, activeConv]);
 
   useEffect(() => {
@@ -94,20 +102,33 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
 
   useEffect(() => {
     if (open) {
-      fetchConversations(); // luôn fetch lại khi mở chat
+      fetchConversations();
       if (openWithOwner) createOrGetConversation(openWithOwner);
+      // Nếu đã có activeConv trước đó, join lại phòng
+      if (activeConv && socket) {
+        socket.emit("join:conversation", String(activeConv._id));
+        joinedConvRef.current = activeConv._id;
+      }
     }
+    // Không reset activeConv/messages khi đóng chat để giữ state
+    // Nếu muốn reset, hãy reset ở nơi khác hoặc khi logout
   }, [open, openWithOwner]);
 
+  // Always join conversation when open and activeConv exists
   useEffect(() => {
-    if (!activeConv) return;
-    if (socket) socket.emit("join:conversation", String(activeConv._id));
+    if (!open || !activeConv) return;
+    if (socket) {
+      socket.emit("join:conversation", String(activeConv._id));
+      joinedConvRef.current = activeConv._id;
+    }
     fetchConversationDetail(activeConv._id);
-
     return () => {
-      if (socket) socket.emit("leave:conversation", String(activeConv._id));
+      if (socket && joinedConvRef.current) {
+        socket.emit("leave:conversation", String(joinedConvRef.current));
+        joinedConvRef.current = null;
+      }
     };
-  }, [activeConv]);
+  }, [open, activeConv]);
 
   function scrollToBottom() {
     setTimeout(
@@ -311,7 +332,15 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
           ) : (
             <>
               {/* ✅ FIXED HEADER */}
-              <div style={styles.chatHeader}>
+              <div
+                style={{
+                  ...styles.chatHeader,
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 10,
+                  background: "#fff",
+                }}
+              >
                 {(() => {
                   const other = getOtherUser(activeConv);
                   return (
@@ -320,6 +349,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                     >
                       <img
                         src={other?.avatar || "/avatar.png"}
+                        alt="avatar"
                         style={styles.avatar}
                       />
                       <div>
