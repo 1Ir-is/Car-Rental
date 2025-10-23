@@ -28,6 +28,7 @@ router.post("/", async (req, res) => {
 });
 
 // mark messages read
+// mark messages read
 router.post("/read", async (req, res) => {
   const me = req.user;
   const { conversationId } = req.body;

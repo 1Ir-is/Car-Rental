@@ -7,19 +7,24 @@ const { Server } = require("socket.io");
 
 const conversationRoutes = require("./routes/conversation");
 const messageRoutes = require("./routes/message");
+const Conversation = require("./models/Conversation");
+const Message = require("./models/Message");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// simple middleware to mock auth (replace with JWT in prod)
 app.use((req, res, next) => {
-  // recommended: replace with real auth; here we accept x-user-id header for demo
   req.user = {
     id: req.header("x-user-id") || null,
     name: req.header("x-user-name") || null,
     avatar: req.header("x-user-avatar") || null,
+    role: req.header("x-user-role") || "USER",
   };
+
+  console.log("server got headers role:", req.user.role); // ✅ Thêm tại đây
+  console.log("server got userId:", req.user.id); // ✅ Nên log luôn
+
   next();
 });
 
@@ -45,34 +50,38 @@ io.on("connection", (socket) => {
     console.log("user online", userId);
   });
 
-  socket.on("join:conversation", (conversationId) => {
-    socket.join(conversationId);
+  socket.on("join:conversation", (convId) => {
+    socket.join(String(convId));
+    console.log(`Socket ${socket.id} joined room ${convId}`);
   });
 
   socket.on("leave:conversation", (conversationId) => {
     socket.leave(conversationId);
   });
 
-  // new message (server should persist; we call REST from FE OR use socket to save)
-  socket.on("message:send", async (payload) => {
-    // payload: { conversationId, senderId, content, meta? }
-    const Message = require("./models/Message");
-    try {
-      const msg = await Message.create({
-        conversationId: payload.conversationId,
-        senderId: payload.senderId,
-        content: payload.content,
-        createdAt: new Date(),
-        readBy: [payload.senderId], // sender has read it
-      });
-      // emit to room (conversation)
-      io.to(payload.conversationId).emit("message:receive", msg);
+  socket.on("message:send", async (data) => {
+    const { conversationId, senderId, content } = data;
 
-      // also emit to recipient if online (optional: find recipientId)
-      // we don't assume conversation model here; front-end joins room for both participants.
-    } catch (err) {
-      console.error(err);
-    }
+    const msg = await Message.create({
+      conversationId,
+      senderId,
+      content,
+      createdAt: new Date(),
+    });
+
+    // ✅ Lấy danh sách user trong conversation để emit cho đúng người
+    const conv = await Conversation.findById(conversationId).lean();
+    if (!conv) return;
+
+    conv.participants.forEach((p) => {
+      const sid = onlineUsers.get(p.userId);
+      if (sid) {
+        io.to(sid).emit("message:receive", {
+          ...msg.toObject(),
+          senderId: String(msg.senderId),
+        });
+      }
+    });
   });
 
   socket.on("typing", ({ conversationId, userId, typing }) => {
