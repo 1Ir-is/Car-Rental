@@ -46,41 +46,41 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
 
   useEffect(() => {
     socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
-
     if (currentUser?.id) socket.emit("user:online", currentUser.id);
 
     socket.on("message:receive", (msg) => {
       fetchConversations();
-
       if (activeConv && String(msg.conversationId) === String(activeConv._id)) {
-        setMessages((prev) => [...prev, msg]);
+        fetchConversationDetail(msg.conversationId); // <-- SỬA Ở ĐÂY
         scrollToBottom();
       }
     });
+    return () => socket.off("message:receive");
+  }, [currentUser, activeConv]);
 
-    socket.on("typing", ({ conversationId, userId, typing }) => {
-      setTypingUsers((prev) => ({
-        ...prev,
-        [conversationId]: typing ? userId : null,
-      }));
+  useEffect(() => {
+    socket.on("conversation:update", () => {
+      fetchConversations();
     });
 
-    return () => socket.disconnect();
-  }, [currentUser]); // ✅ not binding activeConv wrongly
+    return () => socket.off("conversation:update");
+  }, []);
 
   useEffect(() => {
     if (open) {
-      fetchConversations();
+      fetchConversations(); // luôn fetch lại khi mở chat
       if (openWithOwner) createOrGetConversation(openWithOwner);
     }
   }, [open, openWithOwner]);
 
   useEffect(() => {
     if (!activeConv) return;
-    socket.emit("join:conversation", String(activeConv._id));
+    if (socket) socket.emit("join:conversation", String(activeConv._id));
     fetchConversationDetail(activeConv._id);
 
-    return () => socket.emit("leave:conversation", String(activeConv._id));
+    return () => {
+      if (socket) socket.emit("leave:conversation", String(activeConv._id));
+    };
   }, [activeConv]);
 
   function scrollToBottom() {
