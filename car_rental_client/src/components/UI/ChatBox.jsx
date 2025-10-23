@@ -32,6 +32,31 @@ const SOCKET_URL = process.env.REACT_APP_CHAT_SOCKET || "http://localhost:5000";
 let socket;
 
 function ChatBox({ open, onClose, openWithOwner, currentUser }) {
+  // Xóa conversation đã đọc khỏi localStorage (dùng khi có message mới đến)
+  const removeReadConv = (convId) => {
+    const prev = getReadConvs();
+    if (prev.includes(convId)) {
+      localStorage.setItem(
+        READ_CONV_KEY,
+        JSON.stringify(prev.filter((id) => id !== convId))
+      );
+    }
+  };
+  // Lưu các conversation đã đọc vào localStorage
+  const READ_CONV_KEY = `read_conversations_${currentUser?.id}`;
+  const getReadConvs = () => {
+    try {
+      return JSON.parse(localStorage.getItem(READ_CONV_KEY) || "[]");
+    } catch {
+      return [];
+    }
+  };
+  const addReadConv = (convId) => {
+    const prev = getReadConvs();
+    if (!prev.includes(convId)) {
+      localStorage.setItem(READ_CONV_KEY, JSON.stringify([...prev, convId]));
+    }
+  };
   const [conversations, setConversations] = useState([]);
   const [activeConv, setActiveConv] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -68,12 +93,16 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     }
     if (currentUser?.id) socket.emit("user:online", currentUser.id);
     const onMessageReceive = (msg) => {
+      if (msg.senderId !== currentUser.id) {
+        removeReadConv(msg.conversationId);
+      }
       setConversations((prev) =>
-        prev.map((conv) =>
-          String(conv._id) === String(msg.conversationId)
-            ? { ...conv, lastMessage: msg }
-            : conv
-        )
+        prev.map((conv) => {
+          if (String(conv._id) === String(msg.conversationId)) {
+            return { ...conv, lastMessage: msg };
+          }
+          return conv;
+        })
       );
       setTimeout(fetchConversations, 400);
       if (activeConv && String(msg.conversationId) === String(activeConv._id)) {
@@ -161,11 +190,44 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
       }
       const res = await axios.get(url, { headers });
       if (res.data.success) {
-        setConversations(res.data.data);
-
+        // Lấy danh sách đã đọc từ localStorage
+        const readConvs = getReadConvs();
+        const newConvs = res.data.data.map((c) => {
+          // Nếu là lastMessage mình gửi, LUÔN ép readBy chứa currentUser.id
+          if (
+            c.lastMessage &&
+            c.lastMessage.senderId === currentUser.id &&
+            !c.lastMessage.readBy?.includes(currentUser.id)
+          ) {
+            return {
+              ...c,
+              lastMessage: {
+                ...c.lastMessage,
+                readBy: [...(c.lastMessage.readBy || []), currentUser.id],
+              },
+            };
+          }
+          // Nếu là đã từng đọc (localStorage), ép readBy như cũ
+          if (
+            c.lastMessage &&
+            getReadConvs().includes(c._id) &&
+            !c.lastMessage.readBy?.includes(currentUser.id)
+          ) {
+            return {
+              ...c,
+              lastMessage: {
+                ...c.lastMessage,
+                readBy: [...(c.lastMessage.readBy || []), currentUser.id],
+              },
+            };
+          }
+          return c;
+        });
+        setConversations(newConvs);
+        setConversations(newConvs);
         // Join ALL conversations để nhận socket event cho mọi room
         if (socket) {
-          res.data.data.forEach((conv) => {
+          newConvs.forEach((conv) => {
             socket.emit("join:conversation", String(conv._id));
           });
         }
@@ -218,6 +280,20 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
         );
         // Sau khi mark as read xong, fetch lại conversations để cập nhật sidebar
         await fetchConversations();
+
+        // Nếu lastMessage đã có readBy chứa currentUser.id thì thêm lại vào localStorage
+        const lastMsg =
+          res.data.data.messages && res.data.data.messages.length > 0
+            ? res.data.data.messages[res.data.data.messages.length - 1]
+            : null;
+        // fetchConversationDetail (sau khi mark as read)
+        if (
+          lastMsg &&
+          lastMsg.readBy &&
+          lastMsg.readBy.includes(currentUser.id)
+        ) {
+          addReadConv(convId);
+        }
       }
     } catch (err) {
       console.error("Error in fetchConversationDetail:", err);
@@ -247,6 +323,23 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     ]);
     setText("");
     scrollToBottom();
+
+    setConversations((prev) =>
+      prev.map((c) =>
+        c._id === activeConv._id
+          ? {
+              ...c,
+              lastMessage: {
+                // Nếu bạn vẫn dùng lastMessage cũ, ép lại cho chắc chắn
+                ...(c.lastMessage || {}),
+                ...payload,
+                readBy: [...(c.lastMessage?.readBy || []), currentUser.id],
+              },
+            }
+          : c
+      )
+    );
+    addReadConv(activeConv._id);
   }
 
   function onTyping(e) {
@@ -257,8 +350,24 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
       userId: currentUser.id,
       typing: !!e.target.value,
     });
-  }
 
+    // Nếu lastMessage chưa đọc, update local conversations
+    setConversations((prev) =>
+      prev.map((c) =>
+        c._id === activeConv._id &&
+        c.lastMessage &&
+        !c.lastMessage.readBy?.includes(currentUser.id)
+          ? {
+              ...c,
+              lastMessage: {
+                ...c.lastMessage,
+                readBy: [...(c.lastMessage.readBy || []), currentUser.id],
+              },
+            }
+          : c
+      )
+    );
+  }
   function onInputBlur() {
     if (!activeConv) return;
     socket.emit("typing", {
@@ -342,7 +451,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                     conv.lastMessage &&
                     !conv.lastMessage.readBy?.includes(currentUser.id) &&
                     conv.lastMessage.senderId !== currentUser.id;
-
                   return (
                     <List.Item
                       style={{
@@ -362,7 +470,47 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                       }}
                       onClick={() => {
                         setActiveConv(conv);
-                        fetchConversationDetail(conv._id);
+                        // Đánh dấu đã đọc ngay lập tức ở local state và localStorage
+                        setConversations((prev) =>
+                          prev.map((c) =>
+                            c._id === conv._id &&
+                            c.lastMessage &&
+                            !c.lastMessage.readBy?.includes(currentUser.id)
+                              ? {
+                                  ...c,
+                                  lastMessage: {
+                                    ...c.lastMessage,
+                                    readBy: [
+                                      ...(c.lastMessage.readBy || []),
+                                      currentUser.id,
+                                    ],
+                                  },
+                                }
+                              : c
+                          )
+                        );
+                        addReadConv(conv._id);
+                        fetchConversationDetail(conv._id).then(() => {
+                          setConversations((prev) =>
+                            prev.map((c) =>
+                              c._id === conv._id &&
+                              c.lastMessage &&
+                              !c.lastMessage.readBy?.includes(currentUser.id)
+                                ? {
+                                    ...c,
+                                    lastMessage: {
+                                      ...c.lastMessage,
+                                      readBy: [
+                                        ...(c.lastMessage.readBy || []),
+                                        currentUser.id,
+                                      ],
+                                    },
+                                  }
+                                : c
+                            )
+                          );
+                          addReadConv(conv._id);
+                        });
                       }}
                     >
                       <List.Item.Meta
@@ -452,6 +600,16 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                   >
                     {(() => {
                       const other = getOtherUser(activeConv);
+                      const roleLabel =
+                        other?.role === "OWNER" || other?.role === "owner"
+                          ? "Chủ xe"
+                          : other?.role === "USER" || other?.role === "user"
+                          ? "Người dùng"
+                          : (other?.role?.name || "").toLowerCase() === "owner"
+                          ? "Chủ xe"
+                          : (other?.role?.name || "").toLowerCase() === "user"
+                          ? "Người dùng"
+                          : "Người dùng";
                       return (
                         <>
                           <Avatar
@@ -464,7 +622,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                               {other?.name || "Người dùng"}
                             </Text>
                             <div style={{ fontSize: 12, color: "#888" }}>
-                              Chủ xe
+                              {roleLabel}
                             </div>
                           </div>
                         </>
