@@ -24,6 +24,9 @@ import {
   EnvironmentOutlined,
 } from "@ant-design/icons";
 
+import Picker from "@emoji-mart/react"; // chú ý @emoji-mart/react
+import data from "@emoji-mart/data"; // cần thêm data
+
 const { Sider, Content } = Layout;
 const { Text } = Typography;
 
@@ -32,6 +35,13 @@ const SOCKET_URL = process.env.REACT_APP_CHAT_SOCKET || "http://localhost:5000";
 let socket;
 
 function ChatBox({ open, onClose, openWithOwner, currentUser }) {
+  const [showEmoji, setShowEmoji] = useState(false);
+
+  // Thêm emoji vào input text
+  const addEmoji = (emoji) => {
+    setText((prev) => prev + emoji.native);
+    setShowEmoji(false);
+  };
   // Xóa conversation đã đọc khỏi localStorage (dùng khi có message mới đến)
   const removeReadConv = (convId) => {
     const prev = getReadConvs();
@@ -79,9 +89,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   };
 
   const getOtherUser = (conv) => {
-    if (currentUser?.role === "OWNER") {
-      return conv?.participants?.find((p) => p.role !== "OWNER");
-    }
+    // Luôn lấy participant khác currentUser
     return conv?.participants?.find(
       (p) => String(p.userId) !== String(currentUser?.id)
     );
@@ -242,16 +250,20 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     try {
       let found = conversations.find(
         (c) =>
-          String(c.vehicleId) === String(ownerInfo.vehicleId) &&
+          String(c.vehicleId || "") === String(ownerInfo.vehicleId || "") &&
           c.participants.some((p) => String(p.userId) === String(ownerInfo.id))
       );
       if (found) {
         setActiveConv(found);
         return;
       }
+      // Khi gọi API, truyền vehicleId chuẩn:
+      const vehicleIdSafe = ownerInfo.vehicleId
+        ? String(ownerInfo.vehicleId)
+        : null;
       const res = await axios.post(
         `${API}/conversations`,
-        { owner: ownerInfo, vehicleId: ownerInfo.vehicleId },
+        { owner: ownerInfo, vehicleId: vehicleIdSafe },
         { headers }
       );
       if (res.data.success) {
@@ -379,11 +391,16 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   if (!open) return null;
 
   // Filter conversations by search
-  const filteredConvs = conversations.filter((conv) => {
-    const other = getOtherUser(conv);
+  const filteredConvs = conversations.filter((conv, idx, arr) => {
     return (
-      !search ||
-      (other?.name || "").toLowerCase().includes(search.toLowerCase())
+      arr.findIndex(
+        (c) =>
+          String(c.vehicleId || "") === String(conv.vehicleId || "") &&
+          c.participants.length === conv.participants.length &&
+          c.participants.every(
+            (p, i) => String(p.userId) === String(conv.participants[i].userId)
+          )
+      ) === idx
     );
   });
 
@@ -446,6 +463,11 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                 dataSource={filteredConvs}
                 renderItem={(conv) => {
                   const other = getOtherUser(conv);
+                  // Giải mã tên nếu bị encode
+                  let displayName = other?.name || "Người dùng";
+                  try {
+                    displayName = decodeURIComponent(displayName);
+                  } catch {}
                   // Kiểm tra nếu lastMessage chưa đọc và KHÔNG phải do mình gửi
                   const isUnread =
                     conv.lastMessage &&
@@ -517,9 +539,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                         avatar={
                           <Avatar icon={<UserOutlined />} src={other?.avatar} />
                         }
-                        title={
-                          <Text strong>{other?.name || "Người dùng"}</Text>
-                        }
+                        title={<Text strong>{displayName}</Text>}
                         description={
                           <span
                             style={{
@@ -600,16 +620,10 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                   >
                     {(() => {
                       const other = getOtherUser(activeConv);
-                      const roleLabel =
-                        other?.role === "OWNER" || other?.role === "owner"
-                          ? "Chủ xe"
-                          : other?.role === "USER" || other?.role === "user"
-                          ? "Người dùng"
-                          : (other?.role?.name || "").toLowerCase() === "owner"
-                          ? "Chủ xe"
-                          : (other?.role?.name || "").toLowerCase() === "user"
-                          ? "Người dùng"
-                          : "Người dùng";
+                      let displayName = other?.name || "";
+                      try {
+                        displayName = decodeURIComponent(displayName);
+                      } catch {}
                       return (
                         <>
                           <Avatar
@@ -619,11 +633,8 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                           />
                           <div>
                             <Text strong style={{ fontSize: 17 }}>
-                              {other?.name || "Người dùng"}
+                              {displayName}
                             </Text>
-                            <div style={{ fontSize: 12, color: "#888" }}>
-                              {roleLabel}
-                            </div>
                           </div>
                         </>
                       );
@@ -732,8 +743,14 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                           zIndex: 2,
                         }}
                       >
-                        {getOtherUser(activeConv)?.name || "Đối phương"} đang
-                        nhập...
+                        {(() => {
+                          let typingName =
+                            getOtherUser(activeConv)?.name || "Đối phương";
+                          try {
+                            typingName = decodeURIComponent(typingName);
+                          } catch {}
+                          return typingName + " đang nhập...";
+                        })()}
                       </div>
                     )}
                   <Divider style={{ margin: 0 }} />
@@ -807,8 +824,22 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                               background: "none",
                             }}
                             tabIndex={-1}
+                            onClick={() => setShowEmoji((v) => !v)}
                           />
                         </Tooltip>
+                        {/* Popup emoji picker */}
+                        {showEmoji && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: 50,
+                              right: 0,
+                              zIndex: 9999,
+                            }}
+                          >
+                            <Picker data={data} onEmojiSelect={addEmoji} />
+                          </div>
+                        )}
                       </div>
                       <Input
                         style={{
