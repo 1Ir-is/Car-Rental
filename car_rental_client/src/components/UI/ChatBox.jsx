@@ -2,10 +2,29 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import io from "socket.io-client";
 import dayjs from "dayjs";
+import {
+  Layout,
+  List,
+  Avatar,
+  Input,
+  Button,
+  Typography,
+  Divider,
+  Card,
+  Tooltip,
+} from "antd";
+import {
+  UserOutlined,
+  SendOutlined,
+  CloseOutlined,
+  MessageOutlined,
+} from "@ant-design/icons";
+
+const { Sider, Content } = Layout;
+const { Text } = Typography;
 
 const API = process.env.REACT_APP_CHAT_API || "http://localhost:5000/api";
 const SOCKET_URL = process.env.REACT_APP_CHAT_SOCKET || "http://localhost:5000";
-
 let socket;
 
 function ChatBox({ open, onClose, openWithOwner, currentUser }) {
@@ -14,8 +33,8 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [typingUsers, setTypingUsers] = useState({});
+  const [search, setSearch] = useState("");
   const messagesEndRef = useRef(null);
-  // Track if we have joined the conversation to re-join on open
   const joinedConvRef = useRef(null);
 
   const myRole =
@@ -31,25 +50,39 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   };
 
   const getOtherUser = (conv) => {
-    // Nếu là OWNER, show user là người không phải OWNER
     if (currentUser?.role === "OWNER") {
       return conv?.participants?.find((p) => p.role !== "OWNER");
     }
-    // Nếu là USER thì show người không phải mình
     return conv?.participants?.find(
       (p) => String(p.userId) !== String(currentUser?.id)
     );
   };
 
-  // Ensure socket is always connected and listeners are set up once
   useEffect(() => {
     if (!socket) {
       socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
     }
     if (currentUser?.id) socket.emit("user:online", currentUser.id);
-
     const onMessageReceive = (msg) => {
+      // Cập nhật local conversations ngay lập tức
+      setConversations((prev) =>
+        prev.map((conv) =>
+          String(conv._id) === String(msg.conversationId)
+            ? {
+                ...conv,
+                lastMessage: {
+                  ...msg,
+                  readBy: msg.readBy || [], // thường là [senderId]
+                },
+              }
+            : conv
+        )
+      );
+
+      // Vẫn gọi fetchConversations để sync lại với BE
       fetchConversations();
+
+      // Nếu đang mở đúng hội thoại, fetch chi tiết và scroll
       if (activeConv && String(msg.conversationId) === String(activeConv._id)) {
         fetchConversationDetail(msg.conversationId);
         scrollToBottom();
@@ -64,20 +97,14 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   useEffect(() => {
     if (!activeConv) return;
     let timeout;
-
     if (
       typingUsers[activeConv._id] &&
       typingUsers[activeConv._id] !== currentUser.id
     ) {
-      // Khi nhận typing true, mỗi lần đều reset timeout
       timeout = setTimeout(() => {
-        setTypingUsers((prev) => ({
-          ...prev,
-          [activeConv._id]: null,
-        }));
-      }, 2000); // 2s sau tự clear nếu không có event mới
+        setTypingUsers((prev) => ({ ...prev, [activeConv._id]: null }));
+      }, 2000);
     }
-
     return () => clearTimeout(timeout);
   }, [typingUsers, activeConv, currentUser]);
 
@@ -96,7 +123,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     socket.on("conversation:update", () => {
       fetchConversations();
     });
-
     return () => socket.off("conversation:update");
   }, []);
 
@@ -104,17 +130,13 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     if (open) {
       fetchConversations();
       if (openWithOwner) createOrGetConversation(openWithOwner);
-      // Nếu đã có activeConv trước đó, join lại phòng
       if (activeConv && socket) {
         socket.emit("join:conversation", String(activeConv._id));
         joinedConvRef.current = activeConv._id;
       }
     }
-    // Không reset activeConv/messages khi đóng chat để giữ state
-    // Nếu muốn reset, hãy reset ở nơi khác hoặc khi logout
   }, [open, openWithOwner]);
 
-  // Always join conversation when open and activeConv exists
   useEffect(() => {
     if (!open || !activeConv) return;
     if (socket) {
@@ -140,14 +162,10 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   async function fetchConversations() {
     try {
       let url = `${API}/conversations`;
-
-      // ✅ Nếu owner → gọi API lấy tất cả conversation
       if (currentUser?.role === "OWNER") {
         url = `${API}/conversations/all`;
       }
-
       const res = await axios.get(url, { headers });
-
       if (res.data.success) {
         setConversations(res.data.data);
       }
@@ -158,25 +176,21 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
 
   async function createOrGetConversation(ownerInfo) {
     if (currentUser?.role === "OWNER") return;
-
     try {
       let found = conversations.find(
         (c) =>
           String(c.vehicleId) === String(ownerInfo.vehicleId) &&
           c.participants.some((p) => String(p.userId) === String(ownerInfo.id))
       );
-
       if (found) {
         setActiveConv(found);
         return;
       }
-
       const res = await axios.post(
         `${API}/conversations`,
         { owner: ownerInfo, vehicleId: ownerInfo.vehicleId },
         { headers }
       );
-
       if (res.data.success) {
         setActiveConv(res.data.data);
         fetchConversations();
@@ -188,24 +202,21 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
 
   async function fetchConversationDetail(convId) {
     try {
-      // ✅ Lấy dữ liệu tin nhắn + thông tin conversation
       const res = await axios.get(`${API}/conversations/${convId}`, {
         headers,
       });
-
       if (res.data.success) {
         setMessages(res.data.data.messages || []);
         scrollToBottom();
 
-        // ✅ Mark all messages as read
+        // Đợi mark as read hoàn tất rồi mới fetch lại conversations
         await axios.post(
           `${API}/messages/read`,
           { conversationId: convId },
           { headers }
         );
-
-        // ✅ Update lại danh sách cuộc trò chuyện để lastMessage cập nhật
-        fetchConversations();
+        // Đợi server cập nhật xong, fetch lại conversations
+        setTimeout(fetchConversations, 200); // Thêm delay nhỏ nếu API BE chưa đồng bộ ngay
       }
     } catch (err) {
       console.error("Error in fetchConversationDetail:", err);
@@ -219,15 +230,12 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
       senderId: currentUser.id,
       content: text.trim(),
     };
-
     socket.emit("message:send", payload);
-    // Khi gửi tin nhắn thì báo đã dừng nhập
     socket.emit("typing", {
       conversationId: activeConv._id,
       userId: currentUser.id,
       typing: false,
     });
-
     setMessages((prev) => [
       ...prev,
       {
@@ -260,264 +268,381 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   }
   if (!open) return null;
 
+  // Filter conversations by search
+  const filteredConvs = conversations.filter((conv) => {
+    const other = getOtherUser(conv);
+    return (
+      !search ||
+      (other?.name || "").toLowerCase().includes(search.toLowerCase())
+    );
+  });
+
   return (
-    <div style={styles.overlay}>
-      <div style={styles.box}>
-        {/* LEFT - Conversation List */}
-        <div style={styles.left}>
-          <div style={styles.headerLeft}>
-            <h4>Chat</h4>
-            <button onClick={onClose}>✕</button>
-          </div>
+    <div style={{ position: "fixed", right: 20, bottom: 20, zIndex: 9999 }}>
+      <Card
+        style={{
+          width: 900,
+          height: 600,
+          borderRadius: 12,
+          overflow: "hidden",
+          boxShadow: "0 6px 24px #0002",
+          padding: 0,
+        }}
+        bodyStyle={{ padding: 0, height: "100%" }}
+      >
+        <Layout style={{ height: "100%", background: "#fff" }}>
+          <Sider
+            width={320}
+            style={{
+              background: "#f7f7f7",
+              borderRight: "1px solid #eee",
+              padding: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                padding: 16,
+                borderBottom: "1px solid #eee",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text strong style={{ fontSize: 18 }}>
+                <MessageOutlined /> Chat
+              </Text>
+              <Tooltip title="Đóng">
+                <Button
+                  type="text"
+                  icon={<CloseOutlined />}
+                  onClick={onClose}
+                />
+              </Tooltip>
+            </div>
+            <div style={{ padding: 12, borderBottom: "1px solid #eee" }}>
+              <Input.Search
+                placeholder="Tìm theo tên..."
+                allowClear
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ borderRadius: 20 }}
+              />
+            </div>
+            <div style={{ flex: 1, overflowY: "auto" }}>
+              <List
+                itemLayout="horizontal"
+                dataSource={filteredConvs}
+                renderItem={(conv) => {
+                  const other = getOtherUser(conv);
+                  // Kiểm tra nếu lastMessage chưa đọc và KHÔNG phải do mình gửi
+                  const isUnread =
+                    conv.lastMessage &&
+                    !conv.lastMessage.readBy?.includes(currentUser.id) &&
+                    conv.lastMessage.senderId !== currentUser.id;
 
-          <div style={styles.search}>
-            <input placeholder="Tìm theo tên..." style={{ width: "100%" }} />
-          </div>
-
-          <div style={styles.convList}>
-            {conversations.map((conv) => {
-              const other = getOtherUser(conv);
-              return (
-                <div
-                  key={conv._id}
-                  style={{
-                    ...styles.convItem,
-                    background:
-                      activeConv && String(activeConv._id) === String(conv._id)
-                        ? "#f0f0f0"
-                        : "transparent",
-                  }}
-                  onClick={() => setActiveConv(conv)}
-                >
-                  <img
-                    src={other?.avatar || "/avatar.png"}
-                    alt=""
-                    style={styles.avatar}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div
+                  return (
+                    <List.Item
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
+                        background:
+                          activeConv &&
+                          String(activeConv._id) === String(conv._id)
+                            ? "#e6f7ff"
+                            : "transparent",
+                        cursor: "pointer",
+                        paddingLeft: 12,
+                        borderLeft:
+                          activeConv &&
+                          String(activeConv._id) === String(conv._id)
+                            ? "4px solid #1890ff"
+                            : "4px solid transparent",
+                        transition: "background 0.2s, border 0.2s",
+                      }}
+                      onClick={() => {
+                        setActiveConv(conv);
+
+                        // Cập nhật local conversations sidebar: mark as read luôn UI cho lastMessage
+                        setConversations((prev) =>
+                          prev.map((c) =>
+                            c._id === conv._id && c.lastMessage
+                              ? {
+                                  ...c,
+                                  lastMessage: {
+                                    ...c.lastMessage,
+                                    readBy: [
+                                      ...new Set([
+                                        ...(c.lastMessage.readBy || []),
+                                        currentUser.id,
+                                      ]),
+                                    ],
+                                  },
+                                }
+                              : c
+                          )
+                        );
                       }}
                     >
-                      <div style={{ fontWeight: 600 }}>
-                        {other?.name || "Người dùng"}
-                      </div>
-                      <div style={{ fontSize: 12, color: "#666" }}>
+                      <List.Item.Meta
+                        avatar={
+                          <Avatar icon={<UserOutlined />} src={other?.avatar} />
+                        }
+                        title={
+                          <Text strong>{other?.name || "Người dùng"}</Text>
+                        }
+                        description={
+                          <span
+                            style={{
+                              fontSize: 13,
+                              color: isUnread ? "#222" : "#888",
+                              fontWeight: isUnread ? 700 : 400,
+                              display: "block",
+                              maxWidth: 170,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {conv.lastMessage
+                              ? conv.lastMessage.content
+                              : "Nhấn để mở cuộc trò chuyện"}
+                          </span>
+                        }
+                      />
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "#888",
+                          minWidth: 48,
+                          textAlign: "right",
+                          paddingRight: 16,
+                          fontWeight: isUnread ? 700 : 400,
+                        }}
+                      >
                         {conv.lastMessage
                           ? dayjs(conv.lastMessage.createdAt).format("HH:mm")
                           : ""}
                       </div>
-                    </div>
-                    <div style={{ fontSize: 13, color: "#666", marginTop: 6 }}>
-                      {conv.lastMessage
-                        ? conv.lastMessage.content.slice(0, 50)
-                        : "Nhấn để mở cuộc trò chuyện"}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* RIGHT - Chat Window */}
-        <div style={styles.right}>
-          {!activeConv ? (
-            <div style={styles.welcome}>
-              <h3>Chào mừng bạn đến với Chat</h3>
-              <p>Chọn một cuộc trò chuyện hoặc nhấn “Chat với Owner”.</p>
-            </div>
-          ) : (
-            <>
-              {/* ✅ FIXED HEADER */}
-              <div
-                style={{
-                  ...styles.chatHeader,
-                  position: "sticky",
-                  top: 0,
-                  zIndex: 10,
-                  background: "#fff",
-                }}
-              >
-                {(() => {
-                  const other = getOtherUser(activeConv);
-                  return (
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 12 }}
-                    >
-                      <img
-                        src={other?.avatar || "/avatar.png"}
-                        alt="avatar"
-                        style={styles.avatar}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 700 }}>
-                          {other?.name || "Người dùng"}
-                        </div>
-                        <div style={{ fontSize: 12, color: "#666" }}>
-                          Chủ xe
-                        </div>
-                      </div>
-                    </div>
+                    </List.Item>
                   );
-                })()}
-              </div>
-
-              <div
-                style={{
-                  position: "relative",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
                 }}
-              >
-                <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-                  <div style={styles.messages}>
-                    {messages.map((m) => {
-                      const isMe =
-                        String(m.senderId) === String(currentUser.id);
+              />
+            </div>
+          </Sider>
+          <Layout>
+            <Content
+              style={{
+                padding: 0,
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+              }}
+            >
+              {!activeConv ? (
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  <Text strong style={{ fontSize: 22 }}>
+                    Chào mừng bạn đến với Chat
+                  </Text>
+                  <Text type="secondary">
+                    Chọn một cuộc trò chuyện hoặc nhấn “Chat với Owner”.
+                  </Text>
+                </div>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      padding: 20,
+                      borderBottom: "1px solid #eee",
+                      background: "#fafcff",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    {(() => {
+                      const other = getOtherUser(activeConv);
                       return (
-                        <div
-                          key={m._id || m.createdAt}
-                          style={{
-                            display: "flex",
-                            justifyContent: isMe ? "flex-end" : "flex-start",
-                            marginBottom: 10,
-                          }}
-                        >
+                        <>
+                          <Avatar
+                            size={44}
+                            icon={<UserOutlined />}
+                            src={other?.avatar}
+                          />
+                          <div>
+                            <Text strong style={{ fontSize: 17 }}>
+                              {other?.name || "Người dùng"}
+                            </Text>
+                            <div style={{ fontSize: 12, color: "#888" }}>
+                              Chủ xe
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div
+                    style={{
+                      flex: 1,
+                      overflowY: "auto",
+                      padding: 24,
+                      background: "#f9fafd",
+                    }}
+                  >
+                    <List
+                      dataSource={messages}
+                      renderItem={(m) => {
+                        const isMe =
+                          String(m.senderId) === String(currentUser.id);
+                        const other = getOtherUser(activeConv);
+                        return (
                           <div
                             style={{
-                              maxWidth: "70%",
-                              padding: 10,
-                              borderRadius: 8,
-                              background: isMe ? "#d1f0ff" : "#f1f1f1",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: isMe ? "flex-end" : "flex-start",
+                              marginBottom: 12,
                             }}
                           >
-                            <div style={{ fontSize: 14 }}>{m.content}</div>
                             <div
                               style={{
+                                display: "flex",
+                                flexDirection: "row",
+                                justifyContent: isMe
+                                  ? "flex-end"
+                                  : "flex-start",
+                                alignItems: "flex-end",
+                              }}
+                            >
+                              {!isMe && (
+                                <Avatar
+                                  icon={<UserOutlined />}
+                                  src={other?.avatar}
+                                  style={{ marginRight: 8 }}
+                                />
+                              )}
+                              <div
+                                style={{
+                                  background: isMe ? "#e6f7ff" : "#fff",
+                                  color: "#222",
+                                  borderRadius: 16,
+                                  padding: "10px 18px 10px 18px",
+                                  maxWidth: 320,
+                                  boxShadow: isMe
+                                    ? "0 1px 6px #91d5ff33"
+                                    : "0 1px 6px #eee",
+                                  textAlign: isMe ? "right" : "left",
+                                  position: "relative",
+                                  fontSize: 15,
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                {m.content}
+                              </div>
+                              {isMe && (
+                                <Avatar
+                                  icon={<UserOutlined />}
+                                  src={currentUser?.avatar}
+                                  style={{ marginLeft: 8 }}
+                                />
+                              )}
+                            </div>
+                            <span
+                              style={{
                                 fontSize: 11,
-                                color: "#666",
-                                textAlign: "right",
-                                marginTop: 6,
+                                color: "#888",
+                                marginTop: 2,
+                                marginLeft: isMe ? 0 : 40,
+                                marginRight: isMe ? 40 : 0,
+                                alignSelf: isMe ? "flex-end" : "flex-start",
+                                whiteSpace: "nowrap",
                               }}
                             >
                               {dayjs(m.createdAt).format("HH:mm")}
-                            </div>
+                            </span>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      }}
+                    />
                     <div ref={messagesEndRef} />
                   </div>
-                </div>
-                {activeConv &&
-                  typingUsers[activeConv._id] &&
-                  String(typingUsers[activeConv._id]) !==
-                    String(currentUser.id) && (
-                    <div
-                      style={{
-                        position: "sticky",
-                        bottom: 56, // chiều cao inputRow + margin
-                        left: 0,
-                        width: "100%",
-                        background: "rgba(255,255,255,0.95)",
-                        fontStyle: "italic",
-                        color: "#999",
-                        padding: "4px 12px 2px 12px",
-                        fontSize: 13,
-                        zIndex: 2,
-                      }}
-                    >
-                      {getOtherUser(activeConv)?.name || "Đối phương"} đang
-                      nhập...
-                    </div>
-                  )}
-                <div style={styles.inputRow}>
-                  <input
-                    placeholder="Nhập nội dung tin nhắn"
-                    value={text}
-                    onChange={onTyping}
-                    onBlur={onInputBlur}
-                    style={styles.input}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSend();
+                  {activeConv &&
+                    typingUsers[activeConv._id] &&
+                    String(typingUsers[activeConv._id]) !==
+                      String(currentUser.id) && (
+                      <div
+                        style={{
+                          position: "sticky",
+                          bottom: 56,
+                          left: 0,
+                          width: "100%",
+                          background: "rgba(255,255,255,0.95)",
+                          fontStyle: "italic",
+                          color: "#999",
+                          padding: "4px 12px 2px 12px",
+                          fontSize: 13,
+                          zIndex: 2,
+                        }}
+                      >
+                        {getOtherUser(activeConv)?.name || "Đối phương"} đang
+                        nhập...
+                      </div>
+                    )}
+                  <Divider style={{ margin: 0 }} />
+                  <div
+                    style={{
+                      padding: 16,
+                      background: "#fff",
+                      borderTop: "1px solid #eee",
                     }}
-                  />
-                  <button onClick={handleSend} style={styles.sendBtn}>
-                    Gửi
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+                  >
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <Input
+                        style={{
+                          flex: 1,
+                          borderRadius: 20,
+                          fontSize: 15,
+                          paddingRight: 12,
+                        }}
+                        placeholder="Nhập nội dung tin nhắn"
+                        value={text}
+                        onChange={onTyping}
+                        onBlur={onInputBlur}
+                        onPressEnter={handleSend}
+                      />
+                      <Button
+                        type="primary"
+                        icon={<SendOutlined />}
+                        style={{
+                          borderRadius: 20,
+                          minWidth: 48,
+                          height: 40,
+                          fontWeight: 500,
+                          fontSize: 16,
+                          boxShadow: "0 2px 8px #1890ff22",
+                        }}
+                        onClick={handleSend}
+                      >
+                        Gửi
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </Content>
+          </Layout>
+        </Layout>
+      </Card>
     </div>
   );
 }
-
-const styles = {
-  overlay: { position: "fixed", right: 20, bottom: 20, zIndex: 9999 },
-  box: {
-    width: 900,
-    height: 600,
-    display: "flex",
-    boxShadow: "0 6px 24px rgba(0,0,0,0.2)",
-    borderRadius: 8,
-    overflow: "hidden",
-    background: "#fff",
-  },
-  left: {
-    width: 320,
-    borderRight: "1px solid #eee",
-    display: "flex",
-    flexDirection: "column",
-  },
-  headerLeft: {
-    padding: 12,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  search: { padding: 10 },
-  convList: { overflowY: "auto", padding: 10, flex: 1 },
-  convItem: {
-    display: "flex",
-    gap: 12,
-    padding: 10,
-    cursor: "pointer",
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  avatar: { width: 42, height: 42, borderRadius: 22, objectFit: "cover" },
-  right: { flex: 1, display: "flex", flexDirection: "column" },
-  welcome: {
-    flex: 1,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "column",
-    gap: 8,
-  },
-  chatHeader: { padding: 12, borderBottom: "1px solid #eee" },
-  messages: { padding: 12, flex: 1, overflowY: "auto", background: "#fcfcfd" },
-  inputRow: {
-    display: "flex",
-    padding: 12,
-    gap: 8,
-    borderTop: "1px solid #eee",
-  },
-  input: { flex: 1, padding: 10, borderRadius: 8, border: "1px solid #ddd" },
-  sendBtn: {
-    padding: "8px 14px",
-    borderRadius: 8,
-    border: "none",
-    background: "#0066ff",
-    color: "#fff",
-  },
-};
 
 export default ChatBox;

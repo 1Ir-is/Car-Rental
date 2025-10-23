@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Header from "../Header/Header";
 import Footer from "../Footer/Footer";
 import ScrollToTop from "../UI/ScrollToTop";
@@ -8,6 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import FloatingChatBubble from "../Chat/FloatingChatBubble";
 
 const Layout = () => {
+  const [chatOpen, setChatOpen] = useState(false);
   return (
     <div
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
@@ -18,7 +19,11 @@ const Layout = () => {
         <Routers />
       </main>
       <Footer />
-      <FloatingChatBubble /> {/* ✅ Luôn xuất hiện các trang */}
+      <FloatingChatBubble
+        open={chatOpen}
+        onOpen={() => setChatOpen(true)}
+        onClose={() => setChatOpen(false)}
+      />
       <ScrollToTopButton />
     </div>
   );
