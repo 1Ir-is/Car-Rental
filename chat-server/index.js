@@ -69,19 +69,14 @@ io.on("connection", (socket) => {
       createdAt: new Date(),
     });
 
-    // ✅ Lấy danh sách user trong conversation để emit cho đúng người
-    const conv = await Conversation.findById(conversationId).lean();
-    if (!conv) return;
+    // ✅ Emit message đến tất cả user trong room
+    io.to(String(conversationId)).emit("message:receive", msg);
 
-    conv.participants.forEach((p) => {
-      const sid = onlineUsers.get(p.userId);
-      if (sid) {
-        io.to(sid).emit("message:receive", {
-          ...msg.toObject(),
-          senderId: String(msg.senderId),
-        });
-      }
-    });
+    // ✅ Gửi update conversation đến đúng room đang chat
+    const conv = await Conversation.findById(conversationId).populate(
+      "participants.userId"
+    );
+    io.to(String(conversationId)).emit("conversation:update", conv);
   });
 
   socket.on("typing", ({ conversationId, userId, typing }) => {
