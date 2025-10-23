@@ -60,16 +60,16 @@ public class PostVehicleService implements IPostVehicleService {
                 .status(v.getStatus())
                 .isRented(v.getIsRented())
                 .rating(v.getRating())
-                .userId(v.getUser() != null ? v.getUser().getId() : null)
-                .ownerName(v.getOwnerName())     // Đúng là ownerName
-                .ownerAvatar(v.getOwnerAvatar()) // Đúng là ownerAvatar
+                .ownerId(v.getOwner() != null ? v.getOwner().getId() : null)
+                .ownerName(v.getOwnerName())
+                .ownerAvatar(v.getOwnerAvatar())
                 .build();
     }
 
     private PostVehicle toEntity(PostVehicleDTO dto) {
-        User user = null;
-        if (dto.getUserId() != null) {
-            user = userRepository.findById(dto.getUserId()).orElse(null);
+        User owner = null;
+        if (dto.getOwnerId() != null) {
+            owner = userRepository.findById(dto.getOwnerId()).orElse(null);
         }
         PostVehicle entity = new PostVehicle();
         entity.setId(dto.getId());
@@ -94,9 +94,9 @@ public class PostVehicleService implements IPostVehicleService {
         entity.setStatus(dto.getStatus());
         entity.setIsRented(dto.getIsRented());
         entity.setRating(dto.getRating());
-        entity.setUser(user);
-        entity.setOwnerName(user != null ? user.getName() : null);
-        entity.setOwnerAvatar(user != null ? user.getAvatar() : null);
+        entity.setOwner(owner);
+        entity.setOwnerName(owner != null ? owner.getName() : null);
+        entity.setOwnerAvatar(owner != null ? owner.getAvatar() : null);
         return entity;
     }
 
@@ -106,14 +106,14 @@ public class PostVehicleService implements IPostVehicleService {
     }
 
     @Override
-    public List<PostVehicleDTO> getVehiclesByOwner(Long userId) {
-        return postVehicleRepo.findByUser_Id(userId).stream().map(this::toDTO).collect(Collectors.toList());
+    public List<PostVehicleDTO> getVehiclesByOwner(Long ownerId) {
+        return postVehicleRepo.findByOwner_Id(ownerId).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     @Override
     public Optional<PostVehicleDTO> getVehicleById(UUID id) {
-        Optional<PostVehicle> vOpt = postVehicleRepo.findByIdWithUser(id);
-        vOpt.ifPresent(v -> System.out.println("Vehicle user: " + v.getUser()));
+        Optional<PostVehicle> vOpt = postVehicleRepo.findByIdWithOwner(id);
+        vOpt.ifPresent(v -> System.out.println("Vehicle owner: " + v.getOwner()));
         return vOpt.map(this::toDTO);
     }
 
@@ -127,7 +127,7 @@ public class PostVehicleService implements IPostVehicleService {
 
         // --- Create notification + Send emails: best-effort (log errors, don't break creation) ---
         try {
-            User owner = vehicle.getUser();
+            User owner = vehicle.getOwner();
 
             // Notify admin
             if (owner != null) {
@@ -173,7 +173,7 @@ public class PostVehicleService implements IPostVehicleService {
                 .orElseThrow(() -> new RuntimeException("Vehicle not found"));
 
         // Ownership check: ensure the caller (dto.userId) matches the vehicle owner
-        if (dto.getUserId() == null || vehicle.getUser() == null || !vehicle.getUser().getId().equals(dto.getUserId())) {
+        if (dto.getOwnerId() == null || vehicle.getOwner() == null || !vehicle.getOwner().getId().equals(dto.getOwnerId())) {
             throw new RuntimeException("Unauthorized: you can only update your own vehicle");
         }
 
@@ -227,7 +227,7 @@ public class PostVehicleService implements IPostVehicleService {
         // If owner resubmitted a previously rejected vehicle, notify admin + send confirmation email (best-effort)
         if (oldStatus == VehicleStatus.REJECTED) {
             try {
-                User owner = vehicle.getUser();
+                User owner = vehicle.getOwner();
                 String vehicleIdStr = vehicle.getId() != null ? vehicle.getId().toString() : null;
 
                 // Notification to admin

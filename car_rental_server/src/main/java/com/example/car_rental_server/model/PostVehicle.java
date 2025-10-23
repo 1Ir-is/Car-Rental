@@ -58,8 +58,8 @@ public class PostVehicle {
     private Double rating;          // User rating
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "owner_id") // Đổi tên cột ở DB
+    private User owner;
 
     @Column(name = "owner_name")
     private String ownerName;

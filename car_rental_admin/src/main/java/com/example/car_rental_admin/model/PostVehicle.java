@@ -4,6 +4,7 @@ package com.example.car_rental_admin.model;
 import com.example.car_rental_admin.enums.VehicleStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +14,6 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class PostVehicle {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -57,7 +57,13 @@ public class PostVehicle {
     private Boolean isRented;       // Is rented
     private Double rating;          // User rating
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "owner_id") // Đổi tên cột ở DB
+    private User owner;
+
+    @Column(name = "owner_name")
+    private String ownerName;
+
+    @Column(name = "owner_avatar")
+    private String ownerAvatar;
 }

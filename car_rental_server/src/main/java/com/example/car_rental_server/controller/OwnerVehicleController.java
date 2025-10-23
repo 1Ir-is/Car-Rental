@@ -56,7 +56,7 @@ public class OwnerVehicleController {
         dto.setImageList(imageUrls);
 
         // Đảm bảo userId được set!
-        if (dto.getUserId() == null) {
+        if (dto.getOwnerId() == null) {
             return ResponseEntity.badRequest().body("Missing owner (userId)");
         }
 

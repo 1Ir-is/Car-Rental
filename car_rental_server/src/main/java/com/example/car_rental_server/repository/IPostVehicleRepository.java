@@ -11,8 +11,8 @@ import java.util.UUID;
 
 @Repository
 public interface IPostVehicleRepository extends JpaRepository<PostVehicle, UUID> {
-    List<PostVehicle> findByUser_Id(Long userId);
+    List<PostVehicle> findByOwner_Id(Long ownerId);
 
-    @Query("SELECT v FROM PostVehicle v JOIN FETCH v.user WHERE v.id = :id")
-    Optional<PostVehicle> findByIdWithUser(UUID id);
+    @Query("SELECT v FROM PostVehicle v JOIN FETCH v.owner WHERE v.id = :id")
+    Optional<PostVehicle> findByIdWithOwner(UUID id);
 }

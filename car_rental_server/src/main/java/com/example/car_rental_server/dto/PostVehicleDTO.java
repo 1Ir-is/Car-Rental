@@ -33,7 +33,7 @@ public class PostVehicleDTO {
     private VehicleStatus status;
     private Boolean isRented;
     private Double rating;
-    private Long userId;
+    private Long ownerId; // Đổi tên cho rõ ràng
     private String ownerName;
     private String ownerAvatar;
     private List<String> keepExistingImages;

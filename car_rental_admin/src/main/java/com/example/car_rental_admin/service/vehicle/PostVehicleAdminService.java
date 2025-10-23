@@ -196,7 +196,7 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
     // ----- Helper methods to send mails (best-effort: catch exceptions so flow isn't broken) -----
     private void sendVehicleApprovedMailIfPossible(PostVehicle vehicle) {
         try {
-            User owner = vehicle.getUser();
+            User owner = vehicle.getOwner();
             if (owner != null && owner.getEmail() != null) {
                 mailService.sendVehicleApprovedMail(owner.getEmail(), owner.getName(), vehicle.getVehicleName(), getAppUrl());
             }
@@ -208,7 +208,7 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
 
     private void sendVehicleRejectedMailIfPossible(PostVehicle vehicle, String reason) {
         try {
-            User owner = vehicle.getUser();
+            User owner = vehicle.getOwner();
             if (owner != null && owner.getEmail() != null) {
                 mailService.sendVehicleRejectedMail(owner.getEmail(), owner.getName(), vehicle.getVehicleName(), reason, getAppUrl());
             }
@@ -219,7 +219,7 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
 
     private void sendVehicleUnavailableMailIfPossible(PostVehicle vehicle, String reason) {
         try {
-            User owner = vehicle.getUser();
+            User owner = vehicle.getOwner();
             if (owner != null && owner.getEmail() != null) {
                 mailService.sendVehicleUnavailableMail(owner.getEmail(), owner.getName(), vehicle.getVehicleName(), reason, getAppUrl());
             }
@@ -230,7 +230,7 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
 
     private void sendVehicleAvailableMailIfPossible(PostVehicle vehicle) {
         try {
-            User owner = vehicle.getUser();
+            User owner = vehicle.getOwner();
             if (owner != null && owner.getEmail() != null) {
                 mailService.sendVehicleAvailableMail(owner.getEmail(), owner.getName(), vehicle.getVehicleName(), getAppUrl());
             }
@@ -246,8 +246,8 @@ public class PostVehicleAdminService implements IPostVehicleAdminService {
 
     private void sendOwnerRealtimeNotification(PostVehicle vehicle, String message, String url, String type) {
         try {
-            if (vehicle.getUser() == null || vehicle.getUser().getId() == null) return;
-            Long ownerId = vehicle.getUser().getId();
+            if (vehicle.getOwner() == null || vehicle.getOwner().getId() == null) return;
+            Long ownerId = vehicle.getOwner().getId();
 
             // Build payload similar to owner Notification entity (simplest JSON)
             Map<String, Object> payload = new HashMap<>();
