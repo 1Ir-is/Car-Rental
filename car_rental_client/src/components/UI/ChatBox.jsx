@@ -18,6 +18,10 @@ import {
   SendOutlined,
   CloseOutlined,
   MessageOutlined,
+  PictureOutlined,
+  PaperClipOutlined,
+  SmileOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 
 const { Sider, Content } = Layout;
@@ -64,30 +68,20 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     }
     if (currentUser?.id) socket.emit("user:online", currentUser.id);
     const onMessageReceive = (msg) => {
-      // Cập nhật local conversations ngay lập tức
       setConversations((prev) =>
         prev.map((conv) =>
           String(conv._id) === String(msg.conversationId)
-            ? {
-                ...conv,
-                lastMessage: {
-                  ...msg,
-                  readBy: msg.readBy || [], // thường là [senderId]
-                },
-              }
+            ? { ...conv, lastMessage: msg }
             : conv
         )
       );
-
-      // Vẫn gọi fetchConversations để sync lại với BE
-      fetchConversations();
-
-      // Nếu đang mở đúng hội thoại, fetch chi tiết và scroll
+      setTimeout(fetchConversations, 400);
       if (activeConv && String(msg.conversationId) === String(activeConv._id)) {
         fetchConversationDetail(msg.conversationId);
         scrollToBottom();
       }
     };
+
     socket.on("message:receive", onMessageReceive);
     return () => {
       socket.off("message:receive", onMessageReceive);
@@ -168,6 +162,13 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
       const res = await axios.get(url, { headers });
       if (res.data.success) {
         setConversations(res.data.data);
+
+        // Join ALL conversations để nhận socket event cho mọi room
+        if (socket) {
+          res.data.data.forEach((conv) => {
+            socket.emit("join:conversation", String(conv._id));
+          });
+        }
       }
     } catch (err) {
       console.error(err);
@@ -209,14 +210,14 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
         setMessages(res.data.data.messages || []);
         scrollToBottom();
 
-        // Đợi mark as read hoàn tất rồi mới fetch lại conversations
+        // Gọi API mark as read
         await axios.post(
           `${API}/messages/read`,
           { conversationId: convId },
           { headers }
         );
-        // Đợi server cập nhật xong, fetch lại conversations
-        setTimeout(fetchConversations, 200); // Thêm delay nhỏ nếu API BE chưa đồng bộ ngay
+        // Sau khi mark as read xong, fetch lại conversations để cập nhật sidebar
+        await fetchConversations();
       }
     } catch (err) {
       console.error("Error in fetchConversationDetail:", err);
@@ -361,26 +362,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                       }}
                       onClick={() => {
                         setActiveConv(conv);
-
-                        // Cập nhật local conversations sidebar: mark as read luôn UI cho lastMessage
-                        setConversations((prev) =>
-                          prev.map((c) =>
-                            c._id === conv._id && c.lastMessage
-                              ? {
-                                  ...c,
-                                  lastMessage: {
-                                    ...c.lastMessage,
-                                    readBy: [
-                                      ...new Set([
-                                        ...(c.lastMessage.readBy || []),
-                                        currentUser.id,
-                                      ]),
-                                    ],
-                                  },
-                                }
-                              : c
-                          )
-                        );
+                        fetchConversationDetail(conv._id);
                       }}
                     >
                       <List.Item.Meta
@@ -604,7 +586,72 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                       borderTop: "1px solid #eee",
                     }}
                   >
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div
+                      style={{ display: "flex", gap: 8, alignItems: "center" }}
+                    >
+                      {/* Action buttons with Ant Design */}
+                      <div style={{ display: "flex", gap: 4 }}>
+                        <Tooltip title="Gửi ảnh">
+                          <Button
+                            shape="circle"
+                            icon={<PictureOutlined style={{ fontSize: 18 }} />}
+                            style={{
+                              color: "#1890ff",
+                              border: "none",
+                              background: "none",
+                            }}
+                            tabIndex={-1}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: "none" }}
+                            />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Gửi file">
+                          <Button
+                            shape="circle"
+                            icon={
+                              <PaperClipOutlined style={{ fontSize: 18 }} />
+                            }
+                            style={{
+                              color: "#52c41a",
+                              border: "none",
+                              background: "none",
+                            }}
+                            tabIndex={-1}
+                          >
+                            <input type="file" style={{ display: "none" }} />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip title="Gửi vị trí">
+                          <Button
+                            shape="circle"
+                            icon={
+                              <EnvironmentOutlined style={{ fontSize: 18 }} />
+                            }
+                            style={{
+                              color: "#faad14",
+                              border: "none",
+                              background: "none",
+                            }}
+                            tabIndex={-1}
+                          />
+                        </Tooltip>
+                        <Tooltip title="Gửi icon cảm xúc">
+                          <Button
+                            shape="circle"
+                            icon={<SmileOutlined style={{ fontSize: 18 }} />}
+                            style={{
+                              color: "#eb2f96",
+                              border: "none",
+                              background: "none",
+                            }}
+                            tabIndex={-1}
+                          />
+                        </Tooltip>
+                      </div>
                       <Input
                         style={{
                           flex: 1,
