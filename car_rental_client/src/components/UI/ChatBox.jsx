@@ -28,11 +28,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     "x-user-role": myRole || "user",
   };
 
-  console.log("ROLE:", currentUser?.role);
-  console.log("HEADERS SENT:", headers);
-  console.log("CURRENT USER:", currentUser);
-  console.log("Conversations:", conversations);
-
   const getOtherUser = (conv) => {
     // Nếu là OWNER, show user là người không phải OWNER
     if (currentUser?.role === "OWNER") {
@@ -57,6 +52,37 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     });
     return () => socket.off("message:receive");
   }, [currentUser, activeConv]);
+
+  useEffect(() => {
+    if (!activeConv) return;
+    let timeout;
+
+    if (
+      typingUsers[activeConv._id] &&
+      typingUsers[activeConv._id] !== currentUser.id
+    ) {
+      // Khi nhận typing true, mỗi lần đều reset timeout
+      timeout = setTimeout(() => {
+        setTypingUsers((prev) => ({
+          ...prev,
+          [activeConv._id]: null,
+        }));
+      }, 2000); // 2s sau tự clear nếu không có event mới
+    }
+
+    return () => clearTimeout(timeout);
+  }, [typingUsers, activeConv, currentUser]);
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("typing", ({ conversationId, userId, typing }) => {
+      setTypingUsers((prev) => ({
+        ...prev,
+        [conversationId]: typing ? userId : null,
+      }));
+    });
+    return () => socket.off("typing");
+  }, []);
 
   useEffect(() => {
     socket.on("conversation:update", () => {
@@ -174,6 +200,12 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     };
 
     socket.emit("message:send", payload);
+    // Khi gửi tin nhắn thì báo đã dừng nhập
+    socket.emit("typing", {
+      conversationId: activeConv._id,
+      userId: currentUser.id,
+      typing: false,
+    });
 
     setMessages((prev) => [
       ...prev,
@@ -197,6 +229,14 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     });
   }
 
+  function onInputBlur() {
+    if (!activeConv) return;
+    socket.emit("typing", {
+      conversationId: activeConv._id,
+      userId: currentUser.id,
+      typing: false,
+    });
+  }
   if (!open) return null;
 
   return (
@@ -295,55 +335,91 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                 })()}
               </div>
 
-              <div style={styles.messages}>
-                {messages.map((m) => {
-                  const isMe = String(m.senderId) === String(currentUser.id);
-                  return (
-                    <div
-                      key={m._id || m.createdAt}
-                      style={{
-                        display: "flex",
-                        justifyContent: isMe ? "flex-end" : "flex-start",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div
-                        style={{
-                          maxWidth: "70%",
-                          padding: 10,
-                          borderRadius: 8,
-                          background: isMe ? "#d1f0ff" : "#f1f1f1",
-                        }}
-                      >
-                        <div style={{ fontSize: 14 }}>{m.content}</div>
+              <div
+                style={{
+                  position: "relative",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+                  <div style={styles.messages}>
+                    {messages.map((m) => {
+                      const isMe =
+                        String(m.senderId) === String(currentUser.id);
+                      return (
                         <div
+                          key={m._id || m.createdAt}
                           style={{
-                            fontSize: 11,
-                            color: "#666",
-                            textAlign: "right",
-                            marginTop: 6,
+                            display: "flex",
+                            justifyContent: isMe ? "flex-end" : "flex-start",
+                            marginBottom: 10,
                           }}
                         >
-                          {dayjs(m.createdAt).format("HH:mm")}
+                          <div
+                            style={{
+                              maxWidth: "70%",
+                              padding: 10,
+                              borderRadius: 8,
+                              background: isMe ? "#d1f0ff" : "#f1f1f1",
+                            }}
+                          >
+                            <div style={{ fontSize: 14 }}>{m.content}</div>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#666",
+                                textAlign: "right",
+                                marginTop: 6,
+                              }}
+                            >
+                              {dayjs(m.createdAt).format("HH:mm")}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </div>
+                {activeConv &&
+                  typingUsers[activeConv._id] &&
+                  String(typingUsers[activeConv._id]) !==
+                    String(currentUser.id) && (
+                    <div
+                      style={{
+                        position: "sticky",
+                        bottom: 56, // chiều cao inputRow + margin
+                        left: 0,
+                        width: "100%",
+                        background: "rgba(255,255,255,0.95)",
+                        fontStyle: "italic",
+                        color: "#999",
+                        padding: "4px 12px 2px 12px",
+                        fontSize: 13,
+                        zIndex: 2,
+                      }}
+                    >
+                      {getOtherUser(activeConv)?.name || "Đối phương"} đang
+                      nhập...
                     </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-
-              <div style={styles.inputRow}>
-                <input
-                  placeholder="Nhập nội dung tin nhắn"
-                  value={text}
-                  onChange={onTyping}
-                  style={styles.input}
-                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                />
-                <button onClick={handleSend} style={styles.sendBtn}>
-                  Gửi
-                </button>
+                  )}
+                <div style={styles.inputRow}>
+                  <input
+                    placeholder="Nhập nội dung tin nhắn"
+                    value={text}
+                    onChange={onTyping}
+                    onBlur={onInputBlur}
+                    style={styles.input}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSend();
+                    }}
+                  />
+                  <button onClick={handleSend} style={styles.sendBtn}>
+                    Gửi
+                  </button>
+                </div>
               </div>
             </>
           )}
