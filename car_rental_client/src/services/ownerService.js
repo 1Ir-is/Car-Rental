@@ -69,10 +69,10 @@ const vehicleService = {
   },
 
   // Get all vehicles by owner
-  getMyVehicles: async (userId) => {
+  getMyVehicles: async (ownerId) => {
     try {
       const response = await apiClient.get(
-        `/owner/vehicles/my?userId=${userId}`
+        `/owner/vehicles/my?userId=${ownerId}`
       );
       return { success: true, data: response.data };
     } catch (error) {

@@ -12,17 +12,16 @@ import { vehicleService } from "../../services/vehicleService";
 import { FaCommentDots } from "react-icons/fa";
 import ChatBox from "../../components/UI/ChatBox";
 import { useAuth } from "../../context/AuthContext";
-import { useChatBox } from "../../context/ChatBoxContext";
 import "../../styles/car-info-grid.css";
 
 const CarDetails = () => {
   const { slug } = useParams();
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isChatBoxOpen, setIsChatBoxOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatOwner, setChatOwner] = useState(null);
 
   const { user: currentUser } = useAuth();
-  const { openChatBox } = useChatBox();
 
   const isCurrentUserOwner =
     currentUser &&
@@ -99,6 +98,31 @@ const CarDetails = () => {
     );
   }
 
+  console.log(car?.ownerName);
+  console.log(car?.ownerId);
+  console.log(car);
+
+  const handleOpenChat = () => {
+    if (!currentUser) {
+      alert("Bạn cần đăng nhập để chat với Owner!");
+      return;
+    }
+
+    // không chat với chính mình
+    if (String(car.ownerId) === String(currentUser.id)) {
+      alert("Bạn là chủ xe này!");
+      return;
+    }
+
+    setChatOwner({
+      id: String(car.ownerId), // SỬA Ở ĐÂY
+      name: car.ownerName,
+      avatar: car.ownerAvatar,
+      vehicleId: slug,
+    });
+    setChatOpen(true);
+  };
+
   return (
     <Helmet title={car.vehicleName}>
       <section>
@@ -133,9 +157,10 @@ const CarDetails = () => {
                       alignItems: "center",
                       gap: "8px",
                     }}
-                    onClick={() => openChatBox(ownerInfo)}
+                    onClick={handleOpenChat}
                   >
-                    <FaCommentDots size={18} /> Chat với Owner
+                    <FaCommentDots size={18} />
+                    Chat với Owner ({car.ownerName})
                   </button>
                 </div>
 
@@ -351,6 +376,25 @@ const CarDetails = () => {
               <ReviewSection vehicleId={slug} />
             </Col>
           </Row>
+          {chatOpen && chatOwner && (
+            <div
+              style={{
+                position: "fixed",
+                bottom: "20px",
+                right: "20px",
+                zIndex: 9999,
+                width: "350px",
+                height: "450px",
+              }}
+            >
+              <ChatBox
+                open={chatOpen}
+                onClose={() => setChatOpen(false)}
+                openWithOwner={chatOwner}
+                currentUser={currentUser}
+              />
+            </div>
+          )}
         </Container>
       </section>
     </Helmet>

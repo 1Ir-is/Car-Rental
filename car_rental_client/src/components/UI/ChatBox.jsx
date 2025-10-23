@@ -1,213 +1,376 @@
 import React, { useEffect, useState, useRef } from "react";
-import io from "socket.io-client";
 import axios from "axios";
-import { useChatBox } from "../../context/ChatBoxContext";
-import MessageBubble from "./MessageBubble";
+import io from "socket.io-client";
+import dayjs from "dayjs";
 
-const SOCKET_SERVER_URL = "http://localhost:3001";
+const API = process.env.REACT_APP_CHAT_API || "http://localhost:5000/api";
+const SOCKET_URL = process.env.REACT_APP_CHAT_SOCKET || "http://localhost:5000";
 
-export default function ChatBox({ user }) {
+let socket;
+
+function ChatBox({ open, onClose, openWithOwner, currentUser }) {
+  const [conversations, setConversations] = useState([]);
+  const [activeConv, setActiveConv] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [userList, setUserList] = useState([]);
-  const [content, setContent] = useState("");
-  const [onlineUsers, setOnlineUsers] = useState([]);
-  const socketRef = useRef();
-  const {
-    open: chatBoxOpen,
-    closeChatBox,
-    currentOwner,
-    setCurrentOwner,
-  } = useChatBox();
+  const [text, setText] = useState("");
+  const [typingUsers, setTypingUsers] = useState({});
+  const messagesEndRef = useRef(null);
 
-  // Nếu là owner, khi mở chatbox, lấy danh sách user đã từng chat với owner
-  useEffect(() => {
-    if (user && user.role?.name === "OWNER" && chatBoxOpen && !currentOwner) {
-      axios
-        .get(`${SOCKET_SERVER_URL}/api/chat-users?ownerId=${user.id}`)
-        .then((res) => setUserList(res.data.users));
-    }
-  }, [user, chatBoxOpen, currentOwner]);
-
-  // Khi có user & currentOwner, load hội thoại
-  useEffect(() => {
-    if (!user || !currentOwner) return;
-    socketRef.current = io(SOCKET_SERVER_URL);
-    socketRef.current.emit("join", { userId: user.id });
-    socketRef.current.on("online_users", setOnlineUsers);
-    socketRef.current.on("chat_message", (msg) => {
-      setMessages((prev) => [...prev, msg]);
-    });
-    axios
-      .get(
-        `${SOCKET_SERVER_URL}/api/messages?userId=${user.id}&ownerId=${currentOwner.id}`
-      )
-      .then((res) => setMessages(res.data.messages));
-    return () => {
-      socketRef.current.disconnect();
-    };
-  }, [user, currentOwner]);
-
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (!content.trim()) return;
-
-    const msg = {
-      senderId: user.id,
-      receiverId: currentOwner.id,
-      senderName: user.name,
-      receiverName: currentOwner.name,
-      senderAvatar: user.avatar,
-      receiverAvatar: currentOwner.avatar,
-      senderRole: user.role?.name?.toLowerCase() || "user",
-      receiverRole: currentOwner.role?.name?.toLowerCase() || "owner",
-      content,
-    };
-
-    socketRef.current.emit("chat_message", msg);
-    setContent("");
+  const headers = {
+    "x-user-id": currentUser?.id,
+    "x-user-name": currentUser?.name,
+    "x-user-avatar": currentUser?.avatar,
   };
 
+  const getOtherUser = (conv) =>
+    conv?.participants?.find(
+      (p) => String(p.userId) !== String(currentUser?.id)
+    );
+
+  useEffect(() => {
+    socket = io(SOCKET_URL, { transports: ["websocket", "polling"] });
+
+    if (currentUser?.id) socket.emit("user:online", currentUser.id);
+
+    socket.on("message:receive", (msg) => {
+      if (activeConv && String(msg.conversationId) === String(activeConv._id)) {
+        setMessages((prev) => [...prev, msg]);
+        scrollToBottom();
+      } else {
+        fetchConversations();
+      }
+    });
+
+    socket.on("typing", ({ conversationId, userId, typing }) => {
+      setTypingUsers((prev) => ({
+        ...prev,
+        [conversationId]: typing ? userId : null,
+      }));
+    });
+
+    return () => socket.disconnect();
+  }, [currentUser]); // ✅ not binding activeConv wrongly
+
+  useEffect(() => {
+    if (open) {
+      fetchConversations();
+      if (openWithOwner) createOrGetConversation(openWithOwner);
+    }
+  }, [open, openWithOwner]);
+
+  useEffect(() => {
+    if (!activeConv) return;
+    socket.emit("join:conversation", String(activeConv._id));
+    fetchConversationDetail(activeConv._id);
+
+    return () => socket.emit("leave:conversation", String(activeConv._id));
+  }, [activeConv]);
+
+  function scrollToBottom() {
+    setTimeout(
+      () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+      100
+    );
+  }
+
+  async function fetchConversations() {
+    try {
+      const res = await axios.get(`${API}/conversations`, { headers });
+      if (res.data.success) setConversations(res.data.data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function createOrGetConversation(owner) {
+    try {
+      let found = conversations.find(
+        (c) =>
+          String(c.vehicleId) === String(owner.vehicleId) &&
+          c.participants.some((p) => String(p.userId) === String(owner.id))
+      );
+
+      if (found) {
+        setActiveConv(found);
+        return;
+      }
+
+      const res = await axios.post(
+        `${API}/conversations`,
+        { owner, vehicleId: owner.vehicleId },
+        { headers }
+      );
+
+      if (res.data.success) {
+        setActiveConv(res.data.data);
+        fetchConversations();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function fetchConversationDetail(convId) {
+    try {
+      const res = await axios.get(`${API}/conversations/${convId}`, {
+        headers,
+      });
+      if (res.data.success) {
+        setMessages(res.data.data.messages || []);
+        scrollToBottom();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function handleSend() {
+    if (!text.trim() || !activeConv) return;
+    const payload = {
+      conversationId: activeConv._id,
+      senderId: currentUser.id,
+      content: text.trim(),
+    };
+
+    socket.emit("message:send", payload);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        ...payload,
+        createdAt: new Date().toISOString(),
+        _id: `tmp-${Date.now()}`,
+      },
+    ]);
+    setText("");
+    scrollToBottom();
+  }
+
+  function onTyping(e) {
+    setText(e.target.value);
+    if (!activeConv) return;
+    socket.emit("typing", {
+      conversationId: activeConv._id,
+      userId: currentUser.id,
+      typing: !!e.target.value,
+    });
+  }
+
+  if (!open) return null;
+
   return (
-    <>
-      {user && !chatBoxOpen && <MessageBubble />}
-      {chatBoxOpen && (
-        <div
-          style={{
-            width: 400,
-            height: 500,
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            display: "flex",
-            flexDirection: "column",
-            background: "#fff",
-            position: "fixed",
-            bottom: 40,
-            right: 40,
-            zIndex: 1000,
-          }}
-        >
-          <div style={{ textAlign: "right", padding: 8 }}>
-            <button
-              onClick={closeChatBox}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: 22,
-                cursor: "pointer",
-                color: "#2196f3",
-              }}
-              title="Đóng chat"
-            >
-              ×
-            </button>
+    <div style={styles.overlay}>
+      <div style={styles.box}>
+        {/* LEFT - Conversation List */}
+        <div style={styles.left}>
+          <div style={styles.headerLeft}>
+            <h4>Chat</h4>
+            <button onClick={onClose}>✕</button>
           </div>
-          {/* Nếu là owner và chưa chọn user nào, hiển thị danh sách user đã chat */}
-          {user.role?.name === "OWNER" && !currentOwner ? (
-            <div style={{ padding: 16, textAlign: "center" }}>
-              <div>Chọn một user để xem tin nhắn:</div>
-              {userList.length === 0 && (
-                <div style={{ marginTop: 16, color: "#999" }}>
-                  Chưa có user nào nhắn cho bạn.
-                </div>
-              )}
-              {userList.map((u) => (
+
+          <div style={styles.search}>
+            <input placeholder="Tìm theo tên..." style={{ width: "100%" }} />
+          </div>
+
+          <div style={styles.convList}>
+            {conversations.map((conv) => {
+              const other = getOtherUser(conv);
+              return (
                 <div
-                  key={u.id}
+                  key={conv._id}
                   style={{
-                    cursor: "pointer",
-                    padding: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
+                    ...styles.convItem,
+                    background:
+                      activeConv && String(activeConv._id) === String(conv._id)
+                        ? "#f0f0f0"
+                        : "transparent",
                   }}
-                  onClick={() => setCurrentOwner(u)}
+                  onClick={() => setActiveConv(conv)}
                 >
                   <img
-                    src={u.avatar}
-                    alt={u.name}
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      marginRight: 6,
-                    }}
+                    src={other?.avatar || "/avatar.png"}
+                    alt=""
+                    style={styles.avatar}
                   />
-                  <span style={{ fontWeight: "bold" }}>{u.name}</span>
-                </div>
-              ))}
-            </div>
-          ) : currentOwner ? (
-            <>
-              <div
-                style={{
-                  padding: 8,
-                  borderBottom: "1px solid #eee",
-                  fontWeight: "bold",
-                }}
-              >
-                Chat với {currentOwner.name}
-              </div>
-              <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      marginBottom: 8,
-                      textAlign: msg.senderId === user.id ? "right" : "left",
-                    }}
-                  >
-                    <img
-                      src={msg.senderAvatar}
-                      alt={msg.senderName}
+                  <div style={{ flex: 1 }}>
+                    <div
                       style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: "50%",
-                        verticalAlign: "middle",
+                        display: "flex",
+                        justifyContent: "space-between",
                       }}
-                    />
-                    <span style={{ fontWeight: "bold", margin: "0 4px" }}>
-                      {msg.senderName}
-                    </span>
-                    <span>{msg.content}</span>
+                    >
+                      <div style={{ fontWeight: 600 }}>
+                        {other?.name || "Người dùng"}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#666" }}>
+                        {conv.lastMessage
+                          ? dayjs(conv.lastMessage.createdAt).format("HH:mm")
+                          : ""}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 13, color: "#666", marginTop: 6 }}>
+                      {conv.lastMessage
+                        ? conv.lastMessage.content.slice(0, 50)
+                        : "Nhấn để mở cuộc trò chuyện"}
+                    </div>
                   </div>
-                ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT - Chat Window */}
+        <div style={styles.right}>
+          {!activeConv ? (
+            <div style={styles.welcome}>
+              <h3>Chào mừng bạn đến với Chat</h3>
+              <p>Chọn một cuộc trò chuyện hoặc nhấn “Chat với Owner”.</p>
+            </div>
+          ) : (
+            <>
+              {/* ✅ FIXED HEADER */}
+              <div style={styles.chatHeader}>
+                {(() => {
+                  const other = getOtherUser(activeConv);
+                  return (
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 12 }}
+                    >
+                      <img
+                        src={other?.avatar || "/avatar.png"}
+                        style={styles.avatar}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 700 }}>
+                          {other?.name || "Người dùng"}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#666" }}>
+                          Chủ xe
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
-              <form
-                onSubmit={handleSend}
-                style={{
-                  display: "flex",
-                  padding: 8,
-                  borderTop: "1px solid #eee",
-                }}
-              >
+
+              <div style={styles.messages}>
+                {messages.map((m) => {
+                  const isMe = String(m.senderId) === String(currentUser.id);
+                  return (
+                    <div
+                      key={m._id || m.createdAt}
+                      style={{
+                        display: "flex",
+                        justifyContent: isMe ? "flex-end" : "flex-start",
+                        marginBottom: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          maxWidth: "70%",
+                          padding: 10,
+                          borderRadius: 8,
+                          background: isMe ? "#d1f0ff" : "#f1f1f1",
+                        }}
+                      >
+                        <div style={{ fontSize: 14 }}>{m.content}</div>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#666",
+                            textAlign: "right",
+                            marginTop: 6,
+                          }}
+                        >
+                          {dayjs(m.createdAt).format("HH:mm")}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div style={styles.inputRow}>
                 <input
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
-                  style={{
-                    flex: 1,
-                    border: "none",
-                    outline: "none",
-                    padding: 8,
-                    borderRadius: 4,
-                  }}
+                  placeholder="Nhập nội dung tin nhắn"
+                  value={text}
+                  onChange={onTyping}
+                  style={styles.input}
+                  onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 />
-                <button
-                  type="submit"
-                  style={{ marginLeft: 8, padding: "0 16px" }}
-                >
+                <button onClick={handleSend} style={styles.sendBtn}>
                   Gửi
                 </button>
-              </form>
+              </div>
             </>
-          ) : (
-            <div style={{ padding: 16, textAlign: "center" }}>
-              <div>Chọn một owner để bắt đầu trò chuyện</div>
-            </div>
           )}
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }
+
+const styles = {
+  overlay: { position: "fixed", right: 20, bottom: 20, zIndex: 9999 },
+  box: {
+    width: 900,
+    height: 600,
+    display: "flex",
+    boxShadow: "0 6px 24px rgba(0,0,0,0.2)",
+    borderRadius: 8,
+    overflow: "hidden",
+    background: "#fff",
+  },
+  left: {
+    width: 320,
+    borderRight: "1px solid #eee",
+    display: "flex",
+    flexDirection: "column",
+  },
+  headerLeft: {
+    padding: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  search: { padding: 10 },
+  convList: { overflowY: "auto", padding: 10, flex: 1 },
+  convItem: {
+    display: "flex",
+    gap: 12,
+    padding: 10,
+    cursor: "pointer",
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  avatar: { width: 42, height: 42, borderRadius: 22, objectFit: "cover" },
+  right: { flex: 1, display: "flex", flexDirection: "column" },
+  welcome: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "column",
+    gap: 8,
+  },
+  chatHeader: { padding: 12, borderBottom: "1px solid #eee" },
+  messages: { padding: 12, flex: 1, overflowY: "auto", background: "#fcfcfd" },
+  inputRow: {
+    display: "flex",
+    padding: 12,
+    gap: 8,
+    borderTop: "1px solid #eee",
+  },
+  input: { flex: 1, padding: 10, borderRadius: 8, border: "1px solid #ddd" },
+  sendBtn: {
+    padding: "8px 14px",
+    borderRadius: 8,
+    border: "none",
+    background: "#0066ff",
+    color: "#fff",
+  },
+};
+
+export default ChatBox;

@@ -392,7 +392,7 @@ const AddNewCar = ({ setActiveSection }) => {
       latitude: location.latitude,
       longitude: location.longitude,
       placeId: formData.placeId,
-      userId: user?.id,
+      ownerId: user?.id,
     };
 
     const imageFiles = images.map((img) => img.file);
