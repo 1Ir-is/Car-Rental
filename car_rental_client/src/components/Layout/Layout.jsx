@@ -9,6 +9,7 @@ import FloatingChatBubble from "../Chat/FloatingChatBubble";
 
 const Layout = () => {
   const [chatOpen, setChatOpen] = useState(false);
+  const { user } = useAuth(); // Thêm dòng này để lấy user
   return (
     <div
       style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
@@ -19,11 +20,14 @@ const Layout = () => {
         <Routers />
       </main>
       <Footer />
-      <FloatingChatBubble
-        open={chatOpen}
-        onOpen={() => setChatOpen(true)}
-        onClose={() => setChatOpen(false)}
-      />
+      {/* Ẩn FloatingChatBubble nếu chưa login */}
+      {!!user && !!user.id && (
+        <FloatingChatBubble
+          open={chatOpen}
+          onOpen={() => setChatOpen(true)}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
       <ScrollToTopButton />
     </div>
   );
