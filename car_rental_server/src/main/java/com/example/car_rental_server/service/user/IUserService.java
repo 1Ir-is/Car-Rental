@@ -24,4 +24,6 @@ public interface IUserService {
     UserProfileDTO updateCurrentUserInfo(String email, UserProfileDTO userUpdateDTO);
 
     Optional<User> findByResetPasswordToken(String token);
+
+    Long findIdByEmail(String email);
 }

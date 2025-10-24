@@ -96,4 +96,11 @@ public class UserService implements IUserService {
     public Optional<User> findByResetPasswordToken(String token) {
         return userRepository.findByResetPasswordToken(token);
     }
+
+    @Override
+    public Long findIdByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("User not found by email: " + email));
+    }
 }

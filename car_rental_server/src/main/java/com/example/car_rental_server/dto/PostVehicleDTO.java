@@ -37,4 +37,35 @@ public class PostVehicleDTO {
     private String ownerName;
     private String ownerAvatar;
     private List<String> keepExistingImages;
+
+    public static PostVehicleDTO from(com.example.car_rental_server.model.PostVehicle vehicle) {
+        if (vehicle == null) return null;
+        return PostVehicleDTO.builder()
+                .id(vehicle.getId())
+                .vehicleName(vehicle.getVehicleName())
+                .brand(vehicle.getBrand())
+                .model(vehicle.getModel())
+                .year(vehicle.getYear())
+                .color(vehicle.getColor())
+                .licensePlate(vehicle.getLicensePlate())
+                .vehicleSeat(vehicle.getVehicleSeat())
+                .transmission(vehicle.getTransmission())
+                .fuelType(vehicle.getFuelType())
+                .dailyPrice(vehicle.getDailyPrice())
+                .description(vehicle.getDescription())
+                .category(vehicle.getCategory())
+                .imageList(vehicle.getImageList())
+                .features(vehicle.getFeatures())
+                .address(vehicle.getAddress())
+                .placeId(vehicle.getPlaceId())
+                .latitude(vehicle.getLatitude())
+                .longitude(vehicle.getLongitude())
+                .status(vehicle.getStatus())
+                .isRented(vehicle.getIsRented())
+                .rating(vehicle.getRating())
+                .ownerId(vehicle.getOwner() != null ? vehicle.getOwner().getId() : null)
+                .ownerName(vehicle.getOwnerName())
+                .ownerAvatar(vehicle.getOwnerAvatar())
+                .build();
+    }
 }

@@ -63,6 +63,12 @@ public class SecurityConfig {
                         // Notifications (keep current policy)
                         .requestMatchers("/api/notifications/**").permitAll()
 
+                        // ==== FOLLOW VEHICLES ====
+
+                        .requestMatchers(HttpMethod.GET, "/api/vehicles/follow/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/vehicles/follow/**").hasAnyAuthority("USER", "OWNER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/vehicles/follow/**").hasAnyAuthority("USER", "OWNER", "ADMIN")
+
                         // Admin/owner/user specific endpoints
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/owner/**").hasAuthority("OWNER")
