@@ -60,19 +60,24 @@ io.on("connection", (socket) => {
   });
 
   socket.on("message:send", async (data) => {
-    const { conversationId, senderId, content } = data;
+    console.log("socket nhận data:", data); // LOG NÀY!
+    const { conversationId, senderId, content, images, image } = data;
 
     const msg = await Message.create({
       conversationId,
       senderId,
       content,
+      image: image || (images && images.length === 1 ? images[0] : undefined),
+      images: images && images.length > 1 ? images : undefined,
       createdAt: new Date(),
+      readBy: [senderId],
     });
+    // Lấy lại message vừa tạo (đảm bảo đầy đủ dữ liệu)
+    const fullMsg = await Message.findById(msg._id).lean();
+    // Emit cho tất cả user trong room (KHÔNG chỉ emit cho người gửi)
+    io.to(String(conversationId)).emit("message:receive", fullMsg);
 
-    // ✅ Emit message đến tất cả user trong room
-    io.to(String(conversationId)).emit("message:receive", msg);
-
-    // ✅ Gửi update conversation đến đúng room đang chat
+    // Gửi update conversation (tùy dùng hoặc không)
     const conv = await Conversation.findById(conversationId).populate(
       "participants.userId"
     );

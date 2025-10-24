@@ -8,9 +8,11 @@ const MessageSchema = new Schema({
     required: true,
   },
   senderId: { type: String, required: true },
-  content: { type: String, required: true },
-  meta: { type: Object, default: {} }, // e.g. type: 'text'|'image'
-  readBy: [String], // userIds who have read
+  content: { type: String },
+  image: { type: String }, // 1 ảnh (giữ cho tương thích cũ)
+  images: [{ type: String }], // nhiều ảnh (mới)
+  meta: { type: Object, default: {} },
+  readBy: [String],
   createdAt: { type: Date, default: Date.now },
 });
 

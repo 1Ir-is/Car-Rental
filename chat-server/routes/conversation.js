@@ -85,16 +85,15 @@ router.post("/", async (req, res) => {
 
   try {
     const existing = await Conversation.findOne({
-      vehicleId: vehicleId || null,
+      vehicleId: vehicleId !== undefined ? String(vehicleId) : null,
       participants: {
         $size: 2,
         $all: [
-          { $elemMatch: { userId: me.id } },
-          { $elemMatch: { userId: owner.id } },
+          { $elemMatch: { userId: String(me.id) } },
+          { $elemMatch: { userId: String(owner.id) } },
         ],
       },
     });
-
     if (existing) return res.json({ success: true, data: existing });
 
     const conv = await Conversation.create({
