@@ -90,18 +90,23 @@ io.on("connection", (socket) => {
     "message:react",
     async ({ messageId, emoji, userId, conversationId }) => {
       if (!messageId || !emoji || !userId || !conversationId) return;
-      const msg = await Message.findById(messageId);
-      const existed = msg.reactions?.find(
+      // Luôn xóa mọi reaction của user này trên message
+      await Message.findByIdAndUpdate(messageId, {
+        $pull: { reactions: { userId } },
+      });
+
+      // LẤY LẠI message SAU KHI ĐÃ XÓA (phải lấy lại bản mới)
+      const msgAfterPull = await Message.findById(messageId);
+      const existed = msgAfterPull.reactions?.find(
         (r) => r.userId === userId && r.emoji === emoji
       );
+
       let newMsg;
       if (existed) {
-        newMsg = await Message.findByIdAndUpdate(
-          messageId,
-          { $pull: { reactions: { emoji, userId } } },
-          { new: true }
-        );
+        // Không thêm nữa (người dùng muốn bỏ reaction, đã xóa ở trên rồi)
+        newMsg = msgAfterPull;
       } else {
+        // Thêm reaction mới
         newMsg = await Message.findByIdAndUpdate(
           messageId,
           { $push: { reactions: { emoji, userId } } },
@@ -115,7 +120,6 @@ io.on("connection", (socket) => {
       });
     }
   );
-
   socket.on("typing", ({ conversationId, userId, typing }) => {
     socket
       .to(conversationId)

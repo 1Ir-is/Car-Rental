@@ -104,7 +104,11 @@ router.post("/react", async (req, res) => {
     return res.status(400).json({ success: false, message: "Missing" });
 
   try {
-    // Kiểm tra đã react chưa
+    // Luôn xóa mọi reaction của user này trước khi thêm mới (đảm bảo chỉ 1 emoji!)
+    await Message.findByIdAndUpdate(messageId, {
+      $pull: { reactions: { userId: me.id } },
+    });
+
     const msg = await Message.findById(messageId);
     const existed = msg.reactions?.find(
       (r) => r.userId === me.id && r.emoji === emoji
@@ -112,14 +116,10 @@ router.post("/react", async (req, res) => {
 
     let newMsg;
     if (existed) {
-      // Nếu đã react thì xóa react này
-      newMsg = await Message.findByIdAndUpdate(
-        messageId,
-        { $pull: { reactions: { emoji, userId: me.id } } },
-        { new: true }
-      );
+      // Không thêm nữa (người dùng muốn bỏ reaction)
+      newMsg = await Message.findById(messageId);
     } else {
-      // Thêm react
+      // Thêm reaction mới
       newMsg = await Message.findByIdAndUpdate(
         messageId,
         { $push: { reactions: { emoji, userId: me.id } } },
