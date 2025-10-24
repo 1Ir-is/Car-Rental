@@ -26,6 +26,8 @@ import {
 
 import Picker from "@emoji-mart/react"; // chú ý @emoji-mart/react
 import data from "@emoji-mart/data"; // cần thêm data
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
 
 const { Sider, Content } = Layout;
 const { Text } = Typography;
@@ -36,6 +38,120 @@ let socket;
 
 function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   const [showEmoji, setShowEmoji] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]); // [{file, url}]
+  const [uploadError, setUploadError] = useState("");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  function handleImageChange(e) {
+    const MAX_IMAGES = 10;
+    const files = Array.from(e.target.files);
+
+    // Nếu đã đủ 10 ảnh thì không cho chọn nữa, báo lỗi
+    if (selectedImages.length >= MAX_IMAGES) {
+      setUploadError(`Chỉ có thể chọn tối đa ${MAX_IMAGES} ảnh.`);
+      e.target.value = "";
+      return;
+    }
+
+    // Nếu số lượng ảnh muốn chọn vượt quá MAX_IMAGES
+    if (selectedImages.length + files.length > MAX_IMAGES) {
+      setUploadError(`Bạn chỉ có thể gửi tối đa ${MAX_IMAGES} ảnh mỗi lần.`);
+    } else {
+      setUploadError("");
+    }
+
+    // Chỉ lấy vừa đủ số còn thiếu
+    const newFiles = files.slice(0, MAX_IMAGES - selectedImages.length);
+    for (const file of newFiles) {
+      if (file.size > 2 * 1024 * 1024) {
+        setUploadError("Ảnh vượt quá dung lượng tối đa 2MB.");
+        continue;
+      }
+      setSelectedImages((prev) => [
+        ...prev,
+        { file, url: URL.createObjectURL(file) },
+      ]);
+    }
+    e.target.value = "";
+  }
+
+  function removePreviewImage(idx) {
+    setSelectedImages((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleSend() {
+    if ((!text.trim() && selectedImages.length === 0) || !activeConv) return;
+    setUploading(true);
+
+    let imageUrls = [];
+
+    if (selectedImages.length > 0) {
+      // DEBUG: Log tên file để chắc chắn không bị trùng
+      console.log(
+        "selectedImages:",
+        selectedImages.map((i) => i.file && i.file.name)
+      );
+
+      // Tạo mảng promise upload song song, mỗi promise upload 1 file riêng biệt
+      const uploadPromises = selectedImages.map((img) => {
+        const form = new FormData();
+        // Truyền đúng tên file
+        form.append("image", img.file, img.file.name);
+        form.append("conversationId", activeConv._id);
+        form.append("senderId", currentUser.id);
+        return axios.post(`${API}/messages/upload-image`, form, {
+          headers: {
+            ...headers,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      });
+
+      try {
+        const results = await Promise.all(uploadPromises);
+        for (const res of results) {
+          if (res.data.success && res.data.url) {
+            imageUrls.push(res.data.url);
+          }
+        }
+        if (imageUrls.length !== selectedImages.length) {
+          setUploadError("Một số ảnh gửi thất bại.");
+          setUploading(false);
+          return;
+        }
+      } catch (err) {
+        setUploadError("Có lỗi khi upload ảnh.");
+        setUploading(false);
+        return;
+      }
+    }
+
+    console.log("images gửi lên:", imageUrls);
+
+    const payload = {
+      conversationId: activeConv._id,
+      senderId: currentUser.id,
+      content: text.trim(),
+      images: imageUrls, // có thể là []
+    };
+
+    socket.emit("message:send", payload);
+    setMessages((prev) => [
+      ...prev,
+      {
+        ...payload,
+        createdAt: new Date().toISOString(),
+        _id: `tmp-${Date.now()}`,
+      },
+    ]);
+    setText("");
+    setSelectedImages([]);
+    setUploading(false);
+    scrollToBottom();
+  }
 
   // Thêm emoji vào input text
   const addEmoji = (emoji) => {
@@ -312,48 +428,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     }
   }
 
-  function handleSend() {
-    if (!text.trim() || !activeConv) return;
-    const payload = {
-      conversationId: activeConv._id,
-      senderId: currentUser.id,
-      content: text.trim(),
-    };
-    socket.emit("message:send", payload);
-    socket.emit("typing", {
-      conversationId: activeConv._id,
-      userId: currentUser.id,
-      typing: false,
-    });
-    setMessages((prev) => [
-      ...prev,
-      {
-        ...payload,
-        createdAt: new Date().toISOString(),
-        _id: `tmp-${Date.now()}`,
-      },
-    ]);
-    setText("");
-    scrollToBottom();
-
-    setConversations((prev) =>
-      prev.map((c) =>
-        c._id === activeConv._id
-          ? {
-              ...c,
-              lastMessage: {
-                // Nếu bạn vẫn dùng lastMessage cũ, ép lại cho chắc chắn
-                ...(c.lastMessage || {}),
-                ...payload,
-                readBy: [...(c.lastMessage?.readBy || []), currentUser.id],
-              },
-            }
-          : c
-      )
-    );
-    addReadConv(activeConv._id);
-  }
-
   function onTyping(e) {
     setText(e.target.value);
     if (!activeConv) return;
@@ -415,7 +489,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
           boxShadow: "0 6px 24px #0002",
           padding: 0,
         }}
-        bodyStyle={{ padding: 0, height: "100%" }}
+        styles={{ body: { padding: 0, height: "100%" } }}
       >
         <Layout style={{ height: "100%", background: "#fff" }}>
           <Sider
@@ -649,8 +723,20 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                     }}
                   >
                     <List
-                      dataSource={messages}
+                      dataSource={
+                        uploading
+                          ? [
+                              ...messages,
+                              {
+                                _id: "uploading-spinner",
+                                senderId: currentUser.id,
+                                uploading: true,
+                              },
+                            ]
+                          : messages
+                      }
                       renderItem={(m) => {
+                        // ...existing code for normal message bubble...
                         const isMe =
                           String(m.senderId) === String(currentUser.id);
                         const other = getOtherUser(activeConv);
@@ -696,6 +782,108 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                   wordBreak: "break-word",
                                 }}
                               >
+                                {/* CHỖ NÀY: thay thế nội dung tin nhắn */}
+
+                                {m.images && m.images.length > 0 && (
+                                  <div
+                                    style={{ marginBottom: m.content ? 8 : 0 }}
+                                  >
+                                    <div
+                                      style={{
+                                        color: "#888",
+                                        fontSize: 13,
+                                        margin: "0 0 6px 2px",
+                                        fontWeight: 500,
+                                        letterSpacing: 0.1,
+                                      }}
+                                    >
+                                      {m.images.length === 1
+                                        ? "You sent a photo"
+                                        : `You sent ${m.images.length} photos`}
+                                    </div>
+                                    <div
+                                      style={{
+                                        position: "relative",
+                                        width:
+                                          120 +
+                                          Math.min(m.images.length - 1, 3) * 32,
+                                        height: 120,
+                                        margin: "8px 0",
+                                        cursor: "pointer",
+                                      }}
+                                    >
+                                      {/* Chỉ render 4 ảnh đầu */}
+                                      {m.images
+                                        .slice(0, 4)
+                                        .map((imgUrl, idx) => (
+                                          <img
+                                            key={idx}
+                                            src={imgUrl}
+                                            alt=""
+                                            style={{
+                                              position: "absolute",
+                                              left: idx * 32,
+                                              top: 0,
+                                              width: 120,
+                                              height: 120,
+                                              objectFit: "cover",
+                                              borderRadius: 24,
+                                              boxShadow: "0 2px 12px #d3e3f5cc",
+                                              border: "3px solid #fff",
+                                              zIndex: idx,
+                                              background: "#f0f0f0",
+                                              cursor: "pointer",
+                                            }}
+                                            onClick={() => {
+                                              setLightboxImages(
+                                                m.images.map((src) => ({ src }))
+                                              );
+                                              setLightboxIndex(idx);
+                                              setLightboxOpen(true);
+                                            }}
+                                          />
+                                        ))}
+                                      {/* Hiển thị overlay nếu >4 ảnh */}
+                                      {m.images.length > 4 && (
+                                        <div
+                                          style={{
+                                            position: "absolute",
+                                            left: 3 * 32,
+                                            top: 0,
+                                            width: 120,
+                                            height: 120,
+                                            borderRadius: 24,
+                                            background: "rgba(0,0,0,0.7)",
+                                            color: "#fff",
+                                            fontWeight: "bold",
+                                            fontSize: 28,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            zIndex: 100,
+                                            pointerEvents: "none",
+                                            boxShadow: "0 2px 12px #d3e3f5cc",
+                                          }}
+                                        >
+                                          +{m.images.length - 4}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                {m.image && (
+                                  <img
+                                    src={m.image}
+                                    alt="img"
+                                    style={{
+                                      maxWidth: 200,
+                                      maxHeight: 200,
+                                      borderRadius: 8,
+                                      marginBottom: m.content ? 6 : 0,
+                                      display: "block",
+                                    }}
+                                  />
+                                )}
                                 {m.content}
                               </div>
                               {isMe && (
@@ -761,6 +949,131 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                       borderTop: "1px solid #eee",
                     }}
                   >
+                    {selectedImages.length > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0,
+                          padding: "12px 12px 8px 12px",
+                          borderRadius: 18,
+                          background: "#f7faff",
+                          boxShadow: "0 2px 16px #b2cdf933",
+                          marginBottom: 10,
+                          overflowX: "auto",
+                          maxWidth: "100%", // chiếm hết chiều ngang khung chat
+                          minHeight: 90,
+                          transition: "background .2s",
+                          scrollbarWidth: "thin",
+                        }}
+                      >
+                        {/* Nút cộng để thêm ảnh mới */}
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 78,
+                            height: 78,
+                            borderRadius: 18,
+                            background: "#eaf2fd",
+                            cursor: uploading ? "not-allowed" : "pointer",
+                            border: "2px dashed #b5c8e6",
+                            marginRight: 10,
+                            transition: "background .2s",
+                            opacity: uploading ? 0.6 : 1,
+                            flex: "0 0 auto",
+                          }}
+                          title="Thêm ảnh"
+                        >
+                          <PictureOutlined
+                            style={{ fontSize: 32, color: "#4686f5" }}
+                          />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            style={{ display: "none" }}
+                            onChange={handleImageChange}
+                            disabled={uploading}
+                          />
+                        </label>
+                        {/* Danh sách ảnh được chọn */}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 14,
+                            flex: "1 1 auto",
+                            overflowX: "auto",
+                            minWidth: 0, // Cho phép scroll khi nhiều ảnh
+                          }}
+                        >
+                          {selectedImages.map((img, idx) => (
+                            <div
+                              key={idx}
+                              style={{
+                                position: "relative",
+                                width: 78,
+                                height: 78,
+                                borderRadius: 18,
+                                overflow: "hidden",
+                                background: "#fff",
+                                boxShadow: "0 2px 10px #e3ebf7",
+                                flex: "0 0 auto",
+                              }}
+                            >
+                              <img
+                                src={img.url}
+                                alt=""
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  borderRadius: 18,
+                                  userSelect: "none",
+                                  pointerEvents: "none",
+                                }}
+                              />
+                              {/* Nút x custom */}
+                              <div
+                                onClick={
+                                  uploading
+                                    ? undefined
+                                    : () => removePreviewImage(idx)
+                                }
+                                style={{
+                                  position: "absolute",
+                                  top: 6,
+                                  right: 6,
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: "50%",
+                                  background: "#fff",
+                                  border: "2px solid #4686f5",
+                                  color: "#4686f5",
+                                  fontWeight: "bold",
+                                  fontSize: 19,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  boxShadow: "0 2px 8px #b3cfff33",
+                                  zIndex: 10,
+                                  transition: "filter 0.15s",
+                                  filter: "drop-shadow(0 1px 4px #4686f555)",
+                                  userSelect: "none",
+                                  pointerEvents: uploading ? "none" : "auto",
+                                  opacity: uploading ? 0.5 : 1,
+                                  cursor: uploading ? "not-allowed" : "pointer",
+                                }}
+                                title="Xoá ảnh này"
+                              >
+                                ×
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div
                       style={{ display: "flex", gap: 8, alignItems: "center" }}
                     >
@@ -771,16 +1084,32 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                             shape="circle"
                             icon={<PictureOutlined style={{ fontSize: 18 }} />}
                             style={{
-                              color: "#1890ff",
+                              color: "#4686f5",
                               border: "none",
                               background: "none",
+                              position: "relative",
+                              cursor: uploading ? "not-allowed" : "pointer",
                             }}
                             tabIndex={-1}
+                            loading={uploading}
                           >
                             <input
                               type="file"
                               accept="image/*"
-                              style={{ display: "none" }}
+                              multiple
+                              style={{
+                                position: "absolute",
+                                left: 0,
+                                top: 0,
+                                right: 0,
+                                bottom: 0,
+                                opacity: 0,
+                                width: "100%",
+                                height: "100%",
+                                cursor: uploading ? "not-allowed" : "pointer",
+                              }}
+                              disabled={uploading}
+                              onChange={handleImageChange}
                             />
                           </Button>
                         </Tooltip>
@@ -796,6 +1125,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                               background: "none",
                             }}
                             tabIndex={-1}
+                            disabled={uploading}
                           >
                             <input type="file" style={{ display: "none" }} />
                           </Button>
@@ -854,6 +1184,11 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                         onBlur={onInputBlur}
                         onPressEnter={handleSend}
                       />
+                      {uploadError && (
+                        <div style={{ color: "red", margin: "6px 0 0 0" }}>
+                          {uploadError}
+                        </div>
+                      )}
                       <Button
                         type="primary"
                         icon={<SendOutlined />}
@@ -866,6 +1201,8 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                           boxShadow: "0 2px 8px #1890ff22",
                         }}
                         onClick={handleSend}
+                        loading={uploading}
+                        disabled={uploading}
                       >
                         Gửi
                       </Button>
@@ -876,6 +1213,14 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
             </Content>
           </Layout>
         </Layout>
+        {lightboxOpen && (
+          <Lightbox
+            open={lightboxOpen}
+            close={() => setLightboxOpen(false)}
+            slides={lightboxImages}
+            index={lightboxIndex}
+          />
+        )}
       </Card>
     </div>
   );
