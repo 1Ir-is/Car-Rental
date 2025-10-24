@@ -95,7 +95,6 @@ router.get("/download", async (req, res) => {
 
 // Thả hoặc bỏ react cho 1 message
 router.post("/react", async (req, res) => {
-  // Lấy dữ liệu
   const { messageId, emoji } = req.body;
   const me = req.user;
   if (!me.id)
@@ -104,13 +103,24 @@ router.post("/react", async (req, res) => {
     return res.status(400).json({ success: false, message: "Missing" });
 
   try {
-    // Luôn xóa mọi reaction của user này trước khi thêm mới (đảm bảo chỉ 1 emoji!)
+    // Luôn xóa tất cả reaction của user này trước khi thêm mới (chỉ 1 emoji mỗi user)
     await Message.findByIdAndUpdate(messageId, {
       $pull: { reactions: { userId: me.id } },
     });
 
-    const msg = await Message.findById(messageId);
-    const existed = msg.reactions?.find(
+    // Lấy lại message mới nhất
+    const msgAfterPull = await Message.findById(messageId);
+
+    // Nếu sau khi xóa, user vẫn còn emoji này (do bug race/ngắt request), xóa hết
+    // (thường dòng trên đã đủ, nhưng thêm đoạn này để chắc chắn)
+    if (msgAfterPull.reactions?.some((r) => r.userId === me.id)) {
+      await Message.updateOne(
+        { _id: messageId },
+        { $pull: { reactions: { userId: me.id } } }
+      );
+    }
+
+    const existed = msgAfterPull.reactions?.find(
       (r) => r.userId === me.id && r.emoji === emoji
     );
 
@@ -126,8 +136,37 @@ router.post("/react", async (req, res) => {
         { new: true }
       );
     }
-    // Trả về message mới có trường reactions cập nhật
     res.json({ success: true, data: newMsg });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// Thu hồi tin nhắn (unsend)
+router.post("/unsend", async (req, res) => {
+  const { messageId } = req.body;
+  const me = req.user;
+  if (!me.id)
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  if (!messageId)
+    return res.status(400).json({ success: false, message: "Missing" });
+
+  try {
+    // Chỉ cho phép người gửi thu hồi tin nhắn của mình
+    const msg = await Message.findById(messageId);
+    if (!msg)
+      return res.status(404).json({ success: false, message: "Not found" });
+    if (msg.senderId !== me.id)
+      return res.status(403).json({ success: false, message: "Not allowed" });
+
+    msg.deletedForEveryone = true;
+    await msg.save();
+
+    // Phát socket để mọi người cập nhật ngay
+    req.app.get("io").to(String(msg.conversationId)).emit("message:unsend", {
+      messageId: msg._id,
+    });
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

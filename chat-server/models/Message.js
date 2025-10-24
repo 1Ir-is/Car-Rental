@@ -27,6 +27,7 @@ const MessageSchema = new Schema({
   meta: { type: Object, default: {} },
   readBy: [String],
   createdAt: { type: Date, default: Date.now },
+  deletedForEveryone: { type: Boolean, default: false },
 });
 
 MessageSchema.index({ conversationId: 1, createdAt: -1 });

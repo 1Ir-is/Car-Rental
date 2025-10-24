@@ -37,6 +37,8 @@ const io = new Server(server, {
   cors: { origin: "*" },
 });
 
+app.set("io", io);
+
 // socket users map: userId => socketId
 const onlineUsers = new Map();
 
@@ -84,6 +86,15 @@ io.on("connection", (socket) => {
       "participants.userId"
     );
     io.to(String(conversationId)).emit("conversation:update", conv);
+  });
+
+  socket.on("message:unsend", async ({ messageId, userId, conversationId }) => {
+    const msg = await Message.findById(messageId);
+    if (msg && msg.senderId === userId) {
+      msg.deletedForEveryone = true;
+      await msg.save();
+      io.to(String(conversationId)).emit("message:unsend", { messageId });
+    }
   });
 
   socket.on(
