@@ -51,14 +51,14 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
 
     // Nếu đã đủ 10 ảnh thì không cho chọn nữa, báo lỗi
     if (selectedImages.length >= MAX_IMAGES) {
-      setUploadError(`Chỉ có thể chọn tối đa ${MAX_IMAGES} ảnh.`);
+      setUploadError(`You can only select up to ${MAX_IMAGES} images.`);
       e.target.value = "";
       return;
     }
 
     // Nếu số lượng ảnh muốn chọn vượt quá MAX_IMAGES
     if (selectedImages.length + files.length > MAX_IMAGES) {
-      setUploadError(`Bạn chỉ có thể gửi tối đa ${MAX_IMAGES} ảnh mỗi lần.`);
+      setUploadError(`You can only send up to ${MAX_IMAGES} images at a time.`);
     } else {
       setUploadError("");
     }
@@ -67,7 +67,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     const newFiles = files.slice(0, MAX_IMAGES - selectedImages.length);
     for (const file of newFiles) {
       if (file.size > 2 * 1024 * 1024) {
-        setUploadError("Ảnh vượt quá dung lượng tối đa 2MB.");
+        setUploadError("Image exceeds the maximum size of 2MB.");
         continue;
       }
       setSelectedImages((prev) => [
@@ -118,18 +118,16 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
           }
         }
         if (imageUrls.length !== selectedImages.length) {
-          setUploadError("Một số ảnh gửi thất bại.");
+          setUploadError("Some images failed to send.");
           setUploading(false);
           return;
         }
       } catch (err) {
-        setUploadError("Có lỗi khi upload ảnh.");
+        setUploadError("An error occurred while uploading images.");
         setUploading(false);
         return;
       }
     }
-
-    console.log("images gửi lên:", imageUrls);
 
     const payload = {
       conversationId: activeConv._id,
@@ -514,7 +512,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
               <Text strong style={{ fontSize: 18 }}>
                 <MessageOutlined /> Chat
               </Text>
-              <Tooltip title="Đóng">
+              <Tooltip title="Close">
                 <Button
                   type="text"
                   icon={<CloseOutlined />}
@@ -524,7 +522,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
             </div>
             <div style={{ padding: 12, borderBottom: "1px solid #eee" }}>
               <Input.Search
-                placeholder="Tìm theo tên..."
+                placeholder="Search by name..."
                 allowClear
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -628,8 +626,77 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                             }}
                           >
                             {conv.lastMessage
-                              ? conv.lastMessage.content
-                              : "Nhấn để mở cuộc trò chuyện"}
+                              ? conv.lastMessage.images &&
+                                conv.lastMessage.images.length > 0
+                                ? // Hiển thị: "Tên user đã gửi X ảnh"
+                                  `${
+                                    String(conv.lastMessage.senderId) ===
+                                    String(currentUser.id)
+                                      ? "You"
+                                      : (() => {
+                                          // Get the other user's name (if any)
+                                          let name = "";
+                                          try {
+                                            name = decodeURIComponent(
+                                              conv.participants?.find(
+                                                (p) =>
+                                                  String(p.userId) ===
+                                                  String(
+                                                    conv.lastMessage.senderId
+                                                  )
+                                              )?.name || "User"
+                                            );
+                                          } catch {
+                                            name =
+                                              conv.participants?.find(
+                                                (p) =>
+                                                  String(p.userId) ===
+                                                  String(
+                                                    conv.lastMessage.senderId
+                                                  )
+                                              )?.name || "User";
+                                          }
+                                          return name;
+                                        })()
+                                  } sent ${
+                                    conv.lastMessage.images.length
+                                  } photos`
+                                : // Nếu chỉ có 1 ảnh cũ
+                                conv.lastMessage.image
+                                ? `${
+                                    String(conv.lastMessage.senderId) ===
+                                    String(currentUser.id)
+                                      ? "You"
+                                      : (() => {
+                                          let name = "";
+                                          try {
+                                            name = decodeURIComponent(
+                                              conv.participants?.find(
+                                                (p) =>
+                                                  String(p.userId) ===
+                                                  String(
+                                                    conv.lastMessage.senderId
+                                                  )
+                                              )?.name || "User"
+                                            );
+                                          } catch {
+                                            name =
+                                              conv.participants?.find(
+                                                (p) =>
+                                                  String(p.userId) ===
+                                                  String(
+                                                    conv.lastMessage.senderId
+                                                  )
+                                              )?.name || "User";
+                                          }
+                                          return name;
+                                        })()
+                                  } sent 1 photo`
+                                : // Nếu là tin nhắn text thường
+                                conv.lastMessage.content
+                                ? conv.lastMessage.content
+                                : "Click to open the conversation"
+                              : "Click to open the conversation"}
                           </span>
                         }
                       />
@@ -677,7 +744,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                     Chào mừng bạn đến với Chat
                   </Text>
                   <Text type="secondary">
-                    Chọn một cuộc trò chuyện hoặc nhấn “Chat với Owner”.
+                    Select a conversation or click “Chat with Owner”.
                   </Text>
                 </div>
               ) : (
@@ -790,19 +857,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                   >
                                     <div
                                       style={{
-                                        color: "#888",
-                                        fontSize: 13,
-                                        margin: "0 0 6px 2px",
-                                        fontWeight: 500,
-                                        letterSpacing: 0.1,
-                                      }}
-                                    >
-                                      {m.images.length === 1
-                                        ? "You sent a photo"
-                                        : `You sent ${m.images.length} photos`}
-                                    </div>
-                                    <div
-                                      style={{
                                         position: "relative",
                                         width:
                                           120 +
@@ -812,7 +866,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                         cursor: "pointer",
                                       }}
                                     >
-                                      {/* Chỉ render 4 ảnh đầu */}
+                                      {/* Render only the first 4 images */}
                                       {m.images
                                         .slice(0, 4)
                                         .map((imgUrl, idx) => (
@@ -843,7 +897,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                             }}
                                           />
                                         ))}
-                                      {/* Hiển thị overlay nếu >4 ảnh */}
+                                      {/* Show overlay if more than 4 images */}
                                       {m.images.length > 4 && (
                                         <div
                                           style={{
@@ -933,11 +987,11 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                       >
                         {(() => {
                           let typingName =
-                            getOtherUser(activeConv)?.name || "Đối phương";
+                            getOtherUser(activeConv)?.name || "Other user";
                           try {
                             typingName = decodeURIComponent(typingName);
                           } catch {}
-                          return typingName + " đang nhập...";
+                          return typingName + " is typing...";
                         })()}
                       </div>
                     )}
@@ -1079,7 +1133,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                     >
                       {/* Action buttons with Ant Design */}
                       <div style={{ display: "flex", gap: 4 }}>
-                        <Tooltip title="Gửi ảnh">
+                        <Tooltip title="Send image">
                           <Button
                             shape="circle"
                             icon={<PictureOutlined style={{ fontSize: 18 }} />}
@@ -1113,7 +1167,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                             />
                           </Button>
                         </Tooltip>
-                        <Tooltip title="Gửi file">
+                        <Tooltip title="Send file">
                           <Button
                             shape="circle"
                             icon={
@@ -1130,7 +1184,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                             <input type="file" style={{ display: "none" }} />
                           </Button>
                         </Tooltip>
-                        <Tooltip title="Gửi vị trí">
+                        <Tooltip title="Send location">
                           <Button
                             shape="circle"
                             icon={
@@ -1144,7 +1198,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                             tabIndex={-1}
                           />
                         </Tooltip>
-                        <Tooltip title="Gửi icon cảm xúc">
+                        <Tooltip title="Send emoji icon">
                           <Button
                             shape="circle"
                             icon={<SmileOutlined style={{ fontSize: 18 }} />}
@@ -1178,7 +1232,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                           fontSize: 15,
                           paddingRight: 12,
                         }}
-                        placeholder="Nhập nội dung tin nhắn"
+                        placeholder="Enter your message"
                         value={text}
                         onChange={onTyping}
                         onBlur={onInputBlur}
@@ -1204,7 +1258,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                         loading={uploading}
                         disabled={uploading}
                       >
-                        Gửi
+                        Send
                       </Button>
                     </div>
                   </div>
