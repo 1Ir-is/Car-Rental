@@ -947,7 +947,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                   textAlign: isMe ? "right" : "left",
                                   fontSize: 15,
                                   wordBreak: "break-word",
-                                  position: "relative",
+                                  position: "relative", // PHẢI có để absolute đúng
                                 }}
                               >
                                 {m.replyTo && (
@@ -1229,6 +1229,84 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                 </div>
 
                                 {m.content}
+
+                                {m.reactions && m.reactions.length > 0 && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      right: 8,
+                                      bottom: -18,
+                                      display: "flex",
+                                      gap: 2,
+                                      background: "#fff",
+                                      borderRadius: 12,
+                                      boxShadow: "0 1px 4px #0001",
+                                      padding: "0px 6px",
+                                      border: "1px solid #f2f2f2",
+                                      minHeight: 20,
+                                      minWidth: 20,
+                                      zIndex: 2,
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    {[
+                                      ...new Set(
+                                        m.reactions.map((r) => r.emoji)
+                                      ),
+                                    ].map((emoji) => {
+                                      const count = m.reactions.filter(
+                                        (r) => r.emoji === emoji
+                                      ).length;
+                                      const reactedByMe = m.reactions.some(
+                                        (r) =>
+                                          r.emoji === emoji &&
+                                          r.userId === currentUser.id
+                                      );
+                                      return (
+                                        <span
+                                          key={emoji}
+                                          style={{
+                                            fontSize: 15,
+                                            background: reactedByMe
+                                              ? "#ffe6ef"
+                                              : "#f7f7f7",
+                                            borderRadius: 10,
+                                            border: reactedByMe
+                                              ? "1px solid #e74c3c"
+                                              : "1px solid #eee",
+                                            fontWeight: 500,
+                                            cursor: "pointer",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            minHeight: 20,
+                                            minWidth: 20,
+                                            padding: "0 5px",
+                                            margin: "1px 0",
+                                            lineHeight: 1,
+                                            userSelect: "none",
+                                          }}
+                                          title={
+                                            reactedByMe
+                                              ? "Nhấn để bỏ reaction này"
+                                              : "Nhấn để react emoji này"
+                                          }
+                                          onClick={() => {
+                                            // Luôn gửi lên để server tự xử lý: nếu đã có thì xóa, nếu chưa thì thêm
+                                            socket.emit("message:react", {
+                                              messageId: m._id,
+                                              emoji,
+                                              userId: currentUser.id,
+                                              conversationId: activeConv._id,
+                                            });
+                                          }}
+                                        >
+                                          {emoji} {count > 1 ? count : ""}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
                                 {/* Thanh emoji ngang – luôn render phía trên bubble */}
                                 {showReactionPicker === m._id && (
                                   <div
@@ -1290,78 +1368,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                   </div>
                                 )}
                               </div>
-                              {/* Hiển thị reactions đã thả ở dưới bubble */}
-                              {m.reactions && m.reactions.length > 0 && (
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    gap: 2,
-                                    alignItems: "center",
-                                    marginTop: 2,
-                                    marginLeft: isMe ? "auto" : 0,
-                                    marginRight: isMe ? 0 : "auto",
-                                    background: "#fff",
-                                    borderRadius: 12,
-                                    boxShadow: "0 1px 4px #0001",
-                                    padding: "0px 6px",
-                                    minHeight: 20,
-                                    minWidth: 20,
-                                    width: "fit-content",
-                                    pointerEvents: "auto",
-                                    border: "1px solid #f2f2f2",
-                                  }}
-                                >
-                                  {[
-                                    ...new Set(m.reactions.map((r) => r.emoji)),
-                                  ].map((emoji) => {
-                                    const count = m.reactions.filter(
-                                      (r) => r.emoji === emoji
-                                    ).length;
-                                    const reactedByMe = m.reactions.some(
-                                      (r) =>
-                                        r.emoji === emoji &&
-                                        r.userId === currentUser.id
-                                    );
-                                    return (
-                                      <span
-                                        key={emoji}
-                                        style={{
-                                          fontSize: 15,
-                                          background: reactedByMe
-                                            ? "#ffe6ef"
-                                            : "#f7f7f7",
-                                          borderRadius: 10,
-                                          border: reactedByMe
-                                            ? "1px solid #e74c3c"
-                                            : "1px solid #eee",
-                                          fontWeight: 500,
-                                          cursor: "pointer",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          minHeight: 20,
-                                          minWidth: 20,
-                                          padding: "0 5px",
-                                          boxShadow: "0 1px 4px #0001",
-                                          margin: "1px 0",
-                                          transition: ".15s",
-                                          lineHeight: 1,
-                                          userSelect: "none",
-                                        }}
-                                        onClick={() => {
-                                          socket.emit("message:react", {
-                                            messageId: m._id,
-                                            emoji,
-                                            userId: currentUser.id,
-                                            conversationId: activeConv._id,
-                                          });
-                                        }}
-                                      >
-                                        {emoji} {count > 1 ? count : ""}
-                                      </span>
-                                    );
-                                  })}
-                                </div>
-                              )}
 
                               {isMe && (
                                 <Avatar
@@ -1371,6 +1377,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                 />
                               )}
                             </div>
+
                             <span
                               style={{
                                 fontSize: 11,
