@@ -182,12 +182,6 @@ const Header = () => {
 
               // Increase unread count only if it's a new notification
               setUnreadCount((prev) => {
-                // we need to check current notifications state synchronously is hard;
-                // so we approximate: if the payload is new, increment; but ensure not double increment
-                // we'll read current notifications via functional set above; to be safe, check in-state:
-                // (use a microtask to read updated state) - simpler approach: increment but guard by checking existence first
-                // Here we implement a check using current DOM state via temporary variable via prev in setNotifications above.
-                // Simpler and reliable approach: check via a short-lived closure reading current notifications
                 return prev + 1;
               });
             } catch (e) {
@@ -606,6 +600,12 @@ const Header = () => {
                           </div>
                         </DropdownItem>
                         <DropdownItem divider />
+                        <DropdownItem
+                          onClick={() => navigate("/followed-vehicles")}
+                        >
+                          <i className="ri-heart-line me-2"></i> Followed
+                          Vehicles
+                        </DropdownItem>
                         {isOwner(user) && (
                           <>
                             <DropdownItem

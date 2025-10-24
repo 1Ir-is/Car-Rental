@@ -1,27 +1,64 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Col } from "reactstrap";
 import { Link } from "react-router-dom";
+import { favoriteService } from "../../services/favoriteService";
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 import "../../styles/car-item.css";
 
 const CarItem = (props) => {
   const { imgUrl, imageList, model, carName, automatic, fuelType, price, id } =
     props.item;
 
+  const { user } = useAuth(); // Đúng key exported từ AuthContext
+  const userId = user?.id;
+
   const [isFavorite, setIsFavorite] = useState(false);
+  const [loadingFav, setLoadingFav] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!userId) return;
+    setLoadingFav(true);
+    favoriteService
+      .isVehicleFollowed(id, userId)
+      .then((fav) => {
+        if (!cancelled) setIsFavorite(!!fav);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingFav(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, userId]);
+
+  const handleFavoriteClick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!userId) {
+      toast.info("Please login to use favorites");
+      return;
+    }
+    setLoadingFav(true);
+    try {
+      if (isFavorite) {
+        await favoriteService.unfollowVehicle(id, userId);
+        setIsFavorite(false);
+        toast.success("Removed from favorites");
+      } else {
+        await favoriteService.followVehicle(id, userId);
+        setIsFavorite(true);
+        toast.success("Added to favorites");
+      }
+    } catch (err) {
+      toast.error("Error while updating favorites.");
+    }
+    setLoadingFav(false);
+  };
 
   const carImages =
     imageList && imageList.length > 0 ? imageList : imgUrl ? [imgUrl] : [];
-
-  const handleFavoriteClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    // TODO: Add API call to save/remove from favorites
-    console.log(
-      `${isFavorite ? "Removed from" : "Added to"} favorites:`,
-      carName
-    );
-  };
 
   return (
     <Col lg="4" md="4" sm="6" className="mb-5">
@@ -48,8 +85,11 @@ const CarItem = (props) => {
               aria-label={
                 isFavorite ? "Remove from favorites" : "Add to favorites"
               }
+              disabled={loadingFav}
+              style={{ pointerEvents: loadingFav ? "none" : "auto" }}
             >
               <i className={`ri-heart-${isFavorite ? "fill" : "line"}`}></i>
+              {/* Có thể thêm spinner nếu muốn */}
             </button>
           </div>
         </div>
@@ -59,7 +99,6 @@ const CarItem = (props) => {
           <h6 className="rent__price text-center mt-">
             ${price}.00 <span>/ Day</span>
           </h6>
-
           <div className="car__item-info d-flex align-items-center justify-content-between mt-3 mb-4">
             <span className="d-flex align-items-center gap-1">
               <i className="ri-car-line"></i> {model}
@@ -71,7 +110,6 @@ const CarItem = (props) => {
               <i className="ri-gas-station-line"></i> {fuelType}
             </span>
           </div>
-
           <div className="car__item-buttons d-flex">
             <Link
               to={`/cars/${id}`}
@@ -79,7 +117,6 @@ const CarItem = (props) => {
             >
               Rent
             </Link>
-
             <Link
               to={`/cars/${id}`}
               className="car__item-btn car__btn-details w-50"

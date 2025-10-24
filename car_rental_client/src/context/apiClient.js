@@ -13,6 +13,15 @@ const apiClient = axios.create({
   timeout: 10000,
 });
 
+// Gắn Authorization nếu có token (Bearer hoặc bất kỳ)
+apiClient.interceptors.request.use((config) => {
+  const token = authUtils.getToken && authUtils.getToken(); // hoặc localStorage.getItem("jwt")
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {

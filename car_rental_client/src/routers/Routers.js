@@ -27,10 +27,19 @@ import {
 import OwnerDashboard from "../pages/owner/OwnerDashboard";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 import RedirectIfAuthenticated from "../components/RedirectIfAuthenticated";
+import FollowedVehicles from "../pages/user/FollowedVehicles";
 
 const Routers = () => {
   return (
     <Routes>
+      <Route
+        path="/followed-vehicles"
+        element={
+          <ProtectedRoute>
+            <FollowedVehicles />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/home" />} />
       <Route path="/home" element={<Home />} />
       <Route path="/about" element={<About />} />
