@@ -167,3 +167,27 @@ body > div:not(#root) {
   position: fixed !important;
   z-index: 9999 !important;
 }
+
+@keyframes shake {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-2px, 0);
+  }
+  40% {
+    transform: translate(2px, 0);
+  }
+  60% {
+    transform: translate(-2px, 0);
+  }
+  80% {
+    transform: translate(2px, 0);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+.bubble-shake {
+  animation: shake 0.6s;
+}

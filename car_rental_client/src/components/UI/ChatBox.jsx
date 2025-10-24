@@ -222,6 +222,9 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
           audioRef.current.currentTime = 0;
           audioRef.current.play().catch(() => {});
         }
+        if (!open) {
+          window.dispatchEvent(new Event("chat-new-message"));
+        }
         removeReadConv(msg.conversationId);
       }
       setConversations((prev) =>
