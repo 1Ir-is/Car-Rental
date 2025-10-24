@@ -93,6 +93,46 @@ router.get("/download", async (req, res) => {
   }
 });
 
+// Thả hoặc bỏ react cho 1 message
+router.post("/react", async (req, res) => {
+  // Lấy dữ liệu
+  const { messageId, emoji } = req.body;
+  const me = req.user;
+  if (!me.id)
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  if (!messageId || !emoji)
+    return res.status(400).json({ success: false, message: "Missing" });
+
+  try {
+    // Kiểm tra đã react chưa
+    const msg = await Message.findById(messageId);
+    const existed = msg.reactions?.find(
+      (r) => r.userId === me.id && r.emoji === emoji
+    );
+
+    let newMsg;
+    if (existed) {
+      // Nếu đã react thì xóa react này
+      newMsg = await Message.findByIdAndUpdate(
+        messageId,
+        { $pull: { reactions: { emoji, userId: me.id } } },
+        { new: true }
+      );
+    } else {
+      // Thêm react
+      newMsg = await Message.findByIdAndUpdate(
+        messageId,
+        { $push: { reactions: { emoji, userId: me.id } } },
+        { new: true }
+      );
+    }
+    // Trả về message mới có trường reactions cập nhật
+    res.json({ success: true, data: newMsg });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 router.post("/upload-image", upload.single("image"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: "Thiếu file." });

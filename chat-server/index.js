@@ -86,6 +86,36 @@ io.on("connection", (socket) => {
     io.to(String(conversationId)).emit("conversation:update", conv);
   });
 
+  socket.on(
+    "message:react",
+    async ({ messageId, emoji, userId, conversationId }) => {
+      if (!messageId || !emoji || !userId || !conversationId) return;
+      const msg = await Message.findById(messageId);
+      const existed = msg.reactions?.find(
+        (r) => r.userId === userId && r.emoji === emoji
+      );
+      let newMsg;
+      if (existed) {
+        newMsg = await Message.findByIdAndUpdate(
+          messageId,
+          { $pull: { reactions: { emoji, userId } } },
+          { new: true }
+        );
+      } else {
+        newMsg = await Message.findByIdAndUpdate(
+          messageId,
+          { $push: { reactions: { emoji, userId } } },
+          { new: true }
+        );
+      }
+      // Emit tới phòng này để mọi người cập nhật
+      io.to(String(conversationId)).emit("message:reaction-update", {
+        messageId,
+        reactions: newMsg.reactions,
+      });
+    }
+  );
+
   socket.on("typing", ({ conversationId, userId, typing }) => {
     socket
       .to(conversationId)

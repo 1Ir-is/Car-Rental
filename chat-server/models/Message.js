@@ -17,6 +17,12 @@ const MessageSchema = new Schema({
     type: { type: String },
     size: { type: Number },
   },
+  reactions: [
+    {
+      emoji: { type: String }, // VD: "👍", "😂"
+      userId: { type: String }, // Ai thả
+    },
+  ],
   replyTo: { type: String, default: null }, // <-- thêm dòng này
   meta: { type: Object, default: {} },
   readBy: [String],
