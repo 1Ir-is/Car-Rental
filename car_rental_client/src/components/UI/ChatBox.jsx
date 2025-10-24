@@ -44,6 +44,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const audioRef = useRef(null);
 
   function handleImageChange(e) {
     const MAX_IMAGES = 10;
@@ -216,6 +217,11 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     if (currentUser?.id) socket.emit("user:online", currentUser.id);
     const onMessageReceive = (msg) => {
       if (msg.senderId !== currentUser.id) {
+        // Play notification sound
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(() => {});
+        }
         removeReadConv(msg.conversationId);
       }
       setConversations((prev) =>
@@ -1276,6 +1282,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
           />
         )}
       </Card>
+      <audio ref={audioRef} src="/notification.mp3" preload="auto" />
     </div>
   );
 }
