@@ -48,6 +48,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [replyingMessage, setReplyingMessage] = useState(null); // Tin nhắn đang được reply
   const [actionMenuMsgId, setActionMenuMsgId] = useState(null); // Để hiển thị menu 3 chấm của bubble nào
+  const [showReactionPicker, setShowReactionPicker] = useState(null);
 
   function handleImageChange(e) {
     const MAX_IMAGES = 10;
@@ -325,6 +326,16 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
       }));
     });
     return () => socket.off("typing");
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("message:reaction-update", ({ messageId, reactions }) => {
+      setMessages((prev) =>
+        prev.map((msg) => (msg._id === messageId ? { ...msg, reactions } : msg))
+      );
+    });
+    return () => socket.off("message:reaction-update");
   }, []);
 
   useEffect(() => {
@@ -903,6 +914,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                               flexDirection: "column",
                               alignItems: isMe ? "flex-end" : "flex-start",
                               marginBottom: 12,
+                              position: "relative", // cần cho position absolute phía dưới
                             }}
                           >
                             <div
@@ -927,15 +939,15 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                   background: isMe ? "#e6f7ff" : "#fff",
                                   color: "#222",
                                   borderRadius: 16,
-                                  padding: "10px 18px 10px 18px",
+                                  padding: "10px 18px",
                                   maxWidth: 320,
                                   boxShadow: isMe
                                     ? "0 1px 6px #91d5ff33"
                                     : "0 1px 6px #eee",
                                   textAlign: isMe ? "right" : "left",
-                                  position: "relative",
                                   fontSize: 15,
                                   wordBreak: "break-word",
+                                  position: "relative",
                                 }}
                               >
                                 {m.replyTo && (
@@ -1170,7 +1182,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                       style={{
                                         position: "absolute",
                                         top: 0,
-                                        // Menu popup: nếu là mình thì nằm trái, còn lại nằm phải
                                         right: isMe ? "unset" : 36,
                                         left: isMe ? 36 : "unset",
                                         background: "#fff",
@@ -1180,7 +1191,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                         minWidth: 120,
                                         padding: "6px 0",
                                         transition: "all 0.15s",
-                                        // Nếu muốn menu nằm hoàn toàn ngoài dấu 3 chấm, có thể thêm:
                                         transform: isMe
                                           ? "translateX(-100%)"
                                           : "translateX(100%)",
@@ -1199,7 +1209,14 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                       >
                                         Reply
                                       </Button>
-                                      <Button type="text" block>
+                                      <Button
+                                        type="text"
+                                        block
+                                        onClick={() => {
+                                          setShowReactionPicker(m._id); // mở picker ngoài bubble
+                                          setActionMenuMsgId(null); // đóng menu 3 chấm
+                                        }}
+                                      >
                                         React
                                       </Button>
                                       {isMe && (
@@ -1212,7 +1229,140 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                 </div>
 
                                 {m.content}
+                                {/* Thanh emoji ngang – luôn render phía trên bubble */}
+                                {showReactionPicker === m._id && (
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      flexDirection: "row",
+                                      gap: 10,
+                                      background: "#fff",
+                                      boxShadow: "0 6px 32px #0002",
+                                      borderRadius: 22,
+                                      position: "absolute",
+                                      left: isMe ? "unset" : 0,
+                                      right: isMe ? 0 : "unset",
+                                      bottom: "100%", // <-- Đặt phía trên bubble
+                                      marginBottom: 8, // <-- Cách bubble 1 chút
+                                      padding: "6px 14px",
+                                      zIndex: 100,
+                                      border: "1.5px solid #e6e6e6",
+                                      minWidth: 230,
+                                      animation: "fadeIn .15s",
+                                    }}
+                                    onMouseLeave={() =>
+                                      setShowReactionPicker(null)
+                                    }
+                                  >
+                                    {["👍", "❤️", "😂", "😮", "😢", "😡"].map(
+                                      (emoji) => (
+                                        <span
+                                          key={emoji}
+                                          style={{
+                                            fontSize: 30,
+                                            cursor: "pointer",
+                                            borderRadius: "50%",
+                                            transition: "background .13s",
+                                            padding: 3,
+                                            userSelect: "none",
+                                            border: m.reactions?.some(
+                                              (r) =>
+                                                r.emoji === emoji &&
+                                                r.userId === currentUser.id
+                                            )
+                                              ? "2px solid #1890ff"
+                                              : "2px solid transparent",
+                                          }}
+                                          onClick={() => {
+                                            socket.emit("message:react", {
+                                              messageId: m._id,
+                                              emoji,
+                                              userId: currentUser.id,
+                                              conversationId: activeConv._id,
+                                            });
+                                            setShowReactionPicker(null);
+                                          }}
+                                        >
+                                          {emoji}
+                                        </span>
+                                      )
+                                    )}
+                                  </div>
+                                )}
                               </div>
+                              {/* Hiển thị reactions đã thả ở dưới bubble */}
+                              {m.reactions && m.reactions.length > 0 && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: 2,
+                                    alignItems: "center",
+                                    marginTop: 2,
+                                    marginLeft: isMe ? "auto" : 0,
+                                    marginRight: isMe ? 0 : "auto",
+                                    background: "#fff",
+                                    borderRadius: 12,
+                                    boxShadow: "0 1px 4px #0001",
+                                    padding: "0px 6px",
+                                    minHeight: 20,
+                                    minWidth: 20,
+                                    width: "fit-content",
+                                    pointerEvents: "auto",
+                                    border: "1px solid #f2f2f2",
+                                  }}
+                                >
+                                  {[
+                                    ...new Set(m.reactions.map((r) => r.emoji)),
+                                  ].map((emoji) => {
+                                    const count = m.reactions.filter(
+                                      (r) => r.emoji === emoji
+                                    ).length;
+                                    const reactedByMe = m.reactions.some(
+                                      (r) =>
+                                        r.emoji === emoji &&
+                                        r.userId === currentUser.id
+                                    );
+                                    return (
+                                      <span
+                                        key={emoji}
+                                        style={{
+                                          fontSize: 15,
+                                          background: reactedByMe
+                                            ? "#ffe6ef"
+                                            : "#f7f7f7",
+                                          borderRadius: 10,
+                                          border: reactedByMe
+                                            ? "1px solid #e74c3c"
+                                            : "1px solid #eee",
+                                          fontWeight: 500,
+                                          cursor: "pointer",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          minHeight: 20,
+                                          minWidth: 20,
+                                          padding: "0 5px",
+                                          boxShadow: "0 1px 4px #0001",
+                                          margin: "1px 0",
+                                          transition: ".15s",
+                                          lineHeight: 1,
+                                          userSelect: "none",
+                                        }}
+                                        onClick={() => {
+                                          socket.emit("message:react", {
+                                            messageId: m._id,
+                                            emoji,
+                                            userId: currentUser.id,
+                                            conversationId: activeConv._id,
+                                          });
+                                        }}
+                                      >
+                                        {emoji} {count > 1 ? count : ""}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
                               {isMe && (
                                 <Avatar
                                   icon={<UserOutlined />}
