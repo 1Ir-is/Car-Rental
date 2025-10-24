@@ -45,6 +45,9 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   const [lightboxImages, setLightboxImages] = useState([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const audioRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [replyingMessage, setReplyingMessage] = useState(null); // Tin nhắn đang được reply
+  const [actionMenuMsgId, setActionMenuMsgId] = useState(null); // Để hiển thị menu 3 chấm của bubble nào
 
   function handleImageChange(e) {
     const MAX_IMAGES = 10;
@@ -79,27 +82,38 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
     e.target.value = "";
   }
 
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      setUploadError("File exceeds the maximum size of 15MB.");
+      e.target.value = "";
+      return;
+    }
+    setSelectedFile(file);
+    setUploadError("");
+    e.target.value = "";
+  }
+
   function removePreviewImage(idx) {
     setSelectedImages((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleSend() {
-    if ((!text.trim() && selectedImages.length === 0) || !activeConv) return;
+    if (
+      (!text.trim() && selectedImages.length === 0 && !selectedFile) ||
+      !activeConv
+    )
+      return;
     setUploading(true);
 
     let imageUrls = [];
+    let filePayload = null;
 
+    // UPLOAD ẢNH (nếu có)
     if (selectedImages.length > 0) {
-      // DEBUG: Log tên file để chắc chắn không bị trùng
-      console.log(
-        "selectedImages:",
-        selectedImages.map((i) => i.file && i.file.name)
-      );
-
-      // Tạo mảng promise upload song song, mỗi promise upload 1 file riêng biệt
       const uploadPromises = selectedImages.map((img) => {
         const form = new FormData();
-        // Truyền đúng tên file
         form.append("image", img.file, img.file.name);
         form.append("conversationId", activeConv._id);
         form.append("senderId", currentUser.id);
@@ -130,25 +144,65 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
       }
     }
 
-    const payload = {
-      conversationId: activeConv._id,
-      senderId: currentUser.id,
-      content: text.trim(),
-      images: imageUrls, // có thể là []
-    };
+    // UPLOAD FILE (nếu có)
+    if (selectedFile) {
+      try {
+        const form = new FormData();
+        form.append("file", selectedFile, selectedFile.name);
+        form.append("conversationId", activeConv._id);
+        form.append("senderId", currentUser.id);
+        const res = await axios.post(`${API}/messages/upload-file`, form, {
+          headers: {
+            ...headers,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+        if (res.data.success && res.data.url) {
+          filePayload = {
+            url: res.data.url,
+            name: res.data.fileName,
+            type: res.data.fileType,
+            size: res.data.size,
+          };
+        } else {
+          setUploadError("File upload failed.");
+          setUploading(false);
+          return;
+        }
+      } catch (err) {
+        setUploadError("An error occurred while uploading file.");
+        setUploading(false);
+        return;
+      }
+    }
 
-    socket.emit("message:send", payload);
-    setMessages((prev) => [
-      ...prev,
-      {
-        ...payload,
-        createdAt: new Date().toISOString(),
-        _id: `tmp-${Date.now()}`,
-      },
-    ]);
+    // CHỈ PUSH VÀO messages KHI filePayload đã có dữ liệu (sau khi upload xong)
+    if (imageUrls.length > 0 || filePayload || text.trim()) {
+      const payload = {
+        conversationId: activeConv._id,
+        senderId: currentUser.id,
+        content: text.trim(),
+        images: imageUrls,
+        file: filePayload,
+        replyTo: replyingMessage ? replyingMessage._id : undefined, // <-- thêm dòng này
+      };
+
+      socket.emit("message:send", payload);
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...payload,
+          createdAt: new Date().toISOString(),
+          _id: `tmp-${Date.now()}`,
+        },
+      ]);
+    }
+
     setText("");
     setSelectedImages([]);
+    setSelectedFile(null);
     setUploading(false);
+    setReplyingMessage(null); // <-- DÒNG NÀY QUAN TRỌNG: TẮT PREVIEW REPLY
     scrollToBottom();
   }
 
@@ -637,13 +691,12 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                             {conv.lastMessage
                               ? conv.lastMessage.images &&
                                 conv.lastMessage.images.length > 0
-                                ? // Hiển thị: "Tên user đã gửi X ảnh"
+                                ? // Nhiều ảnh
                                   `${
                                     String(conv.lastMessage.senderId) ===
                                     String(currentUser.id)
                                       ? "You"
                                       : (() => {
-                                          // Get the other user's name (if any)
                                           let name = "";
                                           try {
                                             name = decodeURIComponent(
@@ -670,9 +723,9 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                   } sent ${
                                     conv.lastMessage.images.length
                                   } photos`
-                                : // Nếu chỉ có 1 ảnh cũ
-                                conv.lastMessage.image
-                                ? `${
+                                : conv.lastMessage.image
+                                ? // 1 ảnh
+                                  `${
                                     String(conv.lastMessage.senderId) ===
                                     String(currentUser.id)
                                       ? "You"
@@ -701,11 +754,38 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                           return name;
                                         })()
                                   } sent 1 photo`
-                                : // Nếu là tin nhắn text thường
-                                conv.lastMessage.content
-                                ? conv.lastMessage.content
-                                : "Click to open the conversation"
-                              : "Click to open the conversation"}
+                                : conv.lastMessage.file
+                                ? // ==== FILE ở đây ====
+                                  String(conv.lastMessage.senderId) ===
+                                  String(currentUser.id)
+                                  ? "You sent a file"
+                                  : (() => {
+                                      let name = "";
+                                      try {
+                                        name = decodeURIComponent(
+                                          conv.participants?.find(
+                                            (p) =>
+                                              String(p.userId) ===
+                                              String(conv.lastMessage.senderId)
+                                          )?.name || "User"
+                                        );
+                                      } catch {
+                                        name =
+                                          conv.participants?.find(
+                                            (p) =>
+                                              String(p.userId) ===
+                                              String(conv.lastMessage.senderId)
+                                          )?.name || "User";
+                                      }
+                                      return `${name} sent a file`;
+                                    })()
+                                : conv.lastMessage.content
+                                ? // Tin nhắn text
+                                  conv.lastMessage.content
+                                : // Mặc định
+                                  "Click to open the conversation"
+                              : // Nếu chưa có lastMessage
+                                "Click to open the conversation"}
                           </span>
                         }
                       />
@@ -858,8 +938,84 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                   wordBreak: "break-word",
                                 }}
                               >
-                                {/* CHỖ NÀY: thay thế nội dung tin nhắn */}
+                                {m.replyTo && (
+                                  <div
+                                    style={{
+                                      borderLeft: "3px solid #1877f2",
+                                      background: "#f0f4fa",
+                                      borderRadius: 6,
+                                      padding: "5px 10px",
+                                      marginBottom: 5,
+                                      color: "#444",
+                                      maxWidth: 220,
+                                      fontSize: 13,
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    {(() => {
+                                      const repliedMsg = messages.find(
+                                        (msg) => msg._id === m.replyTo
+                                      );
+                                      if (!repliedMsg)
+                                        return "(Message deleted)";
+                                      // === LẤY TÊN NGƯỜI GỬI GỐC ===
+                                      let senderName = "";
+                                      if (
+                                        String(repliedMsg.senderId) ===
+                                        String(currentUser.id)
+                                      ) {
+                                        senderName = "You";
+                                      } else {
+                                        // CHÚ Ý: activeConv phải có participants
+                                        const participant =
+                                          activeConv?.participants?.find(
+                                            (p) =>
+                                              String(p.userId) ===
+                                              String(repliedMsg.senderId)
+                                          );
+                                        if (participant) {
+                                          try {
+                                            senderName = decodeURIComponent(
+                                              participant.name || "Unknown"
+                                            );
+                                          } catch {
+                                            senderName =
+                                              participant.name || "Unknown";
+                                          }
+                                        } else {
+                                          senderName = "(Unknown)";
+                                          // GỢI Ý: Log participant danh sách để debug
+                                          // console.log('participants:', activeConv?.participants, 'senderId:', repliedMsg.senderId);
+                                        }
+                                      }
 
+                                      let replyContent = "";
+                                      if (repliedMsg.content)
+                                        replyContent = repliedMsg.content;
+                                      else if (repliedMsg.images?.length)
+                                        replyContent = "Image";
+                                      else if (repliedMsg.file)
+                                        replyContent = `[File] ${repliedMsg.file.name}`;
+                                      else replyContent = "Attachment";
+                                      return (
+                                        <>
+                                          <span
+                                            style={{
+                                              fontWeight: 600,
+                                              color: "#1877f2",
+                                            }}
+                                          >
+                                            {senderName}
+                                          </span>
+                                          <br />
+                                          <span>{replyContent}</span>
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                )}
+
+                                {/* Bubble image(s) */}
                                 {m.images && m.images.length > 0 && (
                                   <div
                                     style={{ marginBottom: m.content ? 8 : 0 }}
@@ -875,7 +1031,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                         cursor: "pointer",
                                       }}
                                     >
-                                      {/* Render only the first 4 images */}
                                       {m.images
                                         .slice(0, 4)
                                         .map((imgUrl, idx) => (
@@ -906,7 +1061,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                             }}
                                           />
                                         ))}
-                                      {/* Show overlay if more than 4 images */}
                                       {m.images.length > 4 && (
                                         <div
                                           style={{
@@ -934,6 +1088,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                     </div>
                                   </div>
                                 )}
+
                                 {m.image && (
                                   <img
                                     src={m.image}
@@ -944,9 +1099,118 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                       borderRadius: 8,
                                       marginBottom: m.content ? 6 : 0,
                                       display: "block",
+                                      cursor: "pointer",
+                                      boxShadow: "0 2px 12px #d3e3f5cc",
+                                      border: "3px solid #fff",
+                                    }}
+                                    onClick={() => {
+                                      setLightboxImages([{ src: m.image }]);
+                                      setLightboxIndex(0);
+                                      setLightboxOpen(true);
                                     }}
                                   />
                                 )}
+
+                                {/* ==== ĐÂY LÀ ĐOẠN HIỂN THỊ FILE ==== */}
+                                {m.file && (
+                                  <div style={{ marginBottom: 8 }}>
+                                    <a
+                                      href={`${API}/messages/download?url=${encodeURIComponent(
+                                        m.file.url
+                                      )}&name=${encodeURIComponent(
+                                        m.file.name
+                                      )}`}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        color: "#1890ff",
+                                        textDecoration: "underline",
+                                        gap: 8,
+                                        fontWeight: 500,
+                                        wordBreak: "break-all",
+                                      }}
+                                      download
+                                    >
+                                      <PaperClipOutlined /> {m.file.name}
+                                      <span
+                                        style={{ fontSize: 12, color: "#888" }}
+                                      >
+                                        ({(m.file.size / 1024).toFixed(1)} KB)
+                                      </span>
+                                    </a>
+                                  </div>
+                                )}
+                                {/* Nút 3 chấm, chỉ hiện khi hover */}
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: 6,
+                                    left: isMe ? -36 : "unset",
+                                    right: isMe ? "unset" : -36,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    opacity: 0.7,
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  <Button
+                                    icon={
+                                      <span style={{ fontSize: 20 }}>⋯</span>
+                                    }
+                                    shape="circle"
+                                    size="small"
+                                    style={{
+                                      border: "none",
+                                      background: "transparent",
+                                    }}
+                                    onClick={() => setActionMenuMsgId(m._id)}
+                                  />
+                                  {actionMenuMsgId === m._id && (
+                                    <div
+                                      style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        // Menu popup: nếu là mình thì nằm trái, còn lại nằm phải
+                                        right: isMe ? "unset" : 36,
+                                        left: isMe ? 36 : "unset",
+                                        background: "#fff",
+                                        boxShadow: "0 4px 16px #0002",
+                                        borderRadius: 10,
+                                        zIndex: 10,
+                                        minWidth: 120,
+                                        padding: "6px 0",
+                                        transition: "all 0.15s",
+                                        // Nếu muốn menu nằm hoàn toàn ngoài dấu 3 chấm, có thể thêm:
+                                        transform: isMe
+                                          ? "translateX(-100%)"
+                                          : "translateX(100%)",
+                                      }}
+                                      onMouseLeave={() =>
+                                        setActionMenuMsgId(null)
+                                      }
+                                    >
+                                      <Button
+                                        type="text"
+                                        block
+                                        onClick={() => {
+                                          setReplyingMessage(m);
+                                          setActionMenuMsgId(null);
+                                        }}
+                                      >
+                                        Reply
+                                      </Button>
+                                      <Button type="text" block>
+                                        React
+                                      </Button>
+                                      {isMe && (
+                                        <Button type="text" block danger>
+                                          Unsend
+                                        </Button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
                                 {m.content}
                               </div>
                               {isMe && (
@@ -982,16 +1246,17 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                       String(currentUser.id) && (
                       <div
                         style={{
-                          position: "sticky",
-                          bottom: 56,
-                          left: 0,
-                          width: "100%",
-                          background: "rgba(255,255,255,0.95)",
-                          fontStyle: "italic",
-                          color: "#999",
-                          padding: "4px 12px 2px 12px",
-                          fontSize: 13,
-                          zIndex: 2,
+                          position: "absolute",
+                          top: 0,
+                          right: 36, // hoặc right: 0 nếu muốn menu sát mép trái bubble
+                          background: "#fff",
+                          boxShadow: "0 4px 16px #0002",
+                          borderRadius: 10,
+                          zIndex: 10,
+                          minWidth: 120,
+                          padding: "6px 0",
+                          transition: "all 0.15s",
+                          transform: "translateX(-100%)", // menu thò hẳn ra trái
                         }}
                       >
                         {(() => {
@@ -1012,6 +1277,70 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                       borderTop: "1px solid #eee",
                     }}
                   >
+                    {replyingMessage && (
+                      <div
+                        style={{
+                          background: "#e8f0fe",
+                          borderLeft: "3px solid #1877f2",
+                          padding: "8px 12px",
+                          marginBottom: 8,
+                          borderRadius: 6,
+                          display: "flex",
+                          alignItems: "center",
+                          position: "relative",
+                          minHeight: 38,
+                          maxWidth: 420,
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: 600, color: "#1877f2" }}>
+                            {String(replyingMessage.senderId) ===
+                            String(currentUser.id)
+                              ? "You"
+                              : (() => {
+                                  const participant =
+                                    activeConv?.participants?.find(
+                                      (p) =>
+                                        String(p.userId) ===
+                                        String(replyingMessage.senderId)
+                                    );
+                                  if (!participant) return "Unknown";
+                                  try {
+                                    return decodeURIComponent(
+                                      participant.name || "Unknown"
+                                    );
+                                  } catch {
+                                    return participant.name || "Unknown";
+                                  }
+                                })()}
+                          </span>
+                          <br />
+                          <span style={{ color: "#444" }}>
+                            {replyingMessage.content
+                              ? replyingMessage.content
+                              : replyingMessage.images?.length
+                              ? "Image"
+                              : replyingMessage.file
+                              ? `[File] ${replyingMessage.file.name}`
+                              : "Attachment"}
+                          </span>
+                        </div>
+                        <Button
+                          type="text"
+                          size="small"
+                          style={{
+                            color: "#333",
+                            position: "absolute",
+                            right: 0,
+                            top: 0,
+                            zIndex: 2,
+                          }}
+                          onClick={() => setReplyingMessage(null)}
+                          icon={<CloseOutlined />}
+                        />
+                      </div>
+                    )}
+
                     {selectedImages.length > 0 && (
                       <div
                         style={{
@@ -1137,6 +1466,43 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                         </div>
                       </div>
                     )}
+
+                    {selectedFile && (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          background: "#f7faff",
+                          borderRadius: 14,
+                          padding: "10px 16px",
+                          boxShadow: "0 2px 8px #b2cdf922",
+                          marginBottom: 8,
+                          marginTop: 6,
+                          maxWidth: 340,
+                          gap: 8,
+                        }}
+                      >
+                        <PaperClipOutlined
+                          style={{ fontSize: 22, color: "#52c41a" }}
+                        />
+                        <span style={{ fontWeight: 500 }}>
+                          {selectedFile.name}
+                        </span>
+                        <span style={{ color: "#888", fontSize: 13 }}>
+                          ({(selectedFile.size / 1024).toFixed(1)} KB)
+                        </span>
+                        <Button
+                          size="small"
+                          type="text"
+                          style={{ color: "red", marginLeft: 4 }}
+                          onClick={() => setSelectedFile(null)}
+                          disabled={uploading}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    )}
+
                     <div
                       style={{ display: "flex", gap: 8, alignItems: "center" }}
                     >
@@ -1186,26 +1552,28 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                               color: "#52c41a",
                               border: "none",
                               background: "none",
+                              position: "relative",
                             }}
                             tabIndex={-1}
                             disabled={uploading}
                           >
-                            <input type="file" style={{ display: "none" }} />
+                            <input
+                              type="file"
+                              style={{
+                                position: "absolute",
+                                left: 0,
+                                top: 0,
+                                right: 0,
+                                bottom: 0,
+                                opacity: 0,
+                                width: "100%",
+                                height: "100%",
+                                cursor: uploading ? "not-allowed" : "pointer",
+                              }}
+                              disabled={uploading}
+                              onChange={handleFileChange}
+                            />
                           </Button>
-                        </Tooltip>
-                        <Tooltip title="Send location">
-                          <Button
-                            shape="circle"
-                            icon={
-                              <EnvironmentOutlined style={{ fontSize: 18 }} />
-                            }
-                            style={{
-                              color: "#faad14",
-                              border: "none",
-                              background: "none",
-                            }}
-                            tabIndex={-1}
-                          />
                         </Tooltip>
                         <Tooltip title="Send emoji icon">
                           <Button
