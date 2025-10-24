@@ -5,6 +5,7 @@ const Message = require("../models/Message");
 // Cloudinary & Multer setup
 const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
+const fetch = require("node-fetch");
 
 // CLOUDINARY config
 cloudinary.config({
@@ -27,15 +28,24 @@ const upload = multer({
   },
 });
 
+const uploadFile = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB max, đổi tùy bạn
+  fileFilter: (req, file, cb) => {
+    // Chặn file nguy hiểm nếu muốn, ví dụ chỉ cho .pdf, .docx, .zip, ...
+    cb(null, true);
+  },
+});
+
 const MAX_IMAGES_PER_CONVERSATION = 20;
 
 // Gửi message text thường
 router.post("/", async (req, res) => {
   const me = req.user;
+
   if (!me.id)
     return res.status(401).json({ success: false, message: "Unauthorized" });
-
-  const { conversationId, content, meta } = req.body;
+  const { conversationId, content, meta, replyTo } = req.body;
   if (!conversationId || !content)
     return res.status(400).json({ success: false, message: "Missing" });
 
@@ -45,12 +55,41 @@ router.post("/", async (req, res) => {
       senderId: me.id,
       content,
       meta,
+      replyTo: replyTo || null, // <--- LƯU replyTo
       createdAt: new Date(),
       readBy: [me.id],
     });
     res.json({ success: true, data: msg });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get("/download", async (req, res) => {
+  const { url, name } = req.query;
+  if (!url || !name) return res.status(400).send("Missing params");
+
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return res.status(400).send("Cannot fetch file");
+
+    // Đảm bảo header này có charset UTF-8
+    res.setHeader(
+      "Content-Type",
+      resp.headers.get("content-type") || "application/octet-stream"
+    );
+    // Sử dụng encodeURIComponent cho filename* (chuẩn RFC 5987) để hỗ trợ tiếng Việt và ký tự đặc biệt:
+    const fileNameAscii = name.replace(/[^\x00-\x7F]/g, "_"); // fallback cho filename= (ascii)
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${fileNameAscii}"; filename*=UTF-8''${encodeURIComponent(
+        name
+      )}`
+    );
+
+    resp.body.pipe(res);
+  } catch (err) {
+    res.status(500).send("Download failed");
   }
 });
 
@@ -80,6 +119,43 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 
     const result = await uploadFromBuffer(req.file.buffer);
     return res.json({ success: true, url: result.secure_url });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Upload file thường (Cloudinary hoặc local, hoặc S3)
+router.post("/upload-file", uploadFile.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: "Missing file." });
+  }
+  try {
+    // Nếu dùng Cloudinary: resource_type: "raw"
+    const uploadFromBuffer = (fileBuffer) => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "chat_files",
+            resource_type: "raw", // file thường
+            use_filename: true,
+            unique_filename: true,
+          },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        stream.end(fileBuffer);
+      });
+    };
+    const result = await uploadFromBuffer(req.file.buffer);
+    return res.json({
+      success: true,
+      url: result.secure_url,
+      fileName: req.file.originalname,
+      fileType: req.file.mimetype,
+      size: req.file.size,
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

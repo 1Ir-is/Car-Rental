@@ -60,8 +60,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("message:send", async (data) => {
-    console.log("socket nhận data:", data); // LOG NÀY!
-    const { conversationId, senderId, content, images, image } = data;
+    const { conversationId, senderId, content, images, image, file, replyTo } =
+      data;
 
     const msg = await Message.create({
       conversationId,
@@ -69,6 +69,8 @@ io.on("connection", (socket) => {
       content,
       image: image || (images && images.length === 1 ? images[0] : undefined),
       images: images && images.length > 1 ? images : undefined,
+      file: file,
+      replyTo: replyTo || null, // <--- LƯU replyTo
       createdAt: new Date(),
       readBy: [senderId],
     });

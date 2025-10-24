@@ -9,8 +9,15 @@ const MessageSchema = new Schema({
   },
   senderId: { type: String, required: true },
   content: { type: String },
-  image: { type: String }, // 1 ảnh (giữ cho tương thích cũ)
-  images: [{ type: String }], // nhiều ảnh (mới)
+  image: { type: String },
+  images: [{ type: String }],
+  file: {
+    url: { type: String },
+    name: { type: String },
+    type: { type: String },
+    size: { type: Number },
+  },
+  replyTo: { type: String, default: null }, // <-- thêm dòng này
   meta: { type: Object, default: {} },
   readBy: [String],
   createdAt: { type: Date, default: Date.now },
