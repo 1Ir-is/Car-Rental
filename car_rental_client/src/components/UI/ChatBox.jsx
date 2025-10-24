@@ -346,6 +346,18 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
   }, []);
 
   useEffect(() => {
+    if (!socket) return;
+    socket.on("message:unsend", ({ messageId }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === messageId ? { ...msg, deletedForEveryone: true } : msg
+        )
+      );
+    });
+    return () => socket.off("message:unsend");
+  }, []);
+
+  useEffect(() => {
     if (open) {
       fetchConversations();
       if (openWithOwner) createOrGetConversation(openWithOwner);
@@ -907,14 +919,35 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                         const isMe =
                           String(m.senderId) === String(currentUser.id);
                         const other = getOtherUser(activeConv);
-                        return (
+                        return m.deletedForEveryone ? (
                           <div
                             style={{
                               display: "flex",
                               flexDirection: "column",
                               alignItems: isMe ? "flex-end" : "flex-start",
                               marginBottom: 12,
-                              position: "relative", // cần cho position absolute phía dưới
+                            }}
+                          >
+                            <i
+                              style={{
+                                color: "#888",
+                                fontStyle: "italic",
+                                padding: 8,
+                                borderRadius: 12,
+                                background: "#f7f7f7",
+                              }}
+                            >
+                              Tin nhắn đã được thu hồi
+                            </i>
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: isMe ? "flex-end" : "flex-start",
+                              marginBottom: 12,
+                              position: "relative",
                             }}
                           >
                             <div
@@ -947,7 +980,7 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                   textAlign: isMe ? "right" : "left",
                                   fontSize: 15,
                                   wordBreak: "break-word",
-                                  position: "relative", // PHẢI có để absolute đúng
+                                  position: "relative",
                                 }}
                               >
                                 {m.replyTo && (
@@ -1152,7 +1185,8 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                     </a>
                                   </div>
                                 )}
-                                {/* Nút 3 chấm, chỉ hiện khi hover */}
+
+                                {/* Nút 3 chấm + actions */}
                                 <div
                                   style={{
                                     position: "absolute",
@@ -1213,14 +1247,26 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                         type="text"
                                         block
                                         onClick={() => {
-                                          setShowReactionPicker(m._id); // mở picker ngoài bubble
-                                          setActionMenuMsgId(null); // đóng menu 3 chấm
+                                          setShowReactionPicker(m._id);
+                                          setActionMenuMsgId(null);
                                         }}
                                       >
                                         React
                                       </Button>
                                       {isMe && (
-                                        <Button type="text" block danger>
+                                        <Button
+                                          type="text"
+                                          block
+                                          danger
+                                          onClick={async () => {
+                                            await axios.post(
+                                              `${API}/messages/unsend`,
+                                              { messageId: m._id },
+                                              { headers }
+                                            );
+                                            setActionMenuMsgId(null);
+                                          }}
+                                        >
                                           Unsend
                                         </Button>
                                       )}
@@ -1229,83 +1275,6 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                 </div>
 
                                 {m.content}
-
-                                {m.reactions && m.reactions.length > 0 && (
-                                  <div
-                                    style={{
-                                      position: "absolute",
-                                      right: 8,
-                                      bottom: -18,
-                                      display: "flex",
-                                      gap: 2,
-                                      background: "#fff",
-                                      borderRadius: 12,
-                                      boxShadow: "0 1px 4px #0001",
-                                      padding: "0px 6px",
-                                      border: "1px solid #f2f2f2",
-                                      minHeight: 20,
-                                      minWidth: 20,
-                                      zIndex: 2,
-                                      alignItems: "center",
-                                    }}
-                                  >
-                                    {[
-                                      ...new Set(
-                                        m.reactions.map((r) => r.emoji)
-                                      ),
-                                    ].map((emoji) => {
-                                      const count = m.reactions.filter(
-                                        (r) => r.emoji === emoji
-                                      ).length;
-                                      const reactedByMe = m.reactions.some(
-                                        (r) =>
-                                          r.emoji === emoji &&
-                                          r.userId === currentUser.id
-                                      );
-                                      return (
-                                        <span
-                                          key={emoji}
-                                          style={{
-                                            fontSize: 15,
-                                            background: reactedByMe
-                                              ? "#ffe6ef"
-                                              : "#f7f7f7",
-                                            borderRadius: 10,
-                                            border: reactedByMe
-                                              ? "1px solid #e74c3c"
-                                              : "1px solid #eee",
-                                            fontWeight: 500,
-                                            cursor: "pointer",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            minHeight: 20,
-                                            minWidth: 20,
-                                            padding: "0 5px",
-                                            margin: "1px 0",
-                                            lineHeight: 1,
-                                            userSelect: "none",
-                                          }}
-                                          title={
-                                            reactedByMe
-                                              ? "Nhấn để bỏ reaction này"
-                                              : "Nhấn để react emoji này"
-                                          }
-                                          onClick={() => {
-                                            // Luôn gửi lên để server tự xử lý: nếu đã có thì xóa, nếu chưa thì thêm
-                                            socket.emit("message:react", {
-                                              messageId: m._id,
-                                              emoji,
-                                              userId: currentUser.id,
-                                              conversationId: activeConv._id,
-                                            });
-                                          }}
-                                        >
-                                          {emoji} {count > 1 ? count : ""}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
 
                                 {/* Thanh emoji ngang – luôn render phía trên bubble */}
                                 {showReactionPicker === m._id && (
@@ -1367,6 +1336,73 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                                     )}
                                   </div>
                                 )}
+                                {m.reactions && m.reactions.length > 0 && (
+                                  <div
+                                    style={{
+                                      position: "absolute",
+                                      left: isMe ? "unset" : 24,
+                                      right: isMe ? 24 : "unset",
+                                      bottom: -13, // overlap nhẹ lên bubble
+                                      display: "flex",
+                                      gap: 2,
+                                      background: "#fff",
+                                      borderRadius: 12,
+                                      boxShadow: "0 1px 6px #0001",
+                                      padding: "2px 7px",
+                                      minHeight: 24,
+                                      zIndex: 5,
+                                      border: "1px solid #f2f2f2",
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    {[
+                                      ...new Set(
+                                        m.reactions.map((r) => r.emoji)
+                                      ),
+                                    ].map((emoji) => {
+                                      const count = m.reactions.filter(
+                                        (r) => r.emoji === emoji
+                                      ).length;
+                                      const reactedByMe = m.reactions.some(
+                                        (r) =>
+                                          r.emoji === emoji &&
+                                          r.userId === currentUser.id
+                                      );
+                                      return (
+                                        <span
+                                          key={emoji}
+                                          style={{
+                                            fontSize: 10,
+                                            background: reactedByMe
+                                              ? "#ffe6ef"
+                                              : "none",
+                                            borderRadius: 10,
+                                            border: reactedByMe
+                                              ? "1px solid #e74c3c"
+                                              : "none",
+                                            fontWeight: 500,
+                                            cursor: "pointer",
+                                            minWidth: 10,
+                                            padding: "0 2px",
+                                            userSelect: "none",
+                                            display: "flex",
+                                            alignItems: "center",
+                                          }}
+                                          onClick={() => {
+                                            socket.emit("message:react", {
+                                              messageId: m._id,
+                                              emoji,
+                                              userId: currentUser.id,
+                                              conversationId: activeConv._id,
+                                            });
+                                          }}
+                                        >
+                                          {emoji} {count > 1 ? count : ""}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
                               </div>
 
                               {isMe && (
@@ -1400,32 +1436,79 @@ function ChatBox({ open, onClose, openWithOwner, currentUser }) {
                   {activeConv &&
                     typingUsers[activeConv._id] &&
                     String(typingUsers[activeConv._id]) !==
-                      String(currentUser.id) && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          right: 36, // hoặc right: 0 nếu muốn menu sát mép trái bubble
-                          background: "#fff",
-                          boxShadow: "0 4px 16px #0002",
-                          borderRadius: 10,
-                          zIndex: 10,
-                          minWidth: 120,
-                          padding: "6px 0",
-                          transition: "all 0.15s",
-                          transform: "translateX(-100%)", // menu thò hẳn ra trái
-                        }}
-                      >
-                        {(() => {
-                          let typingName =
-                            getOtherUser(activeConv)?.name || "Other user";
-                          try {
-                            typingName = decodeURIComponent(typingName);
-                          } catch {}
-                          return typingName + " is typing...";
-                        })()}
-                      </div>
-                    )}
+                      String(currentUser.id) &&
+                    (() => {
+                      const typingUserObj = activeConv.participants?.find(
+                        (p) =>
+                          String(p.userId) ===
+                          String(typingUsers[activeConv._id])
+                      );
+                      let typingName = typingUserObj?.name || "Someone";
+                      try {
+                        typingName = decodeURIComponent(typingName);
+                      } catch {}
+                      return (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            margin: "2px 0 4px 12px",
+                            fontSize: 16, // Tăng size chữ lên
+                            color: "#888",
+                            fontStyle: "italic",
+                            minHeight: 22,
+                            whiteSpace: "nowrap",
+                            lineHeight: 1.3,
+                            fontWeight: 400,
+                          }}
+                        >
+                          {typingName} is typing
+                          <span
+                            style={{
+                              display: "inline-block",
+                              marginLeft: 8,
+                              letterSpacing: 2,
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: 8, // Match với fontSize, nên dùng 8px khi chữ 16px
+                                height: 8,
+                                borderRadius: "50%",
+                                background: "#1890ff",
+                                margin: "0 2px",
+                                animation: "blink-chat 1.1s infinite alternate",
+                              }}
+                            ></span>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: "#1890ff",
+                                margin: "0 2px",
+                                animation:
+                                  "blink-chat 1.1s infinite alternate 0.3s",
+                              }}
+                            ></span>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: "#1890ff",
+                                margin: "0 2px",
+                                animation:
+                                  "blink-chat 1.1s infinite alternate 0.6s",
+                              }}
+                            ></span>
+                          </span>
+                        </div>
+                      );
+                    })()}
                   <Divider style={{ margin: 0 }} />
                   <div
                     style={{
