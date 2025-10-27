@@ -600,12 +600,6 @@ const Header = () => {
                           </div>
                         </DropdownItem>
                         <DropdownItem divider />
-                        <DropdownItem
-                          onClick={() => navigate("/followed-vehicles")}
-                        >
-                          <i className="ri-heart-line me-2"></i> Followed
-                          Vehicles
-                        </DropdownItem>
                         {isOwner(user) && (
                           <>
                             <DropdownItem
@@ -637,6 +631,12 @@ const Header = () => {
                         </DropdownItem>
                         <DropdownItem onClick={() => navigate("/bookings")}>
                           <i className="ri-car-line me-2"></i> My Bookings
+                        </DropdownItem>
+                        <DropdownItem
+                          onClick={() => navigate("/followed-vehicles")}
+                        >
+                          <i className="ri-heart-line me-2"></i> Followed
+                          Vehicles
                         </DropdownItem>
                         <DropdownItem onClick={() => navigate("/settings")}>
                           <i className="ri-settings-line me-2"></i> Settings

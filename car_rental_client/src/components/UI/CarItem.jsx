@@ -7,8 +7,17 @@ import { toast } from "react-toastify";
 import "../../styles/car-item.css";
 
 const CarItem = (props) => {
-  const { imgUrl, imageList, model, carName, automatic, fuelType, price, id } =
-    props.item;
+  const {
+    imgUrl,
+    imageList,
+    model,
+    carName,
+    automatic,
+    fuelType,
+    price,
+    id,
+    ownerAvatar,
+  } = props.item;
 
   const { user } = useAuth(); // Đúng key exported từ AuthContext
   const userId = user?.id;
@@ -77,6 +86,36 @@ const CarItem = (props) => {
                   "https://via.placeholder.com/400x300?text=Image+Not+Found";
               }}
             />
+            {ownerAvatar && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  left: 16,
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  border: "2px solid #fff",
+                  boxShadow: "0 2px 8px rgba(30,42,73,.15)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                }}
+              >
+                <img
+                  src={ownerAvatar}
+                  alt="Owner Avatar"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+            )}
 
             {/* Favorite Heart Button */}
             <button

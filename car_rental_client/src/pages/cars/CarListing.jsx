@@ -74,7 +74,7 @@ const CarListing = () => {
                 <CarItem
                   key={car.id}
                   item={{
-                    id: car.id, 
+                    id: car.id,
                     imgUrl: car.imageList?.[0] || "/default_car_image.png",
                     imageList: car.imageList,
                     model: car.model,
@@ -82,6 +82,7 @@ const CarListing = () => {
                     automatic: car.transmission,
                     fuelType: car.fuelType,
                     price: car.dailyPrice,
+                    ownerAvatar: car.ownerAvatar,
                   }}
                 />
               ))

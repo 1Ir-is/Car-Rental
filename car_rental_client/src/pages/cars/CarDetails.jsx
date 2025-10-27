@@ -160,8 +160,54 @@ const CarDetails = () => {
                     onClick={handleOpenChat}
                   >
                     <FaCommentDots size={18} />
-                    Chat với Owner ({car.ownerName})
+                    Chat with Owner
                   </button>
+                </div>
+                <div
+                  className="owner-info d-flex align-items-center gap-2 mb-3"
+                  style={{ marginTop: 8 }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      background: "#fff",
+                      border: "2px solid #f1f5f9",
+                      boxShadow: "0 2px 8px rgba(30,42,73,.12)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img
+                      src={car.ownerAvatar || "/default-avatar.png"}
+                      alt="Owner Avatar"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </div>
+                  <span className="fw-bold" style={{ marginLeft: 8 }}>
+                    {car.ownerName}
+                    <span
+                      style={{
+                        background: "#e6f4ff",
+                        color: "#2196f3",
+                        fontSize: "12px",
+                        borderRadius: "8px",
+                        padding: "2px 6px",
+                        marginLeft: 6,
+                        fontWeight: 500,
+                      }}
+                    >
+                      Owner
+                    </span>
+                  </span>
                 </div>
 
                 <div className=" d-flex align-items-center gap-5 mb-4 mt-3">
