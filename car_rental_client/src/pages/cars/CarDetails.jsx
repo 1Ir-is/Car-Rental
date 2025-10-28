@@ -13,6 +13,7 @@ import { FaCommentDots } from "react-icons/fa";
 import ChatBox from "../../components/UI/ChatBox";
 import { useAuth } from "../../context/AuthContext";
 import "../../styles/car-info-grid.css";
+import { useNavigate } from "react-router-dom";
 
 const CarDetails = () => {
   const { slug } = useParams();
@@ -20,6 +21,7 @@ const CarDetails = () => {
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatOwner, setChatOwner] = useState(null);
+  const navigate = useNavigate();
 
   const { user: currentUser } = useAuth();
 
@@ -56,13 +58,17 @@ const CarDetails = () => {
       const res = await vehicleService.getVehicleDetail(slug);
       if (res.success && res.data) {
         setCar(res.data);
+        // Nếu xe đang bị thuê thì redirect về trang /cars
+        if (res.data.status && res.data.status.toLowerCase() === "rented") {
+          navigate("/cars");
+        }
       } else {
         setCar(null);
       }
       setLoading(false);
     };
     fetchCarDetail();
-  }, [slug]);
+  }, [slug, navigate]);
 
   if (loading) {
     return (
