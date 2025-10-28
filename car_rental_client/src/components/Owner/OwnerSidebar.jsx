@@ -38,12 +38,6 @@ const OwnerSidebar = ({ activeSection, setActiveSection }) => {
       icon: "ri-star-line",
       description: "Feedback & Ratings",
     },
-    {
-      id: "settings",
-      label: "Settings",
-      icon: "ri-settings-line",
-      description: "Account & Preferences",
-    },
   ];
 
   return (

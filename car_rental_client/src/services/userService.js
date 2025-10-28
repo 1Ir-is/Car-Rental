@@ -44,29 +44,6 @@ export const userAPI = {
     }
   },
 
-  // Change password
-  changePassword: async (passwordData) => {
-    try {
-      const response = await apiClient.put(
-        "/user/change-password",
-        passwordData
-      );
-      return {
-        success: true,
-        data: response.data,
-        message: "Password changed successfully",
-      };
-    } catch (error) {
-      console.error("❌ Change password error:", error);
-      return {
-        success: false,
-        message:
-          error.response?.data?.message ||
-          error.response?.data ||
-          "Failed to change password",
-      };
-    }
-  },
 
   // Upload avatar
   uploadAvatar: async (formData) => {
@@ -93,23 +70,25 @@ export const userAPI = {
     }
   },
 
-  // Delete user account
-  deleteAccount: async () => {
+
+  // Create a new booking
+  createBooking: async (bookingData) => {
+    // bookingData: { vehicleId, startDate, endDate, pickupLocation, dropoffLocation, totalAmount, note }
     try {
-      const response = await apiClient.delete("/user/account");
+      const response = await apiClient.post("/user/bookings", bookingData);
       return {
         success: true,
         data: response.data,
-        message: "Account deleted successfully",
+        message: "Booking created successfully",
       };
     } catch (error) {
-      console.error("❌ Delete account error:", error);
+      console.error("❌ Create booking error:", error);
       return {
         success: false,
         message:
           error.response?.data?.message ||
           error.response?.data ||
-          "Failed to delete account",
+          "Failed to create booking",
       };
     }
   },

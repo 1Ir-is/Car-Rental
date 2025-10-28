@@ -25,6 +25,7 @@ import {
   BecomeDriver,
 } from "../pages";
 import OwnerDashboard from "../pages/owner/OwnerDashboard";
+import OwnerBookingDetail from "../components/Owner/OwnerBookingDetail";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 import RedirectIfAuthenticated from "../components/RedirectIfAuthenticated";
 import FollowedVehicles from "../pages/user/FollowedVehicles";
@@ -32,6 +33,14 @@ import FollowedVehicles from "../pages/user/FollowedVehicles";
 const Routers = () => {
   return (
     <Routes>
+      <Route
+        path="/owner/bookings/:id"
+        element={
+          <ProtectedRoute>
+            <OwnerBookingDetail />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/followed-vehicles"
         element={

@@ -101,6 +101,9 @@ const CarDetails = () => {
   console.log(car?.ownerName);
   console.log(car?.ownerId);
   console.log(car);
+  console.log("Car id: " + car.id);
+  console.log("Car daily price: " + car.dailyPrice);
+  console.log("Current user id: " + currentUser.id);
 
   const handleOpenChat = () => {
     if (!currentUser) {
@@ -405,7 +408,7 @@ const CarDetails = () => {
             <Col lg="7" className="mt-5">
               <div className="booking-info mt-5">
                 <h5 className="mb-4 fw-bold">Booking Information</h5>
-                <BookingForm />
+                <BookingForm vehicleId={car.id} totalAmount={car.dailyPrice} />
               </div>
             </Col>
 
