@@ -17,9 +17,10 @@ const CarItem = (props) => {
     price,
     id,
     ownerAvatar,
+    status,
   } = props.item;
 
-  const { user } = useAuth(); // Đúng key exported từ AuthContext
+  const { user } = useAuth();
   const userId = user?.id;
 
   const [isFavorite, setIsFavorite] = useState(false);
@@ -69,11 +70,24 @@ const CarItem = (props) => {
   const carImages =
     imageList && imageList.length > 0 ? imageList : imgUrl ? [imgUrl] : [];
 
+  const isRented = status && status.toLowerCase() === "rented";
+
   return (
     <Col lg="4" md="4" sm="6" className="mb-5">
-      <div className="car__item">
-        <div className="car__img">
-          <div className="car__img-container">
+      <div
+        className="car__item"
+        style={{
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          className="car__img"
+          style={{
+            position: "relative",
+          }}
+        >
+          <div className="car__img-container" style={{ position: "relative" }}>
             <img
               src={
                 carImages[0] ||
@@ -81,6 +95,12 @@ const CarItem = (props) => {
               }
               alt={carName}
               className="w-100"
+              style={{
+                filter: isRented
+                  ? "blur(3px) grayscale(0.4) brightness(0.90)"
+                  : "none",
+                transition: "filter 0.2s",
+              }}
               onError={(e) => {
                 e.target.src =
                   "https://via.placeholder.com/400x300?text=Image+Not+Found";
@@ -102,6 +122,7 @@ const CarItem = (props) => {
                   alignItems: "center",
                   justifyContent: "center",
                   overflow: "hidden",
+                  zIndex: 2,
                 }}
               >
                 <img
@@ -117,6 +138,67 @@ const CarItem = (props) => {
               </div>
             )}
 
+            {/* Rented badge: center overlay */}
+            {isRented && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  background:
+                    "linear-gradient(90deg, #ef4444 0%, #f87171 100%)",
+                  color: "#fff",
+                  borderRadius: 18,
+                  padding: "22px 54px",
+                  fontWeight: 900,
+                  fontSize: 38,
+                  zIndex: 10,
+                  boxShadow:
+                    "0 8px 32px rgba(239,68,68,0.18), 0 2px 12px rgba(30,42,73,.18)",
+                  letterSpacing: 3,
+                  textShadow: "0 4px 16px rgba(30,42,73,.18), 0 1px 0 #fff",
+                  pointerEvents: "none",
+                  userSelect: "none",
+                  border: "3px solid #fff",
+                  textTransform: "uppercase",
+                  fontFamily: "Montserrat, Arial, sans-serif",
+                  overflow: "hidden",
+                }}
+              >
+                <span
+                  style={{
+                    position: "relative",
+                    zIndex: 2,
+                  }}
+                >
+                  RENTED
+                </span>
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    background:
+                      "linear-gradient(120deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.08) 100%)",
+                    zIndex: 1,
+                    pointerEvents: "none",
+                    borderRadius: 18,
+                    animation: "shine 2.2s linear infinite",
+                  }}
+                ></span>
+                <style>{`
+                  @keyframes shine {
+                    0% { opacity: 0.7; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.7; }
+                  }
+                `}</style>
+              </div>
+            )}
+
             {/* Favorite Heart Button */}
             <button
               className={`favorite-btn ${isFavorite ? "active" : ""}`}
@@ -125,10 +207,15 @@ const CarItem = (props) => {
                 isFavorite ? "Remove from favorites" : "Add to favorites"
               }
               disabled={loadingFav}
-              style={{ pointerEvents: loadingFav ? "none" : "auto" }}
+              style={{
+                pointerEvents: loadingFav ? "none" : "auto",
+                zIndex: 12,
+                position: "absolute",
+                top: 16,
+                right: 16,
+              }}
             >
               <i className={`ri-heart-${isFavorite ? "fill" : "line"}`}></i>
-              {/* Có thể thêm spinner nếu muốn */}
             </button>
           </div>
         </div>
@@ -151,14 +238,32 @@ const CarItem = (props) => {
           </div>
           <div className="car__item-buttons d-flex">
             <Link
-              to={`/cars/${id}`}
+              to="#"
               className="car__item-btn car__btn-rent w-50"
+              style={{
+                background: isRented ? "#e5e7eb" : "",
+                color: isRented ? "#888" : "",
+                cursor: isRented ? "not-allowed" : "pointer",
+                pointerEvents: isRented ? "none" : "auto",
+                fontWeight: 700,
+              }}
+              tabIndex={isRented ? -1 : 0}
+              aria-disabled={isRented}
             >
               Rent
             </Link>
             <Link
-              to={`/cars/${id}`}
+              to="#"
               className="car__item-btn car__btn-details w-50"
+              style={{
+                background: isRented ? "#e5e7eb" : "",
+                color: isRented ? "#888" : "",
+                cursor: isRented ? "not-allowed" : "pointer",
+                pointerEvents: isRented ? "none" : "auto",
+                fontWeight: 700,
+              }}
+              tabIndex={isRented ? -1 : 0}
+              aria-disabled={isRented}
             >
               Details
             </Link>

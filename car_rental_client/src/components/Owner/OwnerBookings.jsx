@@ -17,12 +17,10 @@ const OwnerBookings = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
-  // Call API lấy danh sách booking cho owner
   useEffect(() => {
     const fetchOwnerBookings = async () => {
       setLoading(true);
       try {
-        // Gọi API: /api/owner/vehicles/bookings (GET)
         const response = await vehicleService.getOwnerBookings();
         if (response.success && response.data) {
           setBookings(response.data);
@@ -37,7 +35,6 @@ const OwnerBookings = () => {
     fetchOwnerBookings();
   }, []);
 
-  // Xác nhận booking (owner)
   const handleConfirm = async (bookingId) => {
     Swal.fire({
       title: "Confirm booking?",
@@ -69,7 +66,6 @@ const OwnerBookings = () => {
     });
   };
 
-  // Huỷ booking (owner)
   const handleCancel = async (bookingId) => {
     Swal.fire({
       title: "Cancel booking?",
@@ -101,7 +97,38 @@ const OwnerBookings = () => {
     });
   };
 
-  // Hiển thị modal chi tiết booking
+  // Hoàn tất booking (owner)
+  const handleComplete = async (bookingId) => {
+    Swal.fire({
+      title: "Complete booking?",
+      text: "Mark this booking as completed?",
+      icon: "success",
+      showCancelButton: true,
+      confirmButtonColor: "#22c55e",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, complete!",
+      cancelButtonText: "No",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await vehicleService.completeBooking(bookingId);
+          if (res.success) {
+            toast.success("Booking completed!");
+            setBookings((prev) =>
+              prev.map((b) =>
+                b.id === bookingId ? { ...b, status: "COMPLETED" } : b
+              )
+            );
+          } else {
+            toast.error(res.message || "Failed to complete booking");
+          }
+        } catch (error) {
+          toast.error("Failed to complete booking");
+        }
+      }
+    });
+  };
+
   const handleDetails = (booking) => {
     setSelectedBooking(booking);
     setModalOpen(true);
@@ -111,12 +138,10 @@ const OwnerBookings = () => {
     setSelectedBooking(null);
   };
 
-  // Lọc bỏ những booking bị cancel khỏi danh sách
   const filteredBookings = bookings.filter(
     (b) => b.status?.toUpperCase() !== "CANCELLED"
   );
 
-  // Tổng doanh thu (chỉ tính booking chưa cancel)
   const totalRevenue = filteredBookings.reduce(
     (sum, b) => sum + (b.totalAmount || 0),
     0
@@ -212,20 +237,37 @@ const OwnerBookings = () => {
                     </button>
                   )}
                   {b.status?.toUpperCase() === "CONFIRMED" && (
-                    <button
-                      style={{
-                        background: "#ef4444",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 8,
-                        padding: "6px 16px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                      onClick={() => handleCancel(b.id)}
-                    >
-                      Cancel
-                    </button>
+                    <>
+                      <button
+                        style={{
+                          background: "#22c55e",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 8,
+                          padding: "6px 16px",
+                          fontWeight: 600,
+                          marginRight: 8,
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleComplete(b.id)}
+                      >
+                        Complete
+                      </button>
+                      <button
+                        style={{
+                          background: "#ef4444",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 8,
+                          padding: "6px 16px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                        onClick={() => handleCancel(b.id)}
+                      >
+                        Cancel
+                      </button>
+                    </>
                   )}
                   <button
                     style={{

@@ -220,6 +220,20 @@ const vehicleService = {
       };
     }
   },
+
+  completeBooking: async (bookingId) => {
+    try {
+      const response = await apiClient.post(
+        `/owner/vehicles/bookings/${bookingId}/complete`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to complete booking",
+      };
+    }
+  },
 };
 
 export default vehicleService;

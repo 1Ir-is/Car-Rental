@@ -46,7 +46,13 @@ const MyBookingDetailModal = ({ isOpen, onClose, booking }) => {
       : { bg: "#f3f4f6", color: "#64748b", border: "1.5px solid #e5e7eb" };
 
   return (
-  <Modal isOpen={isOpen} toggle={onClose} centered size="lg" style={{ maxWidth: 700 }}>
+    <Modal
+      isOpen={isOpen}
+      toggle={onClose}
+      centered
+      size="lg"
+      style={{ maxWidth: 700 }}
+    >
       <ModalHeader
         toggle={onClose}
         style={{

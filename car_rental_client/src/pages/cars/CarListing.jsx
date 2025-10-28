@@ -15,18 +15,18 @@ const CarListing = () => {
       setLoading(true);
       const res = await vehicleService.getAllVehicles();
       if (res.success && Array.isArray(res.data)) {
-        // Filter only available vehicles for customers
-        const availableVehicles = res.data.filter(
+        // Hiển thị cả xe available và rented
+        const displayVehicles = res.data.filter(
           (vehicle) =>
-            vehicle.status && vehicle.status.toLowerCase() === "available"
+            vehicle.status &&
+            ["available", "rented"].includes(vehicle.status.toLowerCase())
         );
-        setCarData(availableVehicles);
+        setCarData(displayVehicles);
       } else {
         setCarData([]);
       }
       setLoading(false);
     };
-
     fetchVehicles();
   }, []);
 
@@ -83,6 +83,7 @@ const CarListing = () => {
                     fuelType: car.fuelType,
                     price: car.dailyPrice,
                     ownerAvatar: car.ownerAvatar,
+                    status: car.status, // <-- truyền status
                   }}
                 />
               ))
