@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.UUID;
 
+
 @Entity
 @Table(name = "post_vehicles")
 @Data
@@ -66,4 +67,10 @@ public class PostVehicle {
 
     @Column(name = "owner_avatar")
     private String ownerAvatar;
+    // OneToMany - reviews của xe này
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore // tránh vòng lặp, tùy nhu cầu có thể bỏ
+    private List<Review> reviews;
+
+    private Integer reviewsCount;
 }

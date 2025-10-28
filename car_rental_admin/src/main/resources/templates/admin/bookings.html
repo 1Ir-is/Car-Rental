@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Admin Bookings</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+<div th:replace="fragments/sidebar :: admin-sidebar"></div>
+
+<div class="main-content">
+    <h2>All Bookings</h2>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>#</th>
+            <th>Customer</th>
+            <th>Owner</th>
+            <th>Car</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Date</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="booking, iterStat : ${bookings}">
+            <td th:text="${iterStat.count}"></td>
+            <td th:text="${booking.user.name}"></td>
+            <td th:text="${booking.owner.name}"></td>
+            <td th:text="${booking.vehicle.vehicleName}"></td>
+            <td th:text="${booking.startDate}"></td>
+            <td th:text="${booking.endDate}"></td>
+            <td>
+                <span th:text="${booking.status}" th:classappend="'badge badge-' + (${booking.status.name().toLowerCase()})"></span>
+            </td>
+            <td th:text="${booking.totalAmount}"></td>
+            <td th:text="${#dates.format(booking.bookingDate, 'yyyy-MM-dd HH:mm')}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
