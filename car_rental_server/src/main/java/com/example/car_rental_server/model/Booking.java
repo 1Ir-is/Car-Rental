@@ -34,6 +34,7 @@ public class Booking {
 
     private String pickupLocation;
     private String dropoffLocation;
+    private LocalDateTime bookingDate;
 
     private Double totalAmount;
 

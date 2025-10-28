@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -21,11 +22,14 @@ public class BookingDTO {
     private String ownerAvatar;
     private UUID vehicleId;
     private String vehicleName;
+    private List<String> vehicleImages;
     private LocalDate startDate;
     private LocalDate endDate;
     private String pickupLocation;
     private String dropoffLocation;
+    private LocalDateTime bookingDate;
     private Double totalAmount;
+    private Double vehicleDailyPrice;
     private BookingStatus status;
     private String note;
 }

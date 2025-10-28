@@ -15,6 +15,9 @@ import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +42,11 @@ public class BookingService implements IBookingService {
         PostVehicle vehicle = vehicleOpt.get();
         User owner = vehicle.getOwner();
 
+        long days = java.time.temporal.ChronoUnit.DAYS.between(dto.getStartDate(), dto.getEndDate());
+        if (days <= 0) days = 1; // ít nhất 1 ngày
+
+        double total = vehicle.getDailyPrice() * days;
+
         Booking booking = Booking.builder()
                 .user(user)
                 .owner(owner)
@@ -47,9 +55,10 @@ public class BookingService implements IBookingService {
                 .endDate(dto.getEndDate())
                 .pickupLocation(dto.getPickupLocation())
                 .dropoffLocation(dto.getDropoffLocation())
-                .totalAmount(dto.getTotalAmount())
+                .totalAmount(total) // <-- set tổng tiền
                 .status(BookingStatus.PENDING)
                 .note(dto.getNote())
+                .bookingDate(java.time.LocalDateTime.now())
                 .build();
 
         booking = bookingRepo.save(booking);
@@ -116,6 +125,7 @@ public class BookingService implements IBookingService {
 
     // Helper convert entity to DTO
     private BookingDTO toDTO(Booking booking) {
+        PostVehicle vehicle = booking.getVehicle();
         return BookingDTO.builder()
                 .id(booking.getId())
                 .userId(booking.getUser().getId())
@@ -124,15 +134,19 @@ public class BookingService implements IBookingService {
                 .ownerId(booking.getOwner().getId())
                 .ownerName(booking.getOwner().getName())
                 .ownerAvatar(booking.getOwner().getAvatar())
-                .vehicleId(booking.getVehicle().getId())
-                .vehicleName(booking.getVehicle().getVehicleName())
+                .vehicleId(vehicle.getId())
+                .vehicleName(vehicle.getVehicleName())
+                .vehicleImages(vehicle.getImageList())  // <-- gán imageList vào DTO
                 .startDate(booking.getStartDate())
                 .endDate(booking.getEndDate())
                 .pickupLocation(booking.getPickupLocation())
                 .dropoffLocation(booking.getDropoffLocation())
                 .totalAmount(booking.getTotalAmount())
+                .vehicleDailyPrice(vehicle.getDailyPrice())
                 .status(booking.getStatus())
                 .note(booking.getNote())
+                .bookingDate(booking.getBookingDate())
                 .build();
     }
+
 }
