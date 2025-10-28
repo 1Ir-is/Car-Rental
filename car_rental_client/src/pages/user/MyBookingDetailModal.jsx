@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, ModalHeader, ModalBody } from "reactstrap";
+import { Modal, ModalHeader, ModalBody, Button } from "reactstrap";
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat("en-US", {
@@ -18,66 +18,61 @@ const formatDate = (dateString) => {
   });
 };
 
-const BookingDetailModal = ({ isOpen, onClose, booking }) => {
+const MyBookingDetailModal = ({ isOpen, onClose, booking }) => {
   if (!isOpen || !booking) return null;
 
   const {
     vehicleName,
     vehicleImages,
-    userName,
-    userAvatar,
     startDate,
     endDate,
+    bookingDate,
     pickupLocation,
     dropoffLocation,
     totalAmount,
     vehicleDailyPrice,
     status,
     note,
-    bookingDate,
   } = booking;
 
+  // Modern status color
+  const statusColor =
+    status?.toLowerCase() === "pending"
+      ? { bg: "#e0e7ff", color: "#2563eb", border: "1.5px solid #2563eb" }
+      : status?.toLowerCase() === "confirmed"
+      ? { bg: "#d1fae5", color: "#059669", border: "1.5px solid #059669" }
+      : status?.toLowerCase() === "rejected"
+      ? { bg: "#fee2e2", color: "#ef4444", border: "1.5px solid #ef4444" }
+      : { bg: "#f3f4f6", color: "#64748b", border: "1.5px solid #e5e7eb" };
+
   return (
-    <Modal
-      isOpen={isOpen}
-      toggle={onClose}
-      centered
-      size="lg"
-      style={{ maxWidth: "720px" }}
-    >
+  <Modal isOpen={isOpen} toggle={onClose} centered size="lg" style={{ maxWidth: 700 }}>
       <ModalHeader
         toggle={onClose}
         style={{
-          borderBottom: "none",
+          fontWeight: 700,
+          fontSize: "1.22rem",
+          color: "#2563eb",
           background: "#f8fafc",
-          paddingBottom: 0,
-          paddingTop: 24,
-          paddingLeft: 32,
-          paddingRight: 32,
+          borderBottom: "1.5px solid #e5e7eb",
         }}
       >
-        <span
-          style={{
-            fontWeight: 700,
-            fontSize: "1.7rem",
-            color: "#2563eb",
-            letterSpacing: "0.5px",
-          }}
-        >
-          Booking Details
-        </span>
+        Your Booking Details
         {status && (
           <span
             style={{
-              marginLeft: 22,
-              background: "#e0e7ff",
-              color: "#2563eb",
+              marginLeft: 18,
+              background: statusColor.bg,
+              color: statusColor.color,
               borderRadius: 14,
-              padding: "8px 28px",
-              fontWeight: 600,
-              fontSize: 18,
+              padding: "7px 22px",
+              fontWeight: 700,
+              fontSize: 17,
               verticalAlign: "middle",
-              boxShadow: "0 2px 8px rgba(30,42,73,0.10)",
+              border: statusColor.border,
+              boxShadow: "0 2px 8px rgba(30,42,73,0.13)",
+              letterSpacing: "0.5px",
+              transition: "all 0.2s",
             }}
           >
             {status.charAt(0).toUpperCase() + status.slice(1).toLowerCase()}
@@ -85,33 +80,26 @@ const BookingDetailModal = ({ isOpen, onClose, booking }) => {
         )}
       </ModalHeader>
       <ModalBody
-        style={{
-          background: "#f8fafc",
-          borderRadius: 0,
-          paddingTop: 0,
-          paddingBottom: 32,
-          paddingLeft: 32,
-          paddingRight: 32,
-        }}
+        style={{ background: "#f8fafc", padding: "38px 44px 38px 44px" }}
       >
         <div
           style={{
             display: "flex",
-            gap: 48,
+            gap: 44,
             alignItems: "flex-start",
             flexWrap: "wrap",
           }}
         >
-          <div style={{ minWidth: 220, textAlign: "center" }}>
+          <div style={{ minWidth: 200, textAlign: "center" }}>
             <img
               src={vehicleImages?.[0] || "/images/no-car.png"}
               alt={vehicleName}
               style={{
-                width: 220,
-                height: 140,
+                width: 200,
+                height: 130,
                 objectFit: "cover",
                 borderRadius: 18,
-                border: "2px solid #e0e7ff",
+                border: "2.5px solid #e0e7ff",
                 boxShadow: "0 8px 32px rgba(30,42,73,0.12)",
                 marginBottom: 24,
               }}
@@ -120,10 +108,10 @@ const BookingDetailModal = ({ isOpen, onClose, booking }) => {
           <div
             style={{
               flex: 1,
-              minWidth: 320,
-              fontSize: "1.18rem",
+              minWidth: 260,
+              fontSize: "1.13rem",
               color: "#1e293b",
-              paddingTop: 12,
+              paddingTop: 8,
             }}
           >
             <div style={{ marginBottom: 14 }}>
@@ -146,12 +134,8 @@ const BookingDetailModal = ({ isOpen, onClose, booking }) => {
                   fontSize: "1.13rem",
                 }}
               >
-                Customer:
+                Booking Date:
               </span>{" "}
-              {userName}
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <span style={{ fontWeight: 700 }}>Booking Date:</span>{" "}
               {formatDate(bookingDate)}
             </div>
             <div style={{ marginBottom: 14 }}>
@@ -201,9 +185,25 @@ const BookingDetailModal = ({ isOpen, onClose, booking }) => {
             )}
           </div>
         </div>
+        <div className="text-end mt-4">
+          <Button
+            color="secondary"
+            onClick={onClose}
+            style={{
+              padding: "8px 32px",
+              fontSize: "1.08rem",
+              borderRadius: 8,
+              fontWeight: 600,
+              background: "#64748b",
+              border: "none",
+            }}
+          >
+            Close
+          </Button>
+        </div>
       </ModalBody>
     </Modal>
   );
 };
 
-export default BookingDetailModal;
+export default MyBookingDetailModal;

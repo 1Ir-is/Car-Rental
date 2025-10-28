@@ -182,6 +182,44 @@ const vehicleService = {
       };
     }
   },
+
+  getOwnerBookings: async () => {
+    try {
+      const response = await apiClient.get("/owner/vehicles/bookings");
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to fetch bookings",
+      };
+    }
+  },
+  confirmBooking: async (bookingId) => {
+    try {
+      const response = await apiClient.post(
+        `/owner/vehicles/bookings/${bookingId}/confirm`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to confirm booking",
+      };
+    }
+  },
+  cancelBooking: async (bookingId) => {
+    try {
+      const response = await apiClient.post(
+        `/owner/vehicles/bookings/${bookingId}/cancel`
+      );
+      return { success: true, data: response.data };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to cancel booking",
+      };
+    }
+  },
 };
 
 export default vehicleService;

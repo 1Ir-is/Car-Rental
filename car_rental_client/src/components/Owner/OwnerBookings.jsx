@@ -1,63 +1,126 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import BookingDetailModal from "./BookingDetailModal";
-
-const mockBookings = [
-  {
-    id: 101,
-    car: "Toyota Camry 2022",
-    renter: "Nguyen Van A",
-    startDate: "2025-10-28",
-    endDate: "2025-10-30",
-    status: "Pending",
-    total: 120,
-  },
-  {
-    id: 102,
-    car: "Ford Ranger 4x4",
-    renter: "Tran Thi B",
-    startDate: "2025-10-25",
-    endDate: "2025-10-27",
-    status: "Confirmed",
-    total: 180,
-  },
-  {
-    id: 103,
-    car: "Kia Morning 2021",
-    renter: "Le Van C",
-    startDate: "2025-10-20",
-    endDate: "2025-10-22",
-    status: "Completed",
-    total: 90,
-  },
-];
+import { toast } from "react-toastify";
+import Swal from "sweetalert2";
+import vehicleService from "../../services/ownerService";
 
 const statusColors = {
-  Pending: "#f59e42",
-  Confirmed: "#2563eb",
-  Completed: "#22c55e",
-  Cancelled: "#ef4444",
+  PENDING: "#f59e42",
+  CONFIRMED: "#2563eb",
+  COMPLETED: "#22c55e",
+  CANCELLED: "#ef4444",
 };
 
 const OwnerBookings = () => {
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
 
-  const handleDetails = (booking) => {
-    setSelectedBooking({
-      carName: booking.car,
-      price: booking.total,
-      customerName: booking.renter,
-      startDate: booking.startDate,
-      endDate: booking.endDate,
-      status: booking.status,
+  // Call API lấy danh sách booking cho owner
+  useEffect(() => {
+    const fetchOwnerBookings = async () => {
+      setLoading(true);
+      try {
+        // Gọi API: /api/owner/vehicles/bookings (GET)
+        const response = await vehicleService.getOwnerBookings();
+        if (response.success && response.data) {
+          setBookings(response.data);
+        } else {
+          toast.error(response.message || "Failed to fetch bookings");
+        }
+      } catch (error) {
+        toast.error("Failed to fetch bookings");
+      }
+      setLoading(false);
+    };
+    fetchOwnerBookings();
+  }, []);
+
+  // Xác nhận booking (owner)
+  const handleConfirm = async (bookingId) => {
+    Swal.fire({
+      title: "Confirm booking?",
+      text: "Do you want to confirm this rental request?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#2563eb",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, confirm!",
+      cancelButtonText: "No",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await vehicleService.confirmBooking(bookingId);
+          if (res.success) {
+            toast.success("Booking confirmed!");
+            setBookings((prev) =>
+              prev.map((b) =>
+                b.id === bookingId ? { ...b, status: "CONFIRMED" } : b
+              )
+            );
+          } else {
+            toast.error(res.message || "Failed to confirm booking");
+          }
+        } catch (error) {
+          toast.error("Failed to confirm booking");
+        }
+      }
     });
-    setModalOpen(true);
   };
 
+  // Huỷ booking (owner)
+  const handleCancel = async (bookingId) => {
+    Swal.fire({
+      title: "Cancel booking?",
+      text: "Do you want to cancel this booking?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: "Yes, cancel!",
+      cancelButtonText: "No",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await vehicleService.cancelBooking(bookingId);
+          if (res.success) {
+            toast.success("Booking cancelled!");
+            setBookings((prev) =>
+              prev.map((b) =>
+                b.id === bookingId ? { ...b, status: "CANCELLED" } : b
+              )
+            );
+          } else {
+            toast.error(res.message || "Failed to cancel booking");
+          }
+        } catch (error) {
+          toast.error("Failed to cancel booking");
+        }
+      }
+    });
+  };
+
+  // Hiển thị modal chi tiết booking
+  const handleDetails = (booking) => {
+    setSelectedBooking(booking);
+    setModalOpen(true);
+  };
   const handleCloseModal = () => {
     setModalOpen(false);
     setSelectedBooking(null);
   };
+
+  // Lọc bỏ những booking bị cancel khỏi danh sách
+  const filteredBookings = bookings.filter(
+    (b) => b.status?.toUpperCase() !== "CANCELLED"
+  );
+
+  // Tổng doanh thu (chỉ tính booking chưa cancel)
+  const totalRevenue = filteredBookings.reduce(
+    (sum, b) => sum + (b.totalAmount || 0),
+    0
+  );
 
   return (
     <div
@@ -83,15 +146,7 @@ const OwnerBookings = () => {
         >
           <thead>
             <tr style={{ background: "#f8fafc" }}>
-              <th
-                style={{
-                  padding: "12px 8px",
-                  textAlign: "left",
-                  color: "#1e293b",
-                }}
-              >
-                #
-              </th>
+              <th style={{ padding: "12px 8px", textAlign: "left" }}>#</th>
               <th style={{ padding: "12px 8px", textAlign: "left" }}>Car</th>
               <th style={{ padding: "12px 8px", textAlign: "left" }}>Renter</th>
               <th style={{ padding: "12px 8px", textAlign: "left" }}>
@@ -110,22 +165,23 @@ const OwnerBookings = () => {
             </tr>
           </thead>
           <tbody>
-            {mockBookings.map((b, idx) => (
+            {filteredBookings.map((b, idx) => (
               <tr key={b.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
                 <td style={{ padding: "10px 8px", color: "#64748b" }}>
                   {idx + 1}
                 </td>
-                <td style={{ padding: "10px 8px" }}>{b.car}</td>
-                <td style={{ padding: "10px 8px" }}>{b.renter}</td>
+                <td style={{ padding: "10px 8px" }}>{b.vehicleName}</td>
+                <td style={{ padding: "10px 8px" }}>{b.userName}</td>
                 <td style={{ padding: "10px 8px" }}>{b.startDate}</td>
                 <td style={{ padding: "10px 8px" }}>{b.endDate}</td>
                 <td style={{ padding: "10px 8px", fontWeight: 600 }}>
-                  ${b.total}
+                  ${b.totalAmount}
                 </td>
                 <td style={{ padding: "10px 8px" }}>
                   <span
                     style={{
-                      background: statusColors[b.status] || "#e5e7eb",
+                      background:
+                        statusColors[b.status?.toUpperCase()] || "#e5e7eb",
                       color: "#fff",
                       borderRadius: 8,
                       padding: "4px 12px",
@@ -133,11 +189,12 @@ const OwnerBookings = () => {
                       fontSize: 14,
                     }}
                   >
-                    {b.status}
+                    {b.status?.charAt(0).toUpperCase() +
+                      b.status?.slice(1).toLowerCase()}
                   </span>
                 </td>
                 <td style={{ padding: "10px 8px" }}>
-                  {b.status === "Pending" && (
+                  {b.status?.toUpperCase() === "PENDING" && (
                     <button
                       style={{
                         background: "#2563eb",
@@ -149,11 +206,12 @@ const OwnerBookings = () => {
                         marginRight: 8,
                         cursor: "pointer",
                       }}
+                      onClick={() => handleConfirm(b.id)}
                     >
                       Confirm
                     </button>
                   )}
-                  {b.status === "Confirmed" && (
+                  {b.status?.toUpperCase() === "CONFIRMED" && (
                     <button
                       style={{
                         background: "#ef4444",
@@ -164,6 +222,7 @@ const OwnerBookings = () => {
                         fontWeight: 600,
                         cursor: "pointer",
                       }}
+                      onClick={() => handleCancel(b.id)}
                     >
                       Cancel
                     </button>
@@ -190,10 +249,9 @@ const OwnerBookings = () => {
         </table>
       </div>
       <div style={{ marginTop: 32, color: "#64748b", fontSize: 15 }}>
-        Showing {mockBookings.length} bookings.{" "}
+        Showing {filteredBookings.length} bookings.{" "}
         <span style={{ marginLeft: 16 }}>
-          Total Revenue:{" "}
-          <b>${mockBookings.reduce((sum, b) => sum + b.total, 0)}</b>
+          Total Revenue: <b>${totalRevenue}</b>
         </span>
       </div>
 
