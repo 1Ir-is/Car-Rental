@@ -44,7 +44,6 @@ export const userAPI = {
     }
   },
 
-
   // Upload avatar
   uploadAvatar: async (formData) => {
     try {
@@ -70,7 +69,6 @@ export const userAPI = {
     }
   },
 
-
   // Create a new booking
   createBooking: async (bookingData) => {
     // bookingData: { vehicleId, startDate, endDate, pickupLocation, dropoffLocation, totalAmount, note }
@@ -89,6 +87,46 @@ export const userAPI = {
           error.response?.data?.message ||
           error.response?.data ||
           "Failed to create booking",
+      };
+    }
+  },
+
+  getMyBookings: async () => {
+    try {
+      const response = await apiClient.get("/user/bookings");
+      return {
+        success: true,
+        data: response.data,
+        message: "Bookings fetched successfully",
+      };
+    } catch (error) {
+      console.error("❌ Fetch bookings error:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          "Failed to fetch bookings",
+      };
+    }
+  },
+  cancelBooking: async (bookingId) => {
+    try {
+      const response = await apiClient.post(
+        `/user/bookings/${bookingId}/cancel`
+      );
+      return {
+        success: true,
+        data: response.data,
+        message: "Booking cancelled successfully!",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.response?.data ||
+          "Failed to cancel booking",
       };
     }
   },
