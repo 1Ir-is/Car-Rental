@@ -14,6 +14,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -261,16 +262,27 @@ public class AuthController {
             String token = jwtService.generateToken(user);
 
             // Set-Cookie như cũ
-            ResponseCookie cookie = ResponseCookie.from("jwt", token)
-                    .httpOnly(true)
-                    .sameSite("Lax")
-                    .path("/")
-                    .maxAge(maxAge)
-                    .build();
-            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+            Cookie cookie = new Cookie("jwt", token);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true); // ⚠️ chỉ nên true nếu bạn deploy HTTPS (local dev thì false)
+            cookie.setPath("/");
+            cookie.setMaxAge((int) maxAge);
+            cookie.setAttribute("SameSite", "None"); // 👈 bắt buộc nếu bạn gửi cookie cross-origin (FE khác domain)
+            response.addCookie(cookie);
 
-            // Thêm token vào body trả về
-            return ResponseEntity.ok(Map.of("success", true, "token", token));
+
+            // ✅ Trả về user info + token
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "token", token,
+                    "user", Map.of(
+                            "id", user.getId(),
+                            "email", user.getEmail(),
+                            "name", user.getName(),
+                            "avatar", user.getAvatar(),
+                            "role", user.getRole().getName()
+                    )
+            ));
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401)
                     .body(Map.of("success", false, "error", "INVALID_CREDENTIALS"));
@@ -309,14 +321,14 @@ public class AuthController {
                 "passwordChangedAt", passwordChangedValue
         ));
     }
-
     @PostMapping("/google")
     public ResponseEntity<?> loginWithGoogle(@RequestBody GoogleLoginRequestDTO request, HttpServletResponse response) {
         try {
             String idTokenString = request.getIdToken();
 
-            // Verify token với Google
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+            // ✅ Xác thực token Google
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(), new GsonFactory())
                     .setAudience(Collections.singletonList(googleClientId))
                     .build();
 
@@ -330,26 +342,25 @@ public class AuthController {
             String name = (String) payload.get("name");
             String picture = (String) payload.get("picture");
 
-            // Tìm user theo email, nếu chưa có thì tự động tạo mới
+            // ✅ Nếu chưa có user → tạo mới
             User user = userService.findByEmail(email).orElse(null);
             if (user == null) {
                 Role userRole = roleService.findByName("USER")
                         .orElseGet(() -> roleService.save(new Role(null, "USER")));
+
                 user = new User();
                 user.setEmail(email);
                 user.setName(name);
                 user.setAvatar(picture);
                 user.setStatus(true);
                 user.setRole(userRole);
-                // Đã xác thực email qua Google
                 user.setVerified(true);
                 userService.save(user);
             } else {
-                // Nếu user đã tồn tại mà chưa có avatar thì cập nhật avatar luôn
+                // ✅ Cập nhật thông tin nếu cần
                 if (user.getAvatar() == null || user.getAvatar().isEmpty()) {
                     user.setAvatar(picture);
                 }
-                // Nếu chưa xác thực email thì tự động xác thực
                 if (!Boolean.TRUE.equals(user.getVerified())) {
                     user.setVerified(true);
                 }
@@ -357,11 +368,13 @@ public class AuthController {
             }
 
             if (!Boolean.TRUE.equals(user.getStatus())) {
-                return ResponseEntity.status(403)
-                        .body(Map.of("success", false, "error", "ACCOUNT_DISABLED"));
+                return ResponseEntity.status(403).body(Map.of(
+                        "success", false,
+                        "error", "ACCOUNT_DISABLED"
+                ));
             }
 
-            // Tạo JWT và trả về như login thường
+            // ✅ Tạo JWT + cookie + response đồng nhất với login thường
             long maxAge = 3600;
             String token = jwtService.generateToken(user);
             ResponseCookie cookie = ResponseCookie.from("jwt", token)
@@ -371,7 +384,18 @@ public class AuthController {
                     .maxAge(maxAge)
                     .build();
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-            return ResponseEntity.ok(Map.of("success", true));
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "token", token,
+                    "user", Map.of(
+                            "id", user.getId(),
+                            "email", user.getEmail(),
+                            "name", user.getName(),
+                            "avatar", user.getAvatar(),
+                            "role", user.getRole().getName()
+                    )
+            ));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("success", false, "error", "SERVER_ERROR"));

@@ -24,24 +24,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
+        // Log tất cả cookie
         if (request.getCookies() != null) {
             for (Cookie c : request.getCookies()) {
                 System.out.println("Cookie: " + c.getName() + " = " + c.getValue());
             }
         }
+
         String token = null;
-        // Ưu tiên lấy token từ cookie tên "jwt"
+        // Ưu tiên lấy từ cookie "jwt"
         if (request.getCookies() != null) {
             for (Cookie c : request.getCookies()) {
-                if (c.getName().equals("jwt")) {
+                if ("jwt".equals(c.getName())) {
                     token = c.getValue();
                     break;
                 }
             }
         }
-        // Nếu không có, thử lấy từ header Authorization
+        // Nếu không có, lấy từ header Authorization
         if (token == null) {
             String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -49,16 +52,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        if (token != null && jwtService.validateToken(token)) {
-            String username = jwtService.getUsernameFromToken(token);
-            UserDetails user = userDetailsService.loadUserByUsername(username);
+        // Log giá trị token lấy được
+        System.out.println("Token lấy được: " + token);
 
-            // LOG authorities
-            System.out.println("JWT Token: " + token);
-            System.out.println("Username: " + username);
-            System.out.println("Authorities: " + user.getAuthorities());
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(auth);
+        // Validate và log lỗi chi tiết
+        if (token != null) {
+            try {
+                if (jwtService.validateToken(token)) {
+                    String username = jwtService.getUsernameFromToken(token);
+                    UserDetails user = userDetailsService.loadUserByUsername(username);
+
+                    System.out.println("JWT Token: " + token);
+                    System.out.println("Username: " + username);
+                    System.out.println("Authorities: " + user.getAuthorities());
+                    UsernamePasswordAuthenticationToken auth =
+                            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    System.out.println("Token không hợp lệ hoặc đã hết hạn!");
+                }
+            } catch (Exception e) {
+                System.out.println("Lỗi validateToken: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Không tìm thấy token trong request!");
         }
 
         filterChain.doFilter(request, response);

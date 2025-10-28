@@ -52,9 +52,10 @@ public class JwtService {
                     .setSigningKey(getSigningKey())
                     .build()
                     .parseClaimsJws(token);
+            System.out.println("Token hợp lệ!");
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            e.printStackTrace(); // Thêm dòng này để log ra lỗi cụ thể
+            System.out.println("JWT invalid: " + e.getMessage());
             return false;
         }
     }

@@ -1,10 +1,14 @@
 package com.example.car_rental_server.controller;
 
 import com.example.car_rental_server.dto.PostVehicleDTO;
+import com.example.car_rental_server.dto.BookingDTO;
 import com.example.car_rental_server.service.owner.IPostVehicleService;
+import com.example.car_rental_server.service.booking.IBookingService;
+import com.example.car_rental_server.service.user.IUserService;
 import com.example.car_rental_server.utils.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,11 +23,18 @@ public class OwnerVehicleController {
 
     private final IPostVehicleService vehicleService;
     private final CloudinaryService cloudinaryService;
+    private final IBookingService bookingService;
+    private final IUserService userService;
 
     // Lấy tất cả xe của owner hiện tại
     @GetMapping("/my")
-    public ResponseEntity<?> getMyVehicles(@RequestParam Long userId) {
-        List<PostVehicleDTO> list = vehicleService.getVehiclesByOwner(userId);
+    public ResponseEntity<?> getMyVehicles(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+        String email = authentication.getName();
+        Long ownerId = userService.findIdByEmail(email);
+        List<PostVehicleDTO> list = vehicleService.getVehiclesByOwner(ownerId);
         return ResponseEntity.ok(list);
     }
 
@@ -39,9 +50,9 @@ public class OwnerVehicleController {
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<?> createVehicle(
             @RequestPart("info") PostVehicleDTO dto,
-            @RequestPart(value = "images", required = false) MultipartFile[] images
+            @RequestPart(value = "images", required = false) MultipartFile[] images,
+            Authentication authentication
     ) {
-        // Upload ảnh lên Cloudinary nếu có
         List<String> imageUrls = new ArrayList<>();
         if (images != null && images.length > 0) {
             for (MultipartFile file : images) {
@@ -55,7 +66,12 @@ public class OwnerVehicleController {
         }
         dto.setImageList(imageUrls);
 
-        // Đảm bảo userId được set!
+        if (dto.getOwnerId() == null && authentication != null && authentication.isAuthenticated()) {
+            String email = authentication.getName();
+            Long ownerId = userService.findIdByEmail(email);
+            dto.setOwnerId(ownerId);
+        }
+
         if (dto.getOwnerId() == null) {
             return ResponseEntity.badRequest().body("Missing owner (userId)");
         }
@@ -80,10 +96,8 @@ public class OwnerVehicleController {
                     return ResponseEntity.badRequest().body("Failed to upload: " + file.getOriginalFilename());
                 }
             }
-            // Nếu có ảnh mới thì dùng ảnh mới
             dto.setImageList(imageUrls);
         } else {
-            // Nếu không có ảnh mới thì giữ lại ảnh cũ
             if (dto.getKeepExistingImages() != null && !dto.getKeepExistingImages().isEmpty()) {
                 dto.setImageList(dto.getKeepExistingImages());
             }
@@ -112,5 +126,54 @@ public class OwnerVehicleController {
             }
         }
         return ResponseEntity.ok(urls);
+    }
+
+    // ==== BOOKING CHO OWNER ====
+
+    // Owner xem tất cả booking liên quan đến mình
+    @GetMapping("/bookings")
+    public ResponseEntity<List<BookingDTO>> getOwnerBookings(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+        String email = authentication.getName();
+        Long ownerId = userService.findIdByEmail(email);
+        return ResponseEntity.ok(bookingService.getOwnerBookings(ownerId));
+    }
+
+    // Owner xác nhận booking
+    @PostMapping("/bookings/{id}/confirm")
+    public ResponseEntity<?> confirmBooking(@PathVariable UUID id, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+        String email = authentication.getName();
+        Long ownerId = userService.findIdByEmail(email);
+        BookingDTO booking = bookingService.confirmBooking(id, ownerId);
+        return booking != null ? ResponseEntity.ok(booking) : ResponseEntity.badRequest().body("Confirm failed");
+    }
+
+    // Owner hoàn tất booking
+    @PostMapping("/bookings/{id}/complete")
+    public ResponseEntity<?> completeBooking(@PathVariable UUID id, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+        String email = authentication.getName();
+        Long ownerId = userService.findIdByEmail(email);
+        BookingDTO booking = bookingService.completeBooking(id, ownerId);
+        return booking != null ? ResponseEntity.ok(booking) : ResponseEntity.badRequest().body("Complete failed");
+    }
+
+    // Owner huỷ booking
+    @PostMapping("/bookings/{id}/cancel")
+    public ResponseEntity<?> cancelBooking(@PathVariable UUID id, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+        String email = authentication.getName();
+        Long ownerId = userService.findIdByEmail(email);
+        BookingDTO booking = bookingService.cancelBooking(id, ownerId);
+        return booking != null ? ResponseEntity.ok(booking) : ResponseEntity.badRequest().body("Cancel failed");
     }
 }
