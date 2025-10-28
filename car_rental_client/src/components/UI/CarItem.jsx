@@ -253,7 +253,7 @@ const CarItem = (props) => {
               Rent
             </Link>
             <Link
-              to="#"
+              to={isRented ? "#" : `/cars/${id}`}
               className="car__item-btn car__btn-details w-50"
               style={{
                 background: isRented ? "#e5e7eb" : "",

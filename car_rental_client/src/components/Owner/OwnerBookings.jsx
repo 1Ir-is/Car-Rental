@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import BookingDetailModal from "./BookingDetailModal";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
+import { Empty } from "antd";
+import "antd/dist/reset.css";
 import vehicleService from "../../services/ownerService";
 
 const statusColors = {
@@ -166,81 +168,68 @@ const OwnerBookings = () => {
         </p>
       </div>
       <div style={{ overflowX: "auto" }}>
-        <table
-          style={{ width: "100%", borderCollapse: "collapse", fontSize: 16 }}
-        >
-          <thead>
-            <tr style={{ background: "#f8fafc" }}>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>#</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Car</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Renter</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>
-                Start Date
-              </th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>
-                End Date
-              </th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>
-                Total ($)
-              </th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>Status</th>
-              <th style={{ padding: "12px 8px", textAlign: "left" }}>
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredBookings.map((b, idx) => (
-              <tr key={b.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                <td style={{ padding: "10px 8px", color: "#64748b" }}>
-                  {idx + 1}
-                </td>
-                <td style={{ padding: "10px 8px" }}>{b.vehicleName}</td>
-                <td style={{ padding: "10px 8px" }}>{b.userName}</td>
-                <td style={{ padding: "10px 8px" }}>{b.startDate}</td>
-                <td style={{ padding: "10px 8px" }}>{b.endDate}</td>
-                <td style={{ padding: "10px 8px", fontWeight: 600 }}>
-                  ${b.totalAmount}
-                </td>
-                <td style={{ padding: "10px 8px" }}>
-                  <span
-                    style={{
-                      background:
-                        statusColors[b.status?.toUpperCase()] || "#e5e7eb",
-                      color: "#fff",
-                      borderRadius: 8,
-                      padding: "4px 12px",
-                      fontWeight: 600,
-                      fontSize: 14,
-                    }}
-                  >
-                    {b.status?.charAt(0).toUpperCase() +
-                      b.status?.slice(1).toLowerCase()}
-                  </span>
-                </td>
-                <td style={{ padding: "10px 8px" }}>
-                  {b.status?.toUpperCase() === "PENDING" && (
-                    <button
+        {filteredBookings.length === 0 ? (
+          <div style={{ padding: "64px 0" }}>
+            <Empty description="No data available" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          </div>
+        ) : (
+          <table
+            style={{ width: "100%", borderCollapse: "collapse", fontSize: 16 }}
+          >
+            <thead>
+              <tr style={{ background: "#f8fafc" }}>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>#</th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>Car</th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>Renter</th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>
+                  Start Date
+                </th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>
+                  End Date
+                </th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>
+                  Total ($)
+                </th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>Status</th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBookings.map((b, idx) => (
+                <tr key={b.id} style={{ borderBottom: "1px solid #e5e7eb" }}>
+                  <td style={{ padding: "10px 8px", color: "#64748b" }}>
+                    {idx + 1}
+                  </td>
+                  <td style={{ padding: "10px 8px" }}>{b.vehicleName}</td>
+                  <td style={{ padding: "10px 8px" }}>{b.userName}</td>
+                  <td style={{ padding: "10px 8px" }}>{b.startDate}</td>
+                  <td style={{ padding: "10px 8px" }}>{b.endDate}</td>
+                  <td style={{ padding: "10px 8px", fontWeight: 600 }}>
+                    ${b.totalAmount}
+                  </td>
+                  <td style={{ padding: "10px 8px" }}>
+                    <span
                       style={{
-                        background: "#2563eb",
+                        background:
+                          statusColors[b.status?.toUpperCase()] || "#e5e7eb",
                         color: "#fff",
-                        border: "none",
                         borderRadius: 8,
-                        padding: "6px 16px",
+                        padding: "4px 12px",
                         fontWeight: 600,
-                        marginRight: 8,
-                        cursor: "pointer",
+                        fontSize: 14,
                       }}
-                      onClick={() => handleConfirm(b.id)}
                     >
-                      Confirm
-                    </button>
-                  )}
-                  {b.status?.toUpperCase() === "CONFIRMED" && (
-                    <>
+                      {b.status?.charAt(0).toUpperCase() +
+                        b.status?.slice(1).toLowerCase()}
+                    </span>
+                  </td>
+                  <td style={{ padding: "10px 8px" }}>
+                    {b.status?.toUpperCase() === "PENDING" && (
                       <button
                         style={{
-                          background: "#22c55e",
+                          background: "#2563eb",
                           color: "#fff",
                           border: "none",
                           borderRadius: 8,
@@ -249,46 +238,65 @@ const OwnerBookings = () => {
                           marginRight: 8,
                           cursor: "pointer",
                         }}
-                        onClick={() => handleComplete(b.id)}
+                        onClick={() => handleConfirm(b.id)}
                       >
-                        Complete
+                        Confirm
                       </button>
-                      <button
-                        style={{
-                          background: "#ef4444",
-                          color: "#fff",
-                          border: "none",
-                          borderRadius: 8,
-                          padding: "6px 16px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                        onClick={() => handleCancel(b.id)}
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
-                  <button
-                    style={{
-                      background: "#f3f4f6",
-                      color: "#2563eb",
-                      border: "none",
-                      borderRadius: 8,
-                      padding: "6px 16px",
-                      fontWeight: 600,
-                      marginLeft: 8,
-                      cursor: "pointer",
-                    }}
-                    onClick={() => handleDetails(b)}
-                  >
-                    Details
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    )}
+                    {b.status?.toUpperCase() === "CONFIRMED" && (
+                      <>
+                        <button
+                          style={{
+                            background: "#22c55e",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 8,
+                            padding: "6px 16px",
+                            fontWeight: 600,
+                            marginRight: 8,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleComplete(b.id)}
+                        >
+                          Complete
+                        </button>
+                        <button
+                          style={{
+                            background: "#ef4444",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 8,
+                            padding: "6px 16px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => handleCancel(b.id)}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    <button
+                      style={{
+                        background: "#f3f4f6",
+                        color: "#2563eb",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "6px 16px",
+                        fontWeight: 600,
+                        marginLeft: 8,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => handleDetails(b)}
+                    >
+                      Details
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
       <div style={{ marginTop: 32, color: "#64748b", fontSize: 15 }}>
         Showing {filteredBookings.length} bookings.{" "}
