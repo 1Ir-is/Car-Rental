@@ -170,7 +170,10 @@ const OwnerBookings = () => {
       <div style={{ overflowX: "auto" }}>
         {filteredBookings.length === 0 ? (
           <div style={{ padding: "64px 0" }}>
-            <Empty description="No data available" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            <Empty
+              description="No data available"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
           </div>
         ) : (
           <table
@@ -180,7 +183,9 @@ const OwnerBookings = () => {
               <tr style={{ background: "#f8fafc" }}>
                 <th style={{ padding: "12px 8px", textAlign: "left" }}>#</th>
                 <th style={{ padding: "12px 8px", textAlign: "left" }}>Car</th>
-                <th style={{ padding: "12px 8px", textAlign: "left" }}>Renter</th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>
+                  Renter
+                </th>
                 <th style={{ padding: "12px 8px", textAlign: "left" }}>
                   Start Date
                 </th>
@@ -190,7 +195,9 @@ const OwnerBookings = () => {
                 <th style={{ padding: "12px 8px", textAlign: "left" }}>
                   Total ($)
                 </th>
-                <th style={{ padding: "12px 8px", textAlign: "left" }}>Status</th>
+                <th style={{ padding: "12px 8px", textAlign: "left" }}>
+                  Status
+                </th>
                 <th style={{ padding: "12px 8px", textAlign: "left" }}>
                   Actions
                 </th>
