@@ -70,4 +70,6 @@ public class PostVehicle {
     @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore // tránh vòng lặp, tùy nhu cầu có thể bỏ
     private List<Review> reviews;
+
+    private Integer reviewsCount;
 }

@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -175,5 +176,53 @@ public class OwnerVehicleController {
         Long ownerId = userService.findIdByEmail(email);
         BookingDTO booking = bookingService.cancelBooking(id, ownerId);
         return booking != null ? ResponseEntity.ok(booking) : ResponseEntity.badRequest().body("Cancel failed");
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<?> getOwnerStats(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+        String email = authentication.getName();
+        Long ownerId = userService.findIdByEmail(email);
+
+        // Tổng số xe
+        int totalCars = vehicleService.getVehiclesByOwner(ownerId).size();
+
+        // Active Rentals (xe có booking CONFIRMED/RENTED)
+        int activeRentals = bookingService.getOwnerBookings(ownerId)
+                .stream().filter(b -> b.getStatus() != null &&
+                        (b.getStatus().toString().equalsIgnoreCase("CONFIRMED")
+                                || b.getStatus().toString().equalsIgnoreCase("RENTED")))
+                .toArray().length;
+
+        // Tổng earnings
+        double totalEarnings = bookingService.getOwnerBookings(ownerId)
+                .stream().filter(b -> b.getStatus() != null &&
+                        (b.getStatus().toString().equalsIgnoreCase("CONFIRMED")
+                                || b.getStatus().toString().equalsIgnoreCase("COMPLETED")))
+                .mapToDouble(b -> b.getTotalAmount() != null ? b.getTotalAmount() : 0)
+                .sum();
+
+        // Rating + reviews (ví dụ nếu có bảng review)
+        double avgRating = vehicleService.getAverageRatingForOwner(ownerId);
+        int totalReviews = vehicleService.getTotalReviewsForOwner(ownerId);
+
+        // Recent bookings (lấy 5 booking mới nhất)
+        List<BookingDTO> recentBookings = bookingService.getOwnerBookings(ownerId)
+                .stream().sorted((a, b) -> b.getBookingDate().compareTo(a.getBookingDate()))
+                .limit(5)
+                .toList();
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "totalCars", totalCars,
+                        "activeRentals", activeRentals,
+                        "totalEarnings", totalEarnings,
+                        "avgRating", avgRating,
+                        "totalReviews", totalReviews,
+                        "recentBookings", recentBookings
+                )
+        );
     }
 }

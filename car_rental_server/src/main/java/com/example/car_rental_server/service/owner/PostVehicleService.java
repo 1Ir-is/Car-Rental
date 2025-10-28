@@ -268,4 +268,26 @@ public class PostVehicleService implements IPostVehicleService {
     public void deleteVehicle(UUID id) {
         postVehicleRepo.deleteById(id);
     }
+
+    // Thống kê cho dashboard owner
+    @Override
+    public double getAverageRatingForOwner(Long ownerId) {
+        List<PostVehicle> vehicles = postVehicleRepo.findAllByOwner_Id(ownerId);
+        double sum = vehicles.stream()
+                .mapToDouble(v -> v.getRating() != null ? v.getRating() : 0)
+                .sum();
+        int count = (int) vehicles.stream()
+                .filter(v -> v.getRating() != null)
+                .count();
+        return count == 0 ? 0 : sum / count;
+    }
+
+    @Override
+    public int getTotalReviewsForOwner(Long ownerId) {
+        // Nếu PostVehicle có trường reviewsCount, lấy tổng. Nếu không, trả về số xe có rating.
+        List<PostVehicle> vehicles = postVehicleRepo.findAllByOwner_Id(ownerId);
+        return vehicles.stream()
+                .mapToInt(v -> v.getReviewsCount() != null ? v.getReviewsCount() : 0)
+                .sum();
+    }
 }

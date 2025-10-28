@@ -8,6 +8,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,6 +18,29 @@ public class NotificationService implements INotificationService {
 
     private final INotificationRepository notificationRepository;
     private final SimpMessagingTemplate messagingTemplate;
+
+    @Override
+    public void notifyOwnerNewBooking(Long ownerId, String vehicleName, String userName, LocalDate start, LocalDate end) {
+        String content = "User " + userName +
+                " has booked your vehicle \"" + vehicleName +
+                "\" from " + start + " to " + end + ".";
+        Notification noti = Notification.builder()
+                .content(content)
+                .isRead(false)
+                .createdAt(LocalDateTime.now())
+                .type("NEW_BOOKING")
+                .url("/owner/vehicles/bookings") // dẫn tới trang quản lý booking
+                .senderId(null) // hoặc booking.getUser().getId()
+                .recipientId(ownerId) // thông báo cho owner
+                .build();
+
+        Notification saved = notificationRepository.save(noti);
+        try {
+            messagingTemplate.convertAndSend("/topic/notifications-user-" + ownerId, saved);
+        } catch (Exception ex) {
+            System.err.println("Failed to broadcast booking notification: " + ex.getMessage());
+        }
+    }
 
     @Override
     public void notifyOwnerRequest(Long senderId, String userName) {

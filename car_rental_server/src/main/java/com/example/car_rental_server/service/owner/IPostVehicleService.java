@@ -13,4 +13,6 @@ public interface IPostVehicleService {
     PostVehicleDTO createVehicle(PostVehicleDTO dto);
     PostVehicleDTO updateVehicle(UUID id, PostVehicleDTO dto);
     void deleteVehicle(UUID id);
+    double getAverageRatingForOwner(Long ownerId);
+    int getTotalReviewsForOwner(Long ownerId);
 }

@@ -2,6 +2,7 @@ package com.example.car_rental_server.service.notification;
 
 import com.example.car_rental_server.model.Notification;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface INotificationService {
@@ -24,4 +25,6 @@ public interface INotificationService {
 
     // count unread for a user
     long countUnreadForUser(Long userId);
+
+    void notifyOwnerNewBooking(Long ownerId, String vehicleName, String userName, LocalDate start, LocalDate end);
 }

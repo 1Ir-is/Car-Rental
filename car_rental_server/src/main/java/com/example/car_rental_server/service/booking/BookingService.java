@@ -2,12 +2,14 @@ package com.example.car_rental_server.service.booking;
 
 import com.example.car_rental_server.dto.BookingDTO;
 import com.example.car_rental_server.enums.BookingStatus;
+import com.example.car_rental_server.enums.VehicleStatus;
 import com.example.car_rental_server.model.Booking;
 import com.example.car_rental_server.model.PostVehicle;
 import com.example.car_rental_server.model.User;
 import com.example.car_rental_server.repository.IBookingRepository;
 import com.example.car_rental_server.repository.IPostVehicleRepository;
 import com.example.car_rental_server.repository.IUserRepository;
+import com.example.car_rental_server.service.notification.INotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +17,6 @@ import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +24,7 @@ public class BookingService implements IBookingService {
     private final IBookingRepository bookingRepo;
     private final IUserRepository userRepo;
     private final IPostVehicleRepository vehicleRepo;
+    private final INotificationService notificationService;
 
     @Override
     public BookingDTO createBooking(BookingDTO dto) {
@@ -62,6 +62,15 @@ public class BookingService implements IBookingService {
                 .build();
 
         booking = bookingRepo.save(booking);
+
+        // Sau khi booking thành công, gửi thông báo cho owner
+        notificationService.notifyOwnerNewBooking(
+                booking.getOwner().getId(),
+                booking.getVehicle().getVehicleName(),
+                booking.getUser().getName(),
+                booking.getStartDate(),
+                booking.getEndDate()
+        );
         return toDTO(booking);
     }
 
@@ -91,13 +100,21 @@ public class BookingService implements IBookingService {
     }
 
     @Override
-    public BookingDTO confirmBooking(UUID  bookingId, Long ownerId) {
+    public BookingDTO confirmBooking(UUID bookingId, Long ownerId) {
         Optional<Booking> bookingOpt = bookingRepo.findById(bookingId);
         if (bookingOpt.isEmpty()) return null;
         Booking booking = bookingOpt.get();
         if (!booking.getOwner().getId().equals(ownerId)) return null;
+
+        // Cập nhật trạng thái booking
         booking.setStatus(BookingStatus.CONFIRMED);
         booking = bookingRepo.save(booking);
+
+        // Cập nhật trạng thái xe
+        PostVehicle vehicle = booking.getVehicle();
+        vehicle.setStatus(VehicleStatus.RENTED); // <-- sử dụng enum
+        vehicleRepo.save(vehicle);
+
         return toDTO(booking);
     }
 
@@ -118,8 +135,16 @@ public class BookingService implements IBookingService {
         if (bookingOpt.isEmpty()) return null;
         Booking booking = bookingOpt.get();
         if (!booking.getOwner().getId().equals(ownerId)) return null;
+
+        // Đánh dấu booking đã hoàn tất
         booking.setStatus(BookingStatus.COMPLETED);
         booking = bookingRepo.save(booking);
+
+        // Đặt lại trạng thái xe thành AVAILABLE
+        PostVehicle vehicle = booking.getVehicle();
+        vehicle.setStatus(VehicleStatus.AVAILABLE);
+        vehicleRepo.save(vehicle);
+
         return toDTO(booking);
     }
 
