@@ -28,8 +28,8 @@
                     </div>
                     <div class="stat-content">
                         <h3>Total Vehicles</h3>
-                        <p class="stat-number">24</p>
-                        <span class="stat-change positive">+2 from last month</span>
+                        <p class="stat-number">0</p>
+
                     </div>
                 </div>
 
@@ -39,8 +39,8 @@
                     </div>
                     <div class="stat-content">
                         <h3>Today's Bookings</h3>
-                        <p class="stat-number">8</p>
-                        <span class="stat-change positive">+3 from yesterday</span>
+                        <p class="stat-number">0</p>
+
                     </div>
                 </div>
 
@@ -50,8 +50,8 @@
                     </div>
                     <div class="stat-content">
                         <h3>Monthly Revenue</h3>
-                        <p class="stat-number">$45,250</p>
-                        <span class="stat-change positive">+12% from last month</span>
+                        <p class="stat-number">$0</p>
+
                     </div>
                 </div>
 
@@ -61,8 +61,8 @@
                     </div>
                     <div class="stat-content">
                         <h3>New Customers</h3>
-                        <p class="stat-number">12</p>
-                        <span class="stat-change positive">+5 this week</span>
+                        <p class="stat-number">0</p>
+
                     </div>
                 </div>
             </div>
@@ -72,10 +72,10 @@
                 <div class="chart-container">
                     <div class="chart-header">
                         <h3>7-Day Revenue</h3>
-                        <select class="chart-filter">
-                            <option>7 days</option>
-                            <option>30 days</option>
-                            <option>3 months</option>
+                        <select class="chart-filter" id="chart-range">
+                            <option value="7">7 days</option>
+                            <option value="30">30 days</option>
+                            <option value="90">3 months</option>
                         </select>
                     </div>
                     <div class="chart-canvas-container">
@@ -97,85 +97,176 @@
             <div class="activities-section">
                 <div class="section-header">
                     <h3>Recent Activities</h3>
-                    <a class="view-all-btn" href="bookings.html">View all</a>
                 </div>
 
-                <div class="activities-list">
-                    <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-plus-circle"></i>
-                        </div>
-                        <div class="activity-content">
-                            <p><strong>John Smith</strong> booked Toyota Camry</p>
-                            <span class="activity-time">5 minutes ago</span>
-                        </div>
-                        <div class="activity-status pending">Pending</div>
-                    </div>
-
-                    <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-check-circle"></i>
-                        </div>
-                        <div class="activity-content">
-                            <p>
-                                <strong>Mary Johnson</strong> completed Honda Civic rental
-                            </p>
-                            <span class="activity-time">1 hour ago</span>
-                        </div>
-                        <div class="activity-status completed">Completed</div>
-                    </div>
-
-                    <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-car"></i>
-                        </div>
-                        <div class="activity-content">
-                            <p>Vehicle <strong>BMW X5</strong> added to system</p>
-                            <span class="activity-time">2 hours ago</span>
-                        </div>
-                        <div class="activity-status new">New</div>
-                    </div>
-
-                    <div class="activity-item">
-                        <div class="activity-icon">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="activity-content">
-                            <p>
-                                Vehicle <strong>Mercedes C200</strong> needs maintenance
-                            </p>
-                            <span class="activity-time">3 hours ago</span>
-                        </div>
-                        <div class="activity-status warning">Warning</div>
-                    </div>
-                </div>
+                <div class="activities-list"></div>
             </div>
 
-            <div class="quick-actions">
-                <h3>Quick Action</h3>
-                <div class="actions-grid">
-                    <button class="action-btn" th:onclick="|location.href='@{/admin/cars/create}'|">
-                        <i class="fas fa-plus"></i>
-                        <span>Add New Vehicle</span>
-                    </button>
-                    <button class="action-btn" th:onclick="|location.href='@{/admin/bookings/create}'|">
-                        <i class="fas fa-calendar-plus"></i>
-                        <span>Create Booking</span>
-                    </button>
-                    <button class="action-btn" th:onclick="|location.href='@{/admin/customers/create}'|">
-                        <i class="fas fa-user-plus"></i>
-                        <span>Add Customer</span>
-                    </button>
-                    <button class="action-btn" onclick="generateReport()">
-                        <i class="fas fa-file-download"></i>
-                        <span>Export Report</span>
-                    </button>
-                </div>
-            </div>
         </div>
     </main>
 </div>
 <script>
+    // Chart.js data containers
+    let dashboardData = { revenue: [], popularCars: [] };
+    let revenueChart = null;
+    let popularCarsChart = null;
+
+    // Format currency helper
+    function formatCurrency(value) {
+        return "$" + Number(value).toLocaleString();
+    }
+
+    // Load dashboard data and render
+    function loadDashboardData() {
+        fetch('/admin/dashboard/data')
+            .then(response => response.json())
+            .then(data => {
+                // Stats Cards
+                document.querySelectorAll('.stat-number')[0].textContent = data.totalVehicles;
+                document.querySelectorAll('.stat-number')[1].textContent = data.todayBookings;
+                document.querySelectorAll('.stat-number')[2].textContent = formatCurrency(data.monthlyRevenue);
+                document.querySelectorAll('.stat-number')[3].textContent = data.newCustomers;
+                // If backend supplies change text, update it:
+                if (data.totalVehiclesChangeText) document.getElementById('vehicles-change').textContent = data.totalVehiclesChangeText;
+                if (data.todayBookingsChangeText) document.getElementById('bookings-change').textContent = data.todayBookingsChangeText;
+                if (data.monthlyRevenueChangeText) document.getElementById('revenue-change').textContent = data.monthlyRevenueChangeText;
+                if (data.newCustomersChangeText) document.getElementById('customers-change').textContent = data.newCustomersChangeText;
+
+                // Charts
+                dashboardData.revenue = data.revenueStats;
+                dashboardData.popularCars = data.popularCars;
+                initializeCharts();
+
+                // Recent Activities
+                const activitiesList = document.querySelector('.activities-list');
+                activitiesList.innerHTML = "";
+                data.recentActivities.forEach(act => {
+                    activitiesList.innerHTML += `
+                      <div class="activity-item">
+                        <div class="activity-icon">
+                          <i class="${act.icon}"></i>
+                        </div>
+                        <div class="activity-content">
+                          <p>${act.content}</p>
+                          <span class="activity-time">${act.time}</span>
+                        </div>
+                        <div class="activity-status ${act.statusClass}">${act.statusText}</div>
+                      </div>
+                    `;
+                });
+            });
+    }
+
+    function initializeCharts() {
+        initRevenueChart();
+        initPopularCarsChart();
+    }
+
+    function initRevenueChart() {
+        const ctx = document.getElementById("revenueChart");
+        if (!ctx) return;
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: dashboardData.revenue.map((item) =>
+                    new Date(item.date).toLocaleDateString("vi-VN", {
+                        month: "short",
+                        day: "numeric",
+                    })
+                ),
+                datasets: [
+                    {
+                        label: "Doanh thu (VNĐ)",
+                        data: dashboardData.revenue.map((item) => item.amount),
+                        borderColor: "#2563eb",
+                        backgroundColor: "rgba(37, 99, 235, 0.1)",
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: "#f97316",
+                        pointBorderColor: "#2563eb",
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return (value / 1000000).toFixed(1) + "M";
+                            },
+                        },
+                        grid: { color: "rgba(0, 0, 0, 0.1)" },
+                    },
+                    x: { grid: { color: "rgba(0, 0, 0, 0.1)" } },
+                },
+                elements: { point: { hoverRadius: 8 } },
+                animation: { duration: 1000 },
+            },
+        });
+    }
+
+    function initPopularCarsChart() {
+        const ctx = document.getElementById("popularCarsChart");
+        if (!ctx) return;
+        if (popularCarsChart) popularCarsChart.destroy();
+        popularCarsChart = new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels: dashboardData.popularCars.map((car) => car.name),
+                datasets: [
+                    {
+                        data: dashboardData.popularCars.map((car) => car.bookings),
+                        backgroundColor: [
+                            "#2563eb",
+                            "#f97316",
+                            "#059669",
+                            "#dc2626",
+                            "#8b5cf6",
+                        ],
+                        borderWidth: 0,
+                        hoverBorderWidth: 3,
+                        hoverBorderColor: "#ffffff",
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: { size: 12 },
+                        },
+                    },
+                },
+                cutout: "60%",
+                animation: { duration: 1000 },
+            },
+        });
+    }
+
+    // Report export (unchanged)
+    function generateReport() {
+        // Simulate report generation for now...
+        showToast("Đang tạo báo cáo...", "info");
+        setTimeout(() => {
+            showToast("Báo cáo đã được tải xuống thành công!", "success");
+        }, 2000);
+    }
+
     function showToast(message, type = 'success') {
         const toastContainer = document.getElementById('toast-container');
         if (!toastContainer) return;
@@ -189,25 +280,18 @@
             </div>
         `;
         toastContainer.appendChild(toast);
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 100);
+        setTimeout(() => { toast.classList.add('show'); }, 100);
         setTimeout(() => {
             toast.classList.remove('show');
-            setTimeout(() => {
-                toastContainer.removeChild(toast);
-            }, 300);
+            setTimeout(() => { toastContainer.removeChild(toast); }, 300);
         }, 3000);
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('login')) {
-            showToast('Login Success!', 'success');
-            // Clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    });
+    // Call loadDashboardData on page load
+    document.addEventListener("DOMContentLoaded", loadDashboardData);
+
+    // Optionally, reload data every 5 minutes
+    setInterval(loadDashboardData, 5 * 60 * 1000);
 </script>
 <div id="toast-container"></div>
 <style>
@@ -218,7 +302,6 @@
         right: 20px;
         z-index: 10000;
     }
-
     .toast {
         background: #fff;
         border-radius: 8px;
@@ -231,47 +314,18 @@
         opacity: 0;
         border-left: 4px solid #28a745;
     }
-
-    .toast.toast-success {
-        border-left-color: #28a745;
-    }
-
-    .toast.toast-error {
-        border-left-color: #dc3545;
-    }
-
-    .toast.show {
-        transform: translateX(0);
-        opacity: 1;
-    }
-
-    .toast-content {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .toast-content i {
-        font-size: 18px;
-        color: #28a745;
-    }
-
-    .toast.toast-error .toast-content i {
-        color: #dc3545;
-    }
-
-    .toast-content span {
-        font-size: 14px;
-        font-weight: 500;
-        color: #333;
-    }
+    .toast.toast-success { border-left-color: #28a745; }
+    .toast.toast-error { border-left-color: #dc3545; }
+    .toast.show { transform: translateX(0); opacity: 1; }
+    .toast-content { display: flex; align-items: center; gap: 10px; }
+    .toast-content i { font-size: 18px; color: #28a745; }
+    .toast.toast-error .toast-content i { color: #dc3545; }
+    .toast-content span { font-size: 14px; font-weight: 500; color: #333; }
 </style>
-<script th:src="@{/js/dashboard.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 <!-- Import thư viện SockJS và StompJS trước -->
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-<!-- Import file JS WebSocket riêng -->
 <script th:src="@{/js/websocket-notify.js}"></script>
 </body>
 </html>

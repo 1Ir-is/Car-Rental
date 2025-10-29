@@ -1,44 +1,191 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
-    <title>Admin Bookings</title>
-    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Management - Auto Rent Admin</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <link rel="stylesheet" th:href="@{/css/table.css}" />
+    <link rel="stylesheet" th:href="@{/css/modal.css}" />
+    <link rel="stylesheet" th:href="@{/css/vehicles.css}" />
+    <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+            rel="stylesheet"
+    />
 </head>
 <body>
-<div th:replace="fragments/sidebar :: admin-sidebar"></div>
+<div class="admin-container">
+    <div
+            th:replace="fragments/sidebar :: admin-sidebar(activeMenu='bookings')"
+    ></div>
 
-<div class="main-content">
-    <h2>All Bookings</h2>
-    <table class="table">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>Customer</th>
-            <th>Owner</th>
-            <th>Car</th>
-            <th>Start</th>
-            <th>End</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Date</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="booking, iterStat : ${bookings}">
-            <td th:text="${iterStat.count}"></td>
-            <td th:text="${booking.user.name}"></td>
-            <td th:text="${booking.owner.name}"></td>
-            <td th:text="${booking.vehicle.vehicleName}"></td>
-            <td th:text="${booking.startDate}"></td>
-            <td th:text="${booking.endDate}"></td>
-            <td>
-                <span th:text="${booking.status}" th:classappend="'badge badge-' + (${booking.status.name().toLowerCase()})"></span>
-            </td>
-            <td th:text="${booking.totalAmount}"></td>
-            <td th:text="${#dates.format(booking.bookingDate, 'yyyy-MM-dd HH:mm')}"></td>
-        </tr>
-        </tbody>
-    </table>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <div th:replace="fragments/navbar :: admin-navbar"></div>
+
+        <!-- Vehicles Content -->
+        <div class="vehicles-content">
+            <!-- Page Header with Actions -->
+            <div class="page-header">
+                <div class="header-content">
+                    <div class="header-title">
+                        <h2>Booking Management</h2>
+                        <p>Manage booking information</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline" onclick="exportBookings()">
+                            <i class="fas fa-download"></i>
+                            Export Excel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-row">
+                    <div class="stat-card total">
+                        <div class="stat-icon total">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Pending</h3>
+                            <p class="stat-number" th:text="${pendingCount}">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card available">
+                        <div class="stat-icon available">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Approved</h3>
+                            <p class="stat-number" th:text="${approvedCount}">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card maintenance">
+                        <div class="stat-icon maintenance">
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>Completed</h3>
+                            <p class="stat-number" th:text="${completedCount}">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Controls -->
+            <div class="table-controls">
+                <form method="get" th:action="@{/admin/vehicles}">
+                    <div class="table-filters">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input
+                                    type="text"
+                                    name="search"
+                                    th:value="${search}"
+                                    placeholder="Search by customer name ..."
+                            />
+                        </div>
+                    </div>
+                </form>
+                <div class="table-actions">
+                    <button
+                            class="btn btn-outline btn-sm"
+                            onclick="window.location.reload()"
+                    >
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Table -->
+            <div class="table-container">
+                <table class="data-table" id="vehicles-table">
+                    <thead>
+                    <tr>
+                        <th class="sortable" data-sort="image">
+                            <span>#</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-sort="vehicle">
+                            <span>Customer</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-sort="license">
+                            <span>Owner</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-sort="price">
+                            <span>Car</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-sort="status">
+                            <span>Start</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-sort="last-rental">
+                            <span>End</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-sort="last-rental">
+                            <span>Status</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-sort="last-rental">
+                            <span>Total</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                        <th class="sortable" data-sort="last-rental">
+                            <span>Date</span>
+                            <i class="fas fa-sort"></i>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="booking, iterStat : ${bookings}">
+                        <td th:text="${iterStat.count}"></td>
+                        <td>
+                            <div class="vehicle-info">
+                                <div class="vehicle-details">
+                        <span
+                                class="vehicle-name"
+                                th:text="${booking.user.name}"
+                        >Car Name</span
+                        >
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${booking.owner.name}"></td>
+                        <td th:text="${booking.vehicle.vehicleName}"></td>
+                        <td th:text="${booking.startDate}"></td>
+                        <td th:text="${booking.endDate}"></td>
+                        <td>
+  <span
+          class="status-badge"
+          th:classappend="${booking.status.name().toLowerCase()}"
+          th:text="${booking.status}"
+  ></span>
+                        </td>
+                        <td th:text="${booking.totalAmount}"></td>
+                        <td th:text="${#temporals.format(booking.bookingDate, 'yyyy-MM-dd HH:mm')}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
 </div>
+<script>
+    function exportBookings() {
+        window.location.href = '/admin/bookings/export';
+    }
+</script>
+<script th:src="@{/js/main.js}"></script>
+<!-- Import thư viện SockJS và StompJS trước -->
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<!-- Import file JS WebSocket riêng -->
+<script th:src="@{/js/websocket-notify.js}"></script>
 </body>
 </html>

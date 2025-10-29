@@ -896,3 +896,15 @@
         padding: 8px 12px;
     }
 }
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+}
+.status-badge.completed { background: #22c55e; }
+.status-badge.pending { background: #fbbf24; }
+.status-badge.confirmed { background: #2563eb; }
+.status-badge.cancelled { background: #ef4444; }
